@@ -9,4 +9,4 @@ CREATE TABLE IF NOT EXISTS events (
   updated_at DATETIME,
   created_by VARCHAR(255),
   updated_by VARCHAR(255)
-)
+);
