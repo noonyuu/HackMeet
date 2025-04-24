@@ -5,5 +5,5 @@ CREATE TABLE IF NOT EXISTS works (
   title VARCHAR(255),
   description TEXT,
   FOREIGN KEY (event_id) REFERENCES events(id),
-  FOREIGN KEY (profile_id) REFERENCES profiles(id),
+  FOREIGN KEY (profile_id) REFERENCES profiles(id)
 );
