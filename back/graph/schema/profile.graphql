@@ -1,0 +1,27 @@
+type Profile {
+  id: String!
+  userId: String!
+  avatarUrl: String
+  nickName: String
+  bio: String
+  createdAt: String!
+  updatedAt: String!
+}
+
+input NewProfile {
+  id: String!
+  userId: String!
+  avatarUrl: String
+  nickName: String
+  bio: String
+  createdAt: String!
+  updatedAt: String!
+}
+
+extend type Query {
+  profile(id: String!): Profile
+}
+
+extend type Mutation {
+  createProfile(input: NewProfile!): Profile!
+}
