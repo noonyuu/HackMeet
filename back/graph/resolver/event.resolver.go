@@ -15,6 +15,16 @@ import (
 	"github.com/noonyuu/nfc/back/graph/model"
 )
 
+// CreatedAt is the resolver for the createdAt field.
+func (r *eventResolver) CreatedAt(ctx context.Context, obj *model.Event) (string, error) {
+	return obj.CreatedAt.Format("2006-01-02 15:04:05"), nil
+}
+
+// UpdatedAt is the resolver for the updatedAt field.
+func (r *eventResolver) UpdatedAt(ctx context.Context, obj *model.Event) (string, error) {
+	return obj.UpdatedAt.Format("2006-01-02 15:04:05"), nil
+}
+
 // CreateEvent is the resolver for the createEvent field.
 func (r *mutationResolver) CreateEvent(ctx context.Context, input model.NewEvent) (*model.Event, error) {
 	// uuidを生成
@@ -109,16 +119,6 @@ func (r *queryResolver) EventByName(ctx context.Context, name string) (*model.Ev
 	}
 
 	return &event, nil
-}
-
-// CreatedAt is the resolver for the createdAt field.
-func (r *eventResolver) CreatedAt(ctx context.Context, obj *model.Event) (string, error) {
-	return obj.CreatedAt.Format("2006-01-02 15:04:05"), nil
-}
-
-// UpdatedAt is the resolver for the updatedAt field.
-func (r *eventResolver) UpdatedAt(ctx context.Context, obj *model.Event) (string, error) {
-	return obj.UpdatedAt.Format("2006-01-02 15:04:05"), nil
 }
 
 // Event returns graph.EventResolver implementation.
