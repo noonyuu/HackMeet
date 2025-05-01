@@ -56,7 +56,50 @@ func (r *profileResolver) UpdatedAt(ctx context.Context, obj *model.Profile) (st
 
 // Profile is the resolver for the profile field.
 func (r *queryResolver) Profile(ctx context.Context, id string) (*model.Profile, error) {
-	return r.profile, nil
+	query := `
+	SELECT id, user_id, avatar_url, nick_name, graduation_year, affiliation, bio, created_at, updated_at
+	FROM profiles
+	WHERE id = ?
+`
+	row := r.DB.QueryRow(query, id)
+	var profile model.Profile
+
+	if err := row.Scan(&profile.ID, &profile.UserID, &profile.AvatarURL, &profile.NickName, &profile.GraduationYear, &profile.Affiliation, &profile.Bio, &profile.CreatedAt, &profile.UpdatedAt); err != nil {
+		return nil, err
+	}
+	return &profile, nil
+}
+
+// ProfileByNickName is the resolver for the profileByNickName field.
+func (r *queryResolver) ProfileByNickName(ctx context.Context, nickName string) (*model.Profile, error) {
+	query := `
+	SELECT id, user_id, avatar_url, nick_name, graduation_year, affiliation, bio, created_at, updated_at
+	FROM profiles
+	WHERE nick_name = ?
+`
+	row := r.DB.QueryRow(query, nickName)
+	var profile model.Profile
+
+	if err := row.Scan(&profile.ID, &profile.UserID, &profile.AvatarURL, &profile.NickName, &profile.GraduationYear, &profile.Affiliation, &profile.Bio, &profile.CreatedAt, &profile.UpdatedAt); err != nil {
+		return nil, err
+	}
+	return &profile, nil
+}
+
+// ProfileByUserID is the resolver for the profileByUserId field.
+func (r *queryResolver) ProfileByUserID(ctx context.Context, userID string) (*model.Profile, error) {
+	query := `
+	SELECT id, user_id, avatar_url, nick_name, graduation_year, affiliation, bio, created_at, updated_at
+	FROM profiles
+	WHERE user_id = ?
+`
+	row := r.DB.QueryRow(query, userID)
+	var profile model.Profile
+
+	if err := row.Scan(&profile.ID, &profile.UserID, &profile.AvatarURL, &profile.NickName, &profile.GraduationYear, &profile.Affiliation, &profile.Bio, &profile.CreatedAt, &profile.UpdatedAt); err != nil {
+		return nil, err
+	}
+	return &profile, nil
 }
 
 // Profile returns graph.ProfileResolver implementation.

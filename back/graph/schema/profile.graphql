@@ -21,6 +21,8 @@ input NewProfile {
 
 extend type Query {
   profile(id: String!): Profile
+  profileByNickName(nickName: String!): Profile
+  profileByUserId(userId: String!): Profile
 }
 
 extend type Mutation {
