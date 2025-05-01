@@ -16,15 +16,12 @@ type NewEvent struct {
 }
 
 type NewProfile struct {
-	ID             string  `json:"id"`
 	UserID         string  `json:"userId"`
 	AvatarURL      *string `json:"avatarUrl,omitempty"`
-	NickName       *string `json:"nickName,omitempty"`
-	GraduationYear *int32  `json:"graduationYear,omitempty"`
+	NickName       string  `json:"nickName"`
+	GraduationYear int32   `json:"graduationYear"`
 	Affiliation    *string `json:"affiliation,omitempty"`
 	Bio            *string `json:"bio,omitempty"`
-	CreatedAt      string  `json:"createdAt"`
-	UpdatedAt      string  `json:"updatedAt"`
 }
 
 type NewSkill struct {

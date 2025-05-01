@@ -122,8 +122,6 @@ type MutationResolver interface {
 	CreateUser(ctx context.Context, input model.NewUser) (*model.User, error)
 }
 type ProfileResolver interface {
-	GraduationYear(ctx context.Context, obj *model.Profile) (*int32, error)
-
 	CreatedAt(ctx context.Context, obj *model.Profile) (string, error)
 	UpdatedAt(ctx context.Context, obj *model.Profile) (string, error)
 }
@@ -1835,11 +1833,14 @@ func (ec *executionContext) _Profile_nickName(ctx context.Context, field graphql
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalOString2string(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Profile_nickName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1869,26 +1870,29 @@ func (ec *executionContext) _Profile_graduationYear(ctx context.Context, field g
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Profile().GraduationYear(rctx, obj)
+		return obj.GraduationYear, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*int32)
+	res := resTmp.(int32)
 	fc.Result = res
-	return ec.marshalOInt2ᚖint32(ctx, field.Selections, res)
+	return ec.marshalNInt2int32(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Profile_graduationYear(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Profile",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Int does not have child fields")
 		},
@@ -5181,20 +5185,13 @@ func (ec *executionContext) unmarshalInputNewProfile(ctx context.Context, obj an
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"id", "userId", "avatarUrl", "nickName", "graduationYear", "affiliation", "bio", "createdAt", "updatedAt"}
+	fieldsInOrder := [...]string{"userId", "avatarUrl", "nickName", "graduationYear", "affiliation", "bio"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
 			continue
 		}
 		switch k {
-		case "id":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-			data, err := ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.ID = data
 		case "userId":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userId"))
 			data, err := ec.unmarshalNString2string(ctx, v)
@@ -5211,14 +5208,14 @@ func (ec *executionContext) unmarshalInputNewProfile(ctx context.Context, obj an
 			it.AvatarURL = data
 		case "nickName":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nickName"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.NickName = data
 		case "graduationYear":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("graduationYear"))
-			data, err := ec.unmarshalOInt2ᚖint32(ctx, v)
+			data, err := ec.unmarshalNInt2int32(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5237,20 +5234,6 @@ func (ec *executionContext) unmarshalInputNewProfile(ctx context.Context, obj an
 				return it, err
 			}
 			it.Bio = data
-		case "createdAt":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAt"))
-			data, err := ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.CreatedAt = data
-		case "updatedAt":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("updatedAt"))
-			data, err := ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.UpdatedAt = data
 		}
 	}
 
@@ -5581,39 +5564,14 @@ func (ec *executionContext) _Profile(ctx context.Context, sel ast.SelectionSet, 
 			out.Values[i] = ec._Profile_avatarUrl(ctx, field, obj)
 		case "nickName":
 			out.Values[i] = ec._Profile_nickName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
 		case "graduationYear":
-			field := field
-
-			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Profile_graduationYear(ctx, field, obj)
-				return res
+			out.Values[i] = ec._Profile_graduationYear(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
 			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "affiliation":
 			out.Values[i] = ec._Profile_affiliation(ctx, field, obj)
 		case "bio":
@@ -6522,6 +6480,21 @@ func (ec *executionContext) marshalNEvent2ᚖgithubᚗcomᚋnoonyuuᚋnfcᚋback
 	return ec._Event(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalNInt2int32(ctx context.Context, v any) (int32, error) {
+	res, err := graphql.UnmarshalInt32(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNInt2int32(ctx context.Context, sel ast.SelectionSet, v int32) graphql.Marshaler {
+	res := graphql.MarshalInt32(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+	}
+	return res
+}
+
 func (ec *executionContext) unmarshalNNewEvent2githubᚗcomᚋnoonyuuᚋnfcᚋbackᚋgraphᚋmodelᚐNewEvent(ctx context.Context, v any) (model.NewEvent, error) {
 	res, err := ec.unmarshalInputNewEvent(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -6961,22 +6934,6 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 		return graphql.Null
 	}
 	res := graphql.MarshalBoolean(*v)
-	return res
-}
-
-func (ec *executionContext) unmarshalOInt2ᚖint32(ctx context.Context, v any) (*int32, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := graphql.UnmarshalInt32(v)
-	return &res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalOInt2ᚖint32(ctx context.Context, sel ast.SelectionSet, v *int32) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	res := graphql.MarshalInt32(*v)
 	return res
 }
 

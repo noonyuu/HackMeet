@@ -2,20 +2,21 @@ type Profile {
   id: String!
   userId: String!
   avatarUrl: String
-  nickName: String
+  nickName: String!
+  graduationYear: Int!
+  affiliation: String
   bio: String
   createdAt: String!
   updatedAt: String!
 }
 
 input NewProfile {
-  id: String!
   userId: String!
   avatarUrl: String
-  nickName: String
+  nickName: String!
+  graduationYear: Int!
+  affiliation: String
   bio: String
-  createdAt: String!
-  updatedAt: String!
 }
 
 extend type Query {
