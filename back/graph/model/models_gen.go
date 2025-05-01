@@ -5,14 +5,26 @@ package model
 type Mutation struct {
 }
 
+type NewEvent struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	StartDate   string `json:"startDate"`
+	EndDate     string `json:"endDate"`
+	Location    string `json:"location"`
+	CreatedBy   string `json:"createdBy"`
+	UpdatedBy   string `json:"updatedBy"`
+}
+
 type NewProfile struct {
-	ID        string  `json:"id"`
-	UserID    string  `json:"userId"`
-	AvatarURL *string `json:"avatarUrl,omitempty"`
-	NickName  *string `json:"nickName,omitempty"`
-	Bio       *string `json:"bio,omitempty"`
-	CreatedAt string  `json:"createdAt"`
-	UpdatedAt string  `json:"updatedAt"`
+	ID             string  `json:"id"`
+	UserID         string  `json:"userId"`
+	AvatarURL      *string `json:"avatarUrl,omitempty"`
+	NickName       *string `json:"nickName,omitempty"`
+	GraduationYear *int32  `json:"graduationYear,omitempty"`
+	Affiliation    *string `json:"affiliation,omitempty"`
+	Bio            *string `json:"bio,omitempty"`
+	CreatedAt      string  `json:"createdAt"`
+	UpdatedAt      string  `json:"updatedAt"`
 }
 
 type NewUser struct {
