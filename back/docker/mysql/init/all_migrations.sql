@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS events (
   created_by VARCHAR(255),
   updated_by VARCHAR(255)
 );CREATE TABLE IF NOT EXISTS skills (
-  id INT AUTO_INCREMENT PRIMARY KEY,
+  id VARCHAR(255) PRIMARY KEY,
   name VARCHAR(255) UNIQUE,
   category VARCHAR(255),
   created_at DATETIME,
@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS profiles (
 );CREATE TABLE IF NOT EXISTS profile_skills (
   id INT AUTO_INCREMENT PRIMARY KEY,
   profile_id VARCHAR(255),
-  skill_id INT,
+  skill_id VARCHAR(255),
   created_at DATETIME,
   updated_at DATETIME,
   FOREIGN KEY (profile_id) REFERENCES profiles(id),
@@ -54,7 +54,7 @@ CREATE TABLE IF NOT EXISTS works (
 );CREATE TABLE IF NOT EXISTS work_skills (
   id INT AUTO_INCREMENT PRIMARY KEY,
   work_id INT,
-  skill_id INT,
+  skill_id VARCHAR(255),
   created_at DATETIME,
   updated_at DATETIME,
   FOREIGN KEY (work_id) REFERENCES works(id),
