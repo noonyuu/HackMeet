@@ -1,10 +1,15 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { RouterProvider, createRouter } from "@tanstack/react-router";
-
-import { routeTree } from "./routeTree.gen";
+import { ApolloClient, ApolloProvider, InMemoryCache } from "@apollo/client";
 
 import "./index.css";
+import { routeTree } from "./routeTree.gen";
+
+const client = new ApolloClient({
+  uri: "http://localhost:8443/api/query",
+  cache: new InMemoryCache(),
+});
 
 const router = createRouter({ routeTree });
 
@@ -15,7 +20,9 @@ declare module "@tanstack/react-router" {
 }
 
 createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    <RouterProvider router={router} />
-  </StrictMode>,
+  <ApolloProvider client={client}>
+    <StrictMode>
+      <RouterProvider router={router} />
+    </StrictMode>
+  </ApolloProvider>,
 );
