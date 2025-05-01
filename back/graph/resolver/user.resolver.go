@@ -6,41 +6,43 @@ package resolver
 
 import (
 	"context"
-	"crypto/rand"
-	"database/sql"
-	"fmt"
-	"math/big"
 	"time"
 
+	"github.com/google/uuid"
+	"github.com/noonyuu/nfc/back/graph"
 	"github.com/noonyuu/nfc/back/graph/model"
 )
 
 // CreateUser is the resolver for the createUser field.
 func (r *mutationResolver) CreateUser(ctx context.Context, input model.NewUser) (*model.User, error) {
-	// ランダムIDを生成
-	randNumber, _ := rand.Int(rand.Reader, big.NewInt(100))
+	// uuidを生成
+	uid, _ := uuid.NewRandom()
+	// 生成したUUIDを文字列に変換
+	uidString := uid.String()
+	// 現在時刻を取得
 	now := time.Now()
-	id := fmt.Sprintf("%d", randNumber)
+	// User構造体にUUIDと現在時刻をセット
+	user := &model.User{
+		ID:        uidString,
+		FirstName: input.FirstName,
+		LastName:  input.LastName,
+		Email:     input.Email,
+		CreatedAt: now,
+		UpdatedAt: now,
+	}
 
 	query := `
 		INSERT INTO users (id, first_name, last_name, email, created_at, updated_at)
 		VALUES (?, ?, ?, ?, ?, ?)
 	`
 
-	_, err := r.DB.Exec(query, id, input.FirstName, input.LastName, input.Email, now, now)
+	_, err := r.DB.Exec(query, user.ID, input.FirstName, input.LastName, input.Email, user.CreatedAt, user.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}
 
 	// 作成したユーザーを返す
-	return &model.User{
-		ID:        id,
-		FirstName: input.FirstName,
-		LastName:  input.LastName,
-		Email:     input.Email,
-		CreatedAt: input.CreatedAt,
-		UpdatedAt: input.UpdatedAt,
-	}, nil
+	return user, nil
 }
 
 // UserByID is the resolver for the userById field.
@@ -52,39 +54,54 @@ func (r *queryResolver) UserByID(ctx context.Context, id string) (*model.User, e
 	`
 	row := r.DB.QueryRow(query, id)
 	var user model.User
-	err := row.Scan(&user.ID, &user.FirstName, &user.LastName, &user.Email, &user.CreatedAt, &user.UpdatedAt)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, fmt.Errorf("user not found")
-		}
+	if err := row.Scan(&user.ID, &user.FirstName, &user.LastName, &user.Email, &user.CreatedAt, &user.UpdatedAt); err != nil {
 		return nil, err
 	}
-	// ユーザーが見つかった場合、ユーザーを返す
-	return &model.User{ID: id}, nil
+
+	return &user, nil
 }
 
-// User is the resolver for the user field.
-func (r *queryResolver) User(ctx context.Context) (*model.User, error) {
+// Users is the resolver for the users field.
+func (r *queryResolver) Users(ctx context.Context) ([]*model.User, error) {
 	query := `
 		SELECT id, first_name, last_name, email, created_at, updated_at
 		FROM users
 	`
-	row := r.DB.QueryRow(query)
-	var user model.User
-	err := row.Scan(&user.ID, &user.FirstName, &user.LastName, &user.Email, &user.CreatedAt, &user.UpdatedAt)
+	rows, err := r.DB.Query(query)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, fmt.Errorf("user not found")
-		}
 		return nil, err
 	}
-	// ユーザーが見つかった場合、ユーザーを返す
-	return &model.User{
-		ID:        user.ID,
-		FirstName: user.FirstName,
-		LastName:  user.LastName,
-		Email:     user.Email,
-		CreatedAt: user.CreatedAt,
-		UpdatedAt: user.UpdatedAt,
-	}, nil
+	defer rows.Close()
+
+	var users []*model.User
+
+	for rows.Next() {
+		var user model.User
+		if err = rows.Scan(&user.ID, &user.FirstName, &user.LastName, &user.Email, &user.CreatedAt, &user.UpdatedAt); err != nil {
+			return nil, err
+		}
+
+		users = append(users, &user)
+	}
+
+	if er := rows.Err(); er != nil {
+		return nil, er
+	}
+
+	return users, nil
 }
+
+// CreatedAt is the resolver for the createdAt field.
+func (r *userResolver) CreatedAt(ctx context.Context, obj *model.User) (string, error) {
+	return obj.CreatedAt.Format("2006-01-02 15:04:05"), nil
+}
+
+// UpdatedAt is the resolver for the updatedAt field.
+func (r *userResolver) UpdatedAt(ctx context.Context, obj *model.User) (string, error) {
+	return obj.UpdatedAt.Format("2006-01-02 15:04:05"), nil
+}
+
+// User returns graph.UserResolver implementation.
+func (r *Resolver) User() graph.UserResolver { return &userResolver{r} }
+
+type userResolver struct{ *Resolver }

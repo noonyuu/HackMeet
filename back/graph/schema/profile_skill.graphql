@@ -1,0 +1,22 @@
+type ProfileSkill {
+  id: Int!
+  profileId: String!
+  skillId: String!
+  createdAt: String!
+  updatedAt: String!
+}
+
+input NewProfileSkill {
+  profileId: String!
+  skillId: String!
+}
+
+extend type Query {
+  profileSkill(id: Int!): ProfileSkill
+  profileSkillsByProfileId(profileId: String!): [ProfileSkill!]!
+}
+
+extend type Mutation {
+  createProfileSkill(input: NewProfileSkill!): ProfileSkill!
+  deleteProfileSkill(id: Int!): ProfileSkill!
+}

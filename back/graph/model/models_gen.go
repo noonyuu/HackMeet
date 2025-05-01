@@ -5,23 +5,55 @@ package model
 type Mutation struct {
 }
 
+type NewEvent struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	StartDate   string `json:"startDate"`
+	EndDate     string `json:"endDate"`
+	Location    string `json:"location"`
+	CreatedBy   string `json:"createdBy"`
+	UpdatedBy   string `json:"updatedBy"`
+}
+
 type NewProfile struct {
-	ID        string  `json:"id"`
-	UserID    string  `json:"userId"`
-	AvatarURL *string `json:"avatarUrl,omitempty"`
-	NickName  *string `json:"nickName,omitempty"`
-	Bio       *string `json:"bio,omitempty"`
-	CreatedAt string  `json:"createdAt"`
-	UpdatedAt string  `json:"updatedAt"`
+	UserID         string  `json:"userId"`
+	AvatarURL      *string `json:"avatarUrl,omitempty"`
+	NickName       string  `json:"nickName"`
+	GraduationYear int32   `json:"graduationYear"`
+	Affiliation    *string `json:"affiliation,omitempty"`
+	Bio            *string `json:"bio,omitempty"`
+}
+
+type NewProfileSkill struct {
+	ProfileID string `json:"profileId"`
+	SkillID   string `json:"skillId"`
+}
+
+type NewSkill struct {
+	Name     string `json:"name"`
+	Category string `json:"category"`
 }
 
 type NewUser struct {
-	ID        string `json:"id"`
 	FirstName string `json:"firstName"`
 	LastName  string `json:"lastName"`
 	Email     string `json:"email"`
-	CreatedAt string `json:"createdAt"`
-	UpdatedAt string `json:"updatedAt"`
+}
+
+type NewWork struct {
+	EventID     string  `json:"eventId"`
+	Title       string  `json:"title"`
+	Description *string `json:"description,omitempty"`
+}
+
+type NewWorkProfile struct {
+	WorkID    string `json:"workId"`
+	ProfileID string `json:"profileId"`
+}
+
+type NewWorkSkill struct {
+	WorkID  string `json:"workId"`
+	SkillID string `json:"skillId"`
 }
 
 type Query struct {

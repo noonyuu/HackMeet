@@ -8,17 +8,14 @@ type User {
 }
 
 input NewUser {
-  id: String!
   firstName: String!
   lastName: String!
   email: String!
-  createdAt: String!
-  updatedAt: String!
 }
 
 extend type Query {
   userById(id: String!): User
-  user: User
+  users: [User!]!
 }
 
 extend type Mutation {

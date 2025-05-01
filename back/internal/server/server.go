@@ -39,8 +39,8 @@ func NewRouter(db *sql.DB) http.Handler {
 		Cache: lru.New[string](100),
 	})
 
-	mux.Handle("/", playground.Handler("GraphQL playground", "/query"))
-	mux.Handle("/query", srv)
+	mux.Handle("/", playground.Handler("GraphQL playground", "/api/query"))
+	mux.Handle("/api/query", srv)
 
 	return mux
 }

@@ -1,0 +1,21 @@
+type WorkSkill {
+  id: Int!
+  workId: String!
+  skillId: String!
+  createdAt: String!
+  updatedAt: String!
+}
+
+input NewWorkSkill {
+  workId: String!
+  skillId: String!
+}
+
+extend type Query {
+  workSkillsByWorkId(workId: String!): [WorkSkill!]!
+}
+
+extend type Mutation {
+  createWorkSkill(input: NewWorkSkill!): WorkSkill!
+  deleteWorkSkill(id: Int!): WorkSkill!
+}

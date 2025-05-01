@@ -17,4 +17,6 @@ type Resolver struct {
 	users    []*model.User
 	profile  *model.Profile
 	profiles []*model.Profile
+	event    *model.Event
+	events   []*model.Event
 }

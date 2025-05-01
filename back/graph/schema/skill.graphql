@@ -1,0 +1,21 @@
+type Skill {
+  id: String!
+  name: String!
+  category: String!
+  createdAt: String!
+  updatedAt: String!
+}
+
+input NewSkill {
+  name: String!
+  category: String!
+}
+
+extend type Query {
+  skillByName(name: String!): Skill!
+  skills: [Skill!]!
+}
+
+extend type Mutation {
+  createSkill(input: NewSkill!): Skill!
+}

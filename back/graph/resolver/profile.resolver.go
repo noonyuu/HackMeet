@@ -6,40 +6,103 @@ package resolver
 
 import (
 	"context"
-	"crypto/rand"
-	"fmt"
-	"math/big"
+	"time"
 
+	"github.com/google/uuid"
 	"github.com/noonyuu/nfc/back/graph"
 	"github.com/noonyuu/nfc/back/graph/model"
 )
 
 // CreateProfile is the resolver for the createProfile field.
 func (r *mutationResolver) CreateProfile(ctx context.Context, input model.NewProfile) (*model.Profile, error) {
-	randNumber, _ := rand.Int(rand.Reader, big.NewInt(100))
+	// uuidを生成
+	uid, _ := uuid.NewRandom()
+	// 生成したUUIDを文字列に変換
+	uidString := uid.String()
+	// 現在時刻を取得
+	now := time.Now()
+	// Profile構造体にUUIDと現在時刻をセット
 	profile := &model.Profile{
-		ID:        fmt.Sprintf("%d", randNumber),
-		UserID:    input.UserID,
-		AvatarURL: *input.AvatarURL,
-		Nickname:  *input.NickName,
-		Bio:       *input.Bio,
-		CreatedAt: input.CreatedAt,
-		UpdatedAt: input.UpdatedAt,
+		ID:             uidString,
+		UserID:         input.UserID,
+		AvatarURL:      *input.AvatarURL,
+		NickName:       input.NickName,
+		GraduationYear: input.GraduationYear,
+		Affiliation:    *input.Affiliation,
+		Bio:            *input.Bio,
+		CreatedAt:      now,
+		UpdatedAt:      now,
 	}
-	r.profiles = append(r.profiles, profile)
+
+	query := `
+	INSERT INTO profiles (id, user_id, avatar_url, nick_name, graduation_year, affiliation, bio, created_at, updated_at)
+	VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+`
+	if _, err := r.DB.Exec(query, profile.ID, profile.UserID, profile.AvatarURL, profile.NickName, profile.GraduationYear, profile.Affiliation, profile.Bio, now, now); err != nil {
+		return nil, err
+	}
 	return profile, nil
+}
+
+// CreatedAt is the resolver for the createdAt field.
+func (r *profileResolver) CreatedAt(ctx context.Context, obj *model.Profile) (string, error) {
+	return obj.CreatedAt.Format("2006-01-02 15:04:05"), nil
+}
+
+// UpdatedAt is the resolver for the updatedAt field.
+func (r *profileResolver) UpdatedAt(ctx context.Context, obj *model.Profile) (string, error) {
+	return obj.UpdatedAt.Format("2006-01-02 15:04:05"), nil
 }
 
 // Profile is the resolver for the profile field.
 func (r *queryResolver) Profile(ctx context.Context, id string) (*model.Profile, error) {
-	return r.profile, nil
+	query := `
+	SELECT id, user_id, avatar_url, nick_name, graduation_year, affiliation, bio, created_at, updated_at
+	FROM profiles
+	WHERE id = ?
+`
+	row := r.DB.QueryRow(query, id)
+	var profile model.Profile
+
+	if err := row.Scan(&profile.ID, &profile.UserID, &profile.AvatarURL, &profile.NickName, &profile.GraduationYear, &profile.Affiliation, &profile.Bio, &profile.CreatedAt, &profile.UpdatedAt); err != nil {
+		return nil, err
+	}
+	return &profile, nil
 }
 
-// Mutation returns graph.MutationResolver implementation.
-func (r *Resolver) Mutation() graph.MutationResolver { return &mutationResolver{r} }
+// ProfileByNickName is the resolver for the profileByNickName field.
+func (r *queryResolver) ProfileByNickName(ctx context.Context, nickName string) (*model.Profile, error) {
+	query := `
+	SELECT id, user_id, avatar_url, nick_name, graduation_year, affiliation, bio, created_at, updated_at
+	FROM profiles
+	WHERE nick_name = ?
+`
+	row := r.DB.QueryRow(query, nickName)
+	var profile model.Profile
 
-// Query returns graph.QueryResolver implementation.
-func (r *Resolver) Query() graph.QueryResolver { return &queryResolver{r} }
+	if err := row.Scan(&profile.ID, &profile.UserID, &profile.AvatarURL, &profile.NickName, &profile.GraduationYear, &profile.Affiliation, &profile.Bio, &profile.CreatedAt, &profile.UpdatedAt); err != nil {
+		return nil, err
+	}
+	return &profile, nil
+}
 
-type mutationResolver struct{ *Resolver }
-type queryResolver struct{ *Resolver }
+// ProfileByUserID is the resolver for the profileByUserId field.
+func (r *queryResolver) ProfileByUserID(ctx context.Context, userID string) (*model.Profile, error) {
+	query := `
+	SELECT id, user_id, avatar_url, nick_name, graduation_year, affiliation, bio, created_at, updated_at
+	FROM profiles
+	WHERE user_id = ?
+`
+	row := r.DB.QueryRow(query, userID)
+	var profile model.Profile
+
+	if err := row.Scan(&profile.ID, &profile.UserID, &profile.AvatarURL, &profile.NickName, &profile.GraduationYear, &profile.Affiliation, &profile.Bio, &profile.CreatedAt, &profile.UpdatedAt); err != nil {
+		return nil, err
+	}
+	return &profile, nil
+}
+
+// Profile returns graph.ProfileResolver implementation.
+func (r *Resolver) Profile() graph.ProfileResolver { return &profileResolver{r} }
+
+type profileResolver struct{ *Resolver }
