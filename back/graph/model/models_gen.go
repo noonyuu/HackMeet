@@ -27,6 +27,11 @@ type NewProfile struct {
 	UpdatedAt      string  `json:"updatedAt"`
 }
 
+type NewSkill struct {
+	Name     string `json:"name"`
+	Category string `json:"category"`
+}
+
 type NewUser struct {
 	FirstName string `json:"firstName"`
 	LastName  string `json:"lastName"`
