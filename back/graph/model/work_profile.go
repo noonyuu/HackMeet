@@ -2,13 +2,13 @@ package model
 
 import "time"
 
-type WorkSkill struct {
+type WorkProfile struct {
 	ID        int32     `json:"id"`
 	WorkID    string    `json:"work_id"`
-	SkillID   string    `json:"skill_id"`
+	ProfileID string    `json:"profile_id"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 
-	Skill *Skill `json:"skill"`
-	Work  *Work  `json:"work"`
+	Profile *Profile `json:"profile"`
+	Work    *Work    `json:"work"`
 }

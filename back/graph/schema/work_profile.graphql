@@ -1,0 +1,22 @@
+type WorkProfile {
+  id: Int!
+  workId: String!
+  profileId: String!
+  createdAt: String!
+  updatedAt: String!
+}
+
+input NewWorkProfile {
+  workId: String!
+  profileId: String!
+}
+
+extend type Query {
+  workProfilesByWorkId(workId: String!): [WorkProfile!]!
+  workProfilesByProfileId(profileId: String!): [WorkProfile!]!
+}
+
+extend type Mutation {
+  createWorkProfile(input: NewWorkProfile!): WorkProfile!
+  deleteWorkProfile(id: Int!): WorkProfile!
+}

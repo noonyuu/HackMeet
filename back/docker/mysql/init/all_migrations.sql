@@ -45,16 +45,24 @@ CREATE TABLE IF NOT EXISTS profiles (
   UNIQUE KEY (profile_id, skill_id)
 );
 CREATE TABLE IF NOT EXISTS works (
-  id INT AUTO_INCREMENT PRIMARY KEY,
+  id VARCHAR(255) PRIMARY KEY,
   event_id VARCHAR(255),
-  profile_id VARCHAR(255),
   title VARCHAR(255),
   description TEXT,
-  FOREIGN KEY (event_id) REFERENCES events(id),
+  created_at DATETIME,
+  updated_at DATETIME,
+  FOREIGN KEY (event_id) REFERENCES events(id)
+);CREATE TABLE IF NOT EXISTS work_profiles (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  work_id VARCHAR(255),
+  profile_id VARCHAR(255),
+  created_at DATETIME,
+  updated_at DATETIME,
+  FOREIGN KEY (work_id) REFERENCES works(id),
   FOREIGN KEY (profile_id) REFERENCES profiles(id)
 );CREATE TABLE IF NOT EXISTS work_skills (
   id INT AUTO_INCREMENT PRIMARY KEY,
-  work_id INT,
+  work_id VARCHAR(255),
   skill_id VARCHAR(255),
   created_at DATETIME,
   updated_at DATETIME,

@@ -40,5 +40,21 @@ type NewUser struct {
 	Email     string `json:"email"`
 }
 
+type NewWork struct {
+	EventID     string  `json:"eventId"`
+	Title       string  `json:"title"`
+	Description *string `json:"description,omitempty"`
+}
+
+type NewWorkProfile struct {
+	WorkID    string `json:"workId"`
+	ProfileID string `json:"profileId"`
+}
+
+type NewWorkSkill struct {
+	WorkID  string `json:"workId"`
+	SkillID string `json:"skillId"`
+}
+
 type Query struct {
 }
