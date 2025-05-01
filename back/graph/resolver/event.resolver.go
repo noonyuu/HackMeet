@@ -99,7 +99,8 @@ func (r *queryResolver) EventByName(ctx context.Context, name string) (*model.Ev
 	`
 	row := r.DB.QueryRow(query, name)
 	var event model.Event
-	err := row.Scan(
+
+	if err := row.Scan(
 		&event.ID,
 		&event.Name,
 		&event.Description,
@@ -110,11 +111,7 @@ func (r *queryResolver) EventByName(ctx context.Context, name string) (*model.Ev
 		&event.UpdatedAt,
 		&event.CreatedBy,
 		&event.UpdatedBy,
-	)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, fmt.Errorf("event not found")
-		}
+	); err != nil {
 		return nil, err
 	}
 

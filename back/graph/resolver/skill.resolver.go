@@ -6,7 +6,6 @@ package resolver
 
 import (
 	"context"
-	"database/sql"
 	"time"
 
 	"github.com/google/uuid"
@@ -52,11 +51,7 @@ func (r *queryResolver) SkillByName(ctx context.Context, name string) (*model.Sk
 	`
 	row := r.DB.QueryRow(query, name)
 	var skill model.Skill
-	err := row.Scan(&skill.ID, &skill.Name, &skill.Category, &skill.CreatedAt, &skill.UpdatedAt)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, nil
-		}
+	if err := row.Scan(&skill.ID, &skill.Name, &skill.Category, &skill.CreatedAt, &skill.UpdatedAt); err != nil {
 		return nil, err
 	}
 	// スキルを返す
@@ -78,8 +73,7 @@ func (r *queryResolver) Skills(ctx context.Context) ([]*model.Skill, error) {
 	var skills []*model.Skill
 	for rows.Next() {
 		var skill model.Skill
-		err := rows.Scan(&skill.ID, &skill.Name, &skill.Category, &skill.CreatedAt, &skill.UpdatedAt)
-		if err != nil {
+		if err := rows.Scan(&skill.ID, &skill.Name, &skill.Category, &skill.CreatedAt, &skill.UpdatedAt); err != nil {
 			return nil, err
 		}
 		skills = append(skills, &skill)

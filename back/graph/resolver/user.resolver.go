@@ -6,8 +6,6 @@ package resolver
 
 import (
 	"context"
-	"database/sql"
-	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -56,11 +54,7 @@ func (r *queryResolver) UserByID(ctx context.Context, id string) (*model.User, e
 	`
 	row := r.DB.QueryRow(query, id)
 	var user model.User
-	err := row.Scan(&user.ID, &user.FirstName, &user.LastName, &user.Email, &user.CreatedAt, &user.UpdatedAt)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, fmt.Errorf("user not found")
-		}
+	if err := row.Scan(&user.ID, &user.FirstName, &user.LastName, &user.Email, &user.CreatedAt, &user.UpdatedAt); err != nil {
 		return nil, err
 	}
 
@@ -83,11 +77,7 @@ func (r *queryResolver) Users(ctx context.Context) ([]*model.User, error) {
 
 	for rows.Next() {
 		var user model.User
-		err = rows.Scan(&user.ID, &user.FirstName, &user.LastName, &user.Email, &user.CreatedAt, &user.UpdatedAt)
-		if err != nil {
-			if err == sql.ErrNoRows {
-				return nil, fmt.Errorf("user not found")
-			}
+		if err = rows.Scan(&user.ID, &user.FirstName, &user.LastName, &user.Email, &user.CreatedAt, &user.UpdatedAt); err != nil {
 			return nil, err
 		}
 
