@@ -6,4 +6,5 @@ CREATE TABLE IF NOT EXISTS profile_skills (
   updated_at DATETIME,
   FOREIGN KEY (profile_id) REFERENCES profiles(id),
   FOREIGN KEY (skill_id) REFERENCES skills(id)
+  UNIQUE KEY (profile_id, skill_id)
 );
