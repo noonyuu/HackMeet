@@ -1,0 +1,164 @@
+package resolver
+
+import (
+	"context"
+	"database/sql"
+	"fmt"
+	"time"
+
+	"github.com/google/uuid"
+	"github.com/noonyuu/nfc/back/graph"
+	"github.com/noonyuu/nfc/back/graph/model"
+
+	"github.com/noonyuu/nfc/back/internal/config"
+)
+
+// CreatedAt is the resolver for the createdAt field.
+func (r *eventResolver) CreatedAt(ctx context.Context, obj *model.Event) (string, error) {
+	return obj.CreatedAt.Format(time.RFC3339), nil
+}
+
+// UpdatedAt is the resolver for the updatedAt field.
+func (r *eventResolver) UpdatedAt(ctx context.Context, obj *model.Event) (string, error) {
+	return obj.UpdatedAt.Format(time.RFC3339), nil
+}
+
+// CreateEvent is the resolver for the createEvent field.
+func (r *mutationResolver) CreateEvent(ctx context.Context, input model.NewEvent) (*model.Event, error) {
+	// uuidを生成
+	uid, _ := uuid.NewRandom()
+	// 生成したUUIDを文字列に変換
+	uidString := uid.String()
+	// 現在時刻を取得
+	now := time.Now()
+	// Event構造体にUUIDと現在時刻をセット
+	event := &model.Event{
+		ID:          uidString,
+		Name:        input.Name,
+		Description: input.Description,
+		StartDate:   input.StartDate,
+		EndDate:     input.EndDate,
+		Location:    input.Location,
+		CreatedAt:   now,
+		UpdatedAt:   now,
+		CreatedBy:   input.CreatedBy,
+		UpdatedBy:   input.CreatedBy,
+	}
+
+	query := `
+		INSERT INTO events (id, name, description, start_date, end_date, location, created_at, updated_at, created_by, updated_by)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`
+	_, err := r.DB.Exec(query, event.ID, event.Name, event.Description, event.StartDate, event.EndDate, event.Location, now, now, event.CreatedBy, event.UpdatedBy)
+	if err != nil {
+		return nil, err
+	}
+	// 作成したイベントを返す
+	return event, nil
+}
+
+// EventByID is the resolver for the eventById field.
+func (r *queryResolver) EventByID(ctx context.Context, id string) (*model.Event, error) {
+	query := `
+		SELECT id, name, description, start_date, end_date, location, created_at, updated_at, created_by, updated_by
+		FROM events
+		WHERE id = ?
+	`
+	row := r.DB.QueryRow(query, id)
+	var event model.Event
+	var createdAtBytes []byte
+	var updatedAtBytes []byte
+	err := row.Scan(
+		&event.ID,
+		&event.Name,
+		&event.Description,
+		&event.StartDate,
+		&event.EndDate,
+		&event.Location,
+		&createdAtBytes,
+		&updatedAtBytes,
+		&event.CreatedBy,
+		&event.UpdatedBy,
+	)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("event not found")
+		}
+		return nil, err
+	}
+
+	// カスタムフォーマットを使用して created_at と updated_at を解析
+	createdAt, err := config.CustomFormat(createdAtBytes)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing created_at: %w", err)
+	}
+
+	updatedAt, err := config.CustomFormat(updatedAtBytes)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing updated_at: %w", err)
+	}
+
+	event.CreatedAt = createdAt
+	event.UpdatedAt = updatedAt
+
+	return &event, nil
+}
+
+// EventByName is the resolver for the eventByName field.
+func (r *queryResolver) EventByName(ctx context.Context, name string) (*model.Event, error) {
+	query := `
+		SELECT id, name, description, start_date, end_date, location, created_at, updated_at, created_by, updated_by
+		FROM events
+		WHERE name = ?
+	`
+	row := r.DB.QueryRow(query, name)
+	var event model.Event
+	var createdAtBytes []byte
+	var updatedAtBytes []byte
+	err := row.Scan(
+		&event.ID,
+		&event.Name,
+		&event.Description,
+		&event.StartDate,
+		&event.EndDate,
+		&event.Location,
+		&createdAtBytes,
+		&updatedAtBytes,
+		&event.CreatedBy,
+		&event.UpdatedBy,
+	)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("event not found")
+		}
+		return nil, err
+	}
+
+	// カスタムフォーマットを使用して created_at と updated_at を解析
+	createdAt, err := config.CustomFormat(createdAtBytes)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing created_at: %w", err)
+	}
+	updatedAt, err := config.CustomFormat(updatedAtBytes)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing updated_at: %w", err)
+	}
+
+	event.CreatedAt = createdAt
+	event.UpdatedAt = updatedAt
+
+	return &event, nil
+}
+
+// Event returns graph.EventResolver implementation.
+func (r *Resolver) Event() graph.EventResolver { return &eventResolver{r} }
+
+// Mutation returns graph.MutationResolver implementation.
+func (r *Resolver) Mutation() graph.MutationResolver { return &mutationResolver{r} }
+
+// Query returns graph.QueryResolver implementation.
+func (r *Resolver) Query() graph.QueryResolver { return &queryResolver{r} }
+
+type eventResolver struct{ *Resolver }
+type mutationResolver struct{ *Resolver }
+type queryResolver struct{ *Resolver }
