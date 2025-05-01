@@ -13,7 +13,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/noonyuu/nfc/back/graph"
 	"github.com/noonyuu/nfc/back/graph/model"
-	"github.com/noonyuu/nfc/back/internal/config"
 )
 
 // CreateEvent is the resolver for the createEvent field.
@@ -59,8 +58,6 @@ func (r *queryResolver) EventByID(ctx context.Context, id string) (*model.Event,
 	`
 	row := r.DB.QueryRow(query, id)
 	var event model.Event
-	var createdAtBytes []byte
-	var updatedAtBytes []byte
 	err := row.Scan(
 		&event.ID,
 		&event.Name,
@@ -68,8 +65,8 @@ func (r *queryResolver) EventByID(ctx context.Context, id string) (*model.Event,
 		&event.StartDate,
 		&event.EndDate,
 		&event.Location,
-		&createdAtBytes,
-		&updatedAtBytes,
+		&event.CreatedAt,
+		&event.UpdatedAt,
 		&event.CreatedBy,
 		&event.UpdatedBy,
 	)
@@ -79,20 +76,6 @@ func (r *queryResolver) EventByID(ctx context.Context, id string) (*model.Event,
 		}
 		return nil, err
 	}
-
-	// カスタムフォーマットを使用して created_at と updated_at を解析
-	createdAt, err := config.CustomFormat(createdAtBytes)
-	if err != nil {
-		return nil, fmt.Errorf("error parsing created_at: %w", err)
-	}
-
-	updatedAt, err := config.CustomFormat(updatedAtBytes)
-	if err != nil {
-		return nil, fmt.Errorf("error parsing updated_at: %w", err)
-	}
-
-	event.CreatedAt = createdAt
-	event.UpdatedAt = updatedAt
 
 	return &event, nil
 }
@@ -106,8 +89,6 @@ func (r *queryResolver) EventByName(ctx context.Context, name string) (*model.Ev
 	`
 	row := r.DB.QueryRow(query, name)
 	var event model.Event
-	var createdAtBytes []byte
-	var updatedAtBytes []byte
 	err := row.Scan(
 		&event.ID,
 		&event.Name,
@@ -115,8 +96,8 @@ func (r *queryResolver) EventByName(ctx context.Context, name string) (*model.Ev
 		&event.StartDate,
 		&event.EndDate,
 		&event.Location,
-		&createdAtBytes,
-		&updatedAtBytes,
+		&event.CreatedAt,
+		&event.UpdatedAt,
 		&event.CreatedBy,
 		&event.UpdatedBy,
 	)
@@ -127,30 +108,17 @@ func (r *queryResolver) EventByName(ctx context.Context, name string) (*model.Ev
 		return nil, err
 	}
 
-	// カスタムフォーマットを使用して created_at と updated_at を解析
-	createdAt, err := config.CustomFormat(createdAtBytes)
-	if err != nil {
-		return nil, fmt.Errorf("error parsing created_at: %w", err)
-	}
-	updatedAt, err := config.CustomFormat(updatedAtBytes)
-	if err != nil {
-		return nil, fmt.Errorf("error parsing updated_at: %w", err)
-	}
-
-	event.CreatedAt = createdAt
-	event.UpdatedAt = updatedAt
-
 	return &event, nil
 }
 
 // CreatedAt is the resolver for the createdAt field.
 func (r *eventResolver) CreatedAt(ctx context.Context, obj *model.Event) (string, error) {
-	return obj.CreatedAt.Format(time.RFC3339), nil
+	return obj.CreatedAt.Format("2006-01-02 15:04:05"), nil
 }
 
 // UpdatedAt is the resolver for the updatedAt field.
 func (r *eventResolver) UpdatedAt(ctx context.Context, obj *model.Event) (string, error) {
-	return obj.UpdatedAt.Format(time.RFC3339), nil
+	return obj.UpdatedAt.Format("2006-01-02 15:04:05"), nil
 }
 
 // Event returns graph.EventResolver implementation.

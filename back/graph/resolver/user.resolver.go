@@ -13,7 +13,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/noonyuu/nfc/back/graph"
 	"github.com/noonyuu/nfc/back/graph/model"
-	"github.com/noonyuu/nfc/back/internal/config"
 )
 
 // CreateUser is the resolver for the createUser field.
@@ -57,29 +56,13 @@ func (r *queryResolver) UserByID(ctx context.Context, id string) (*model.User, e
 	`
 	row := r.DB.QueryRow(query, id)
 	var user model.User
-	var createdAtBytes []byte
-	var updatedAtBytes []byte
-	err := row.Scan(&user.ID, &user.FirstName, &user.LastName, &user.Email, &createdAtBytes, &updatedAtBytes)
+	err := row.Scan(&user.ID, &user.FirstName, &user.LastName, &user.Email, &user.CreatedAt, &user.UpdatedAt)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, fmt.Errorf("user not found")
 		}
 		return nil, err
 	}
-
-	// カスタムフォーマットを使用して created_at と updated_at を解析
-	createdAt, err := config.CustomFormat(createdAtBytes)
-	if err != nil {
-		return nil, fmt.Errorf("error parsing created_at: %w", err)
-	}
-
-	updatedAt, err := config.CustomFormat(updatedAtBytes)
-	if err != nil {
-		return nil, fmt.Errorf("error parsing updated_at: %w", err)
-	}
-
-	user.CreatedAt = createdAt
-	user.UpdatedAt = updatedAt
 
 	return &user, nil
 }
@@ -100,28 +83,13 @@ func (r *queryResolver) Users(ctx context.Context) ([]*model.User, error) {
 
 	for rows.Next() {
 		var user model.User
-		var createdAtBytes []byte
-		var updatedAtBytes []byte
-		err = rows.Scan(&user.ID, &user.FirstName, &user.LastName, &user.Email, &createdAtBytes, &updatedAtBytes)
+		err = rows.Scan(&user.ID, &user.FirstName, &user.LastName, &user.Email, &user.CreatedAt, &user.UpdatedAt)
 		if err != nil {
 			if err == sql.ErrNoRows {
 				return nil, fmt.Errorf("user not found")
 			}
 			return nil, err
 		}
-		// カスタムフォーマットを使用して created_at と updated_at を解析
-		createdAt, err := config.CustomFormat(createdAtBytes)
-		if err != nil {
-			return nil, fmt.Errorf("error parsing created_at: %w", err)
-		}
-
-		updatedAt, err := config.CustomFormat(updatedAtBytes)
-		if err != nil {
-			return nil, fmt.Errorf("error parsing updated_at: %w", err)
-		}
-		// ユーザーが見つかった場合、ユーザーを返す
-		user.CreatedAt = createdAt
-		user.UpdatedAt = updatedAt
 
 		users = append(users, &user)
 	}
@@ -135,12 +103,12 @@ func (r *queryResolver) Users(ctx context.Context) ([]*model.User, error) {
 
 // CreatedAt is the resolver for the createdAt field.
 func (r *userResolver) CreatedAt(ctx context.Context, obj *model.User) (string, error) {
-	return obj.CreatedAt.Format(time.RFC3339), nil
+	return obj.CreatedAt.Format("2006-01-02 15:04:05"), nil
 }
 
 // UpdatedAt is the resolver for the updatedAt field.
 func (r *userResolver) UpdatedAt(ctx context.Context, obj *model.User) (string, error) {
-	return obj.UpdatedAt.Format(time.RFC3339), nil
+	return obj.UpdatedAt.Format("2006-01-02 15:04:05"), nil
 }
 
 // User returns graph.UserResolver implementation.
