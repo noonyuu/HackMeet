@@ -42,6 +42,7 @@ type ResolverRoot interface {
 	Event() EventResolver
 	Mutation() MutationResolver
 	Profile() ProfileResolver
+	ProfileSkill() ProfileSkillResolver
 	Query() QueryResolver
 	Skill() SkillResolver
 	User() UserResolver
@@ -65,10 +66,12 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		CreateEvent   func(childComplexity int, input model.NewEvent) int
-		CreateProfile func(childComplexity int, input model.NewProfile) int
-		CreateSkill   func(childComplexity int, input model.NewSkill) int
-		CreateUser    func(childComplexity int, input model.NewUser) int
+		CreateEvent        func(childComplexity int, input model.NewEvent) int
+		CreateProfile      func(childComplexity int, input model.NewProfile) int
+		CreateProfileSkill func(childComplexity int, input model.NewProfileSkill) int
+		CreateSkill        func(childComplexity int, input model.NewSkill) int
+		CreateUser         func(childComplexity int, input model.NewUser) int
+		DeleteProfileSkill func(childComplexity int, id int32) int
 	}
 
 	Profile struct {
@@ -83,16 +86,26 @@ type ComplexityRoot struct {
 		UserID         func(childComplexity int) int
 	}
 
+	ProfileSkill struct {
+		CreatedAt func(childComplexity int) int
+		ID        func(childComplexity int) int
+		ProfileID func(childComplexity int) int
+		SkillID   func(childComplexity int) int
+		UpdatedAt func(childComplexity int) int
+	}
+
 	Query struct {
-		EventByID         func(childComplexity int, id string) int
-		EventByName       func(childComplexity int, name string) int
-		Profile           func(childComplexity int, id string) int
-		ProfileByNickName func(childComplexity int, nickName string) int
-		ProfileByUserID   func(childComplexity int, userID string) int
-		SkillByName       func(childComplexity int, name string) int
-		Skills            func(childComplexity int) int
-		UserByID          func(childComplexity int, id string) int
-		Users             func(childComplexity int) int
+		EventByID                func(childComplexity int, id string) int
+		EventByName              func(childComplexity int, name string) int
+		Profile                  func(childComplexity int, id string) int
+		ProfileByNickName        func(childComplexity int, nickName string) int
+		ProfileByUserID          func(childComplexity int, userID string) int
+		ProfileSkill             func(childComplexity int, id int32) int
+		ProfileSkillsByProfileID func(childComplexity int, profileID string) int
+		SkillByName              func(childComplexity int, name string) int
+		Skills                   func(childComplexity int) int
+		UserByID                 func(childComplexity int, id string) int
+		Users                    func(childComplexity int) int
 	}
 
 	Skill struct {
@@ -120,6 +133,8 @@ type EventResolver interface {
 type MutationResolver interface {
 	CreateEvent(ctx context.Context, input model.NewEvent) (*model.Event, error)
 	CreateProfile(ctx context.Context, input model.NewProfile) (*model.Profile, error)
+	CreateProfileSkill(ctx context.Context, input model.NewProfileSkill) (*model.ProfileSkill, error)
+	DeleteProfileSkill(ctx context.Context, id int32) (*model.ProfileSkill, error)
 	CreateSkill(ctx context.Context, input model.NewSkill) (*model.Skill, error)
 	CreateUser(ctx context.Context, input model.NewUser) (*model.User, error)
 }
@@ -127,12 +142,18 @@ type ProfileResolver interface {
 	CreatedAt(ctx context.Context, obj *model.Profile) (string, error)
 	UpdatedAt(ctx context.Context, obj *model.Profile) (string, error)
 }
+type ProfileSkillResolver interface {
+	CreatedAt(ctx context.Context, obj *model.ProfileSkill) (string, error)
+	UpdatedAt(ctx context.Context, obj *model.ProfileSkill) (string, error)
+}
 type QueryResolver interface {
 	EventByID(ctx context.Context, id string) (*model.Event, error)
 	EventByName(ctx context.Context, name string) (*model.Event, error)
 	Profile(ctx context.Context, id string) (*model.Profile, error)
 	ProfileByNickName(ctx context.Context, nickName string) (*model.Profile, error)
 	ProfileByUserID(ctx context.Context, userID string) (*model.Profile, error)
+	ProfileSkill(ctx context.Context, id int32) (*model.ProfileSkill, error)
+	ProfileSkillsByProfileID(ctx context.Context, profileID string) ([]*model.ProfileSkill, error)
 	SkillByName(ctx context.Context, name string) (*model.Skill, error)
 	Skills(ctx context.Context) ([]*model.Skill, error)
 	UserByID(ctx context.Context, id string) (*model.User, error)
@@ -260,6 +281,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Mutation.CreateProfile(childComplexity, args["input"].(model.NewProfile)), true
 
+	case "Mutation.createProfileSkill":
+		if e.complexity.Mutation.CreateProfileSkill == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createProfileSkill_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.CreateProfileSkill(childComplexity, args["input"].(model.NewProfileSkill)), true
+
 	case "Mutation.createSkill":
 		if e.complexity.Mutation.CreateSkill == nil {
 			break
@@ -283,6 +316,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Mutation.CreateUser(childComplexity, args["input"].(model.NewUser)), true
+
+	case "Mutation.deleteProfileSkill":
+		if e.complexity.Mutation.DeleteProfileSkill == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_deleteProfileSkill_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.DeleteProfileSkill(childComplexity, args["id"].(int32)), true
 
 	case "Profile.affiliation":
 		if e.complexity.Profile.Affiliation == nil {
@@ -347,6 +392,41 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Profile.UserID(childComplexity), true
 
+	case "ProfileSkill.createdAt":
+		if e.complexity.ProfileSkill.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.ProfileSkill.CreatedAt(childComplexity), true
+
+	case "ProfileSkill.id":
+		if e.complexity.ProfileSkill.ID == nil {
+			break
+		}
+
+		return e.complexity.ProfileSkill.ID(childComplexity), true
+
+	case "ProfileSkill.profileId":
+		if e.complexity.ProfileSkill.ProfileID == nil {
+			break
+		}
+
+		return e.complexity.ProfileSkill.ProfileID(childComplexity), true
+
+	case "ProfileSkill.skillId":
+		if e.complexity.ProfileSkill.SkillID == nil {
+			break
+		}
+
+		return e.complexity.ProfileSkill.SkillID(childComplexity), true
+
+	case "ProfileSkill.updatedAt":
+		if e.complexity.ProfileSkill.UpdatedAt == nil {
+			break
+		}
+
+		return e.complexity.ProfileSkill.UpdatedAt(childComplexity), true
+
 	case "Query.eventById":
 		if e.complexity.Query.EventByID == nil {
 			break
@@ -406,6 +486,30 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Query.ProfileByUserID(childComplexity, args["userId"].(string)), true
+
+	case "Query.profileSkill":
+		if e.complexity.Query.ProfileSkill == nil {
+			break
+		}
+
+		args, err := ec.field_Query_profileSkill_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.ProfileSkill(childComplexity, args["id"].(int32)), true
+
+	case "Query.profileSkillsByProfileId":
+		if e.complexity.Query.ProfileSkillsByProfileID == nil {
+			break
+		}
+
+		args, err := ec.field_Query_profileSkillsByProfileId_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.ProfileSkillsByProfileID(childComplexity, args["profileId"].(string)), true
 
 	case "Query.skillByName":
 		if e.complexity.Query.SkillByName == nil {
@@ -532,6 +636,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 	inputUnmarshalMap := graphql.BuildUnmarshalerMap(
 		ec.unmarshalInputNewEvent,
 		ec.unmarshalInputNewProfile,
+		ec.unmarshalInputNewProfileSkill,
 		ec.unmarshalInputNewSkill,
 		ec.unmarshalInputNewUser,
 	)
@@ -630,7 +735,7 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 	return introspection.WrapTypeFromDef(ec.Schema(), ec.Schema().Types[name]), nil
 }
 
-//go:embed "schema/event.graphql" "schema/profile.graphql" "schema/skill.graphql" "schema/user.graphql"
+//go:embed "schema/event.graphql" "schema/profile.graphql" "schema/profile_skill.graphql" "schema/skill.graphql" "schema/user.graphql"
 var sourcesFS embed.FS
 
 func sourceData(filename string) string {
@@ -644,6 +749,7 @@ func sourceData(filename string) string {
 var sources = []*ast.Source{
 	{Name: "schema/event.graphql", Input: sourceData("schema/event.graphql"), BuiltIn: false},
 	{Name: "schema/profile.graphql", Input: sourceData("schema/profile.graphql"), BuiltIn: false},
+	{Name: "schema/profile_skill.graphql", Input: sourceData("schema/profile_skill.graphql"), BuiltIn: false},
 	{Name: "schema/skill.graphql", Input: sourceData("schema/skill.graphql"), BuiltIn: false},
 	{Name: "schema/user.graphql", Input: sourceData("schema/user.graphql"), BuiltIn: false},
 }
@@ -673,6 +779,29 @@ func (ec *executionContext) field_Mutation_createEvent_argsInput(
 	}
 
 	var zeroVal model.NewEvent
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_createProfileSkill_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_createProfileSkill_argsInput(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+func (ec *executionContext) field_Mutation_createProfileSkill_argsInput(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (model.NewProfileSkill, error) {
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+	if tmp, ok := rawArgs["input"]; ok {
+		return ec.unmarshalNNewProfileSkill2githubᚗcomᚋnoonyuuᚋnfcᚋbackᚋgraphᚋmodelᚐNewProfileSkill(ctx, tmp)
+	}
+
+	var zeroVal model.NewProfileSkill
 	return zeroVal, nil
 }
 
@@ -742,6 +871,29 @@ func (ec *executionContext) field_Mutation_createUser_argsInput(
 	}
 
 	var zeroVal model.NewUser
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_deleteProfileSkill_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_deleteProfileSkill_argsID(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
+	return args, nil
+}
+func (ec *executionContext) field_Mutation_deleteProfileSkill_argsID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (int32, error) {
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+	if tmp, ok := rawArgs["id"]; ok {
+		return ec.unmarshalNInt2int32(ctx, tmp)
+	}
+
+	var zeroVal int32
 	return zeroVal, nil
 }
 
@@ -853,6 +1005,52 @@ func (ec *executionContext) field_Query_profileByUserId_argsUserID(
 ) (string, error) {
 	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("userId"))
 	if tmp, ok := rawArgs["userId"]; ok {
+		return ec.unmarshalNString2string(ctx, tmp)
+	}
+
+	var zeroVal string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_profileSkill_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Query_profileSkill_argsID(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
+	return args, nil
+}
+func (ec *executionContext) field_Query_profileSkill_argsID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (int32, error) {
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+	if tmp, ok := rawArgs["id"]; ok {
+		return ec.unmarshalNInt2int32(ctx, tmp)
+	}
+
+	var zeroVal int32
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_profileSkillsByProfileId_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Query_profileSkillsByProfileId_argsProfileID(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["profileId"] = arg0
+	return args, nil
+}
+func (ec *executionContext) field_Query_profileSkillsByProfileId_argsProfileID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("profileId"))
+	if tmp, ok := rawArgs["profileId"]; ok {
 		return ec.unmarshalNString2string(ctx, tmp)
 	}
 
@@ -1621,6 +1819,140 @@ func (ec *executionContext) fieldContext_Mutation_createProfile(ctx context.Cont
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_createProfileSkill(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_createProfileSkill(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().CreateProfileSkill(rctx, fc.Args["input"].(model.NewProfileSkill))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.ProfileSkill)
+	fc.Result = res
+	return ec.marshalNProfileSkill2ᚖgithubᚗcomᚋnoonyuuᚋnfcᚋbackᚋgraphᚋmodelᚐProfileSkill(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_createProfileSkill(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_ProfileSkill_id(ctx, field)
+			case "profileId":
+				return ec.fieldContext_ProfileSkill_profileId(ctx, field)
+			case "skillId":
+				return ec.fieldContext_ProfileSkill_skillId(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_ProfileSkill_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_ProfileSkill_updatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ProfileSkill", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_createProfileSkill_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_deleteProfileSkill(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_deleteProfileSkill(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().DeleteProfileSkill(rctx, fc.Args["id"].(int32))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.ProfileSkill)
+	fc.Result = res
+	return ec.marshalNProfileSkill2ᚖgithubᚗcomᚋnoonyuuᚋnfcᚋbackᚋgraphᚋmodelᚐProfileSkill(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_deleteProfileSkill(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_ProfileSkill_id(ctx, field)
+			case "profileId":
+				return ec.fieldContext_ProfileSkill_profileId(ctx, field)
+			case "skillId":
+				return ec.fieldContext_ProfileSkill_skillId(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_ProfileSkill_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_ProfileSkill_updatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ProfileSkill", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_deleteProfileSkill_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Mutation_createSkill(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Mutation_createSkill(ctx, field)
 	if err != nil {
@@ -2144,6 +2476,226 @@ func (ec *executionContext) fieldContext_Profile_updatedAt(_ context.Context, fi
 	return fc, nil
 }
 
+func (ec *executionContext) _ProfileSkill_id(ctx context.Context, field graphql.CollectedField, obj *model.ProfileSkill) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ProfileSkill_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int32)
+	fc.Result = res
+	return ec.marshalNInt2int32(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ProfileSkill_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ProfileSkill",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ProfileSkill_profileId(ctx context.Context, field graphql.CollectedField, obj *model.ProfileSkill) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ProfileSkill_profileId(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ProfileID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ProfileSkill_profileId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ProfileSkill",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ProfileSkill_skillId(ctx context.Context, field graphql.CollectedField, obj *model.ProfileSkill) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ProfileSkill_skillId(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SkillID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ProfileSkill_skillId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ProfileSkill",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ProfileSkill_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.ProfileSkill) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ProfileSkill_createdAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.ProfileSkill().CreatedAt(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ProfileSkill_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ProfileSkill",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ProfileSkill_updatedAt(ctx context.Context, field graphql.CollectedField, obj *model.ProfileSkill) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ProfileSkill_updatedAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.ProfileSkill().UpdatedAt(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ProfileSkill_updatedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ProfileSkill",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_eventById(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_eventById(ctx, field)
 	if err != nil {
@@ -2508,6 +3060,137 @@ func (ec *executionContext) fieldContext_Query_profileByUserId(ctx context.Conte
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_profileByUserId_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_profileSkill(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_profileSkill(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().ProfileSkill(rctx, fc.Args["id"].(int32))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.ProfileSkill)
+	fc.Result = res
+	return ec.marshalOProfileSkill2ᚖgithubᚗcomᚋnoonyuuᚋnfcᚋbackᚋgraphᚋmodelᚐProfileSkill(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_profileSkill(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_ProfileSkill_id(ctx, field)
+			case "profileId":
+				return ec.fieldContext_ProfileSkill_profileId(ctx, field)
+			case "skillId":
+				return ec.fieldContext_ProfileSkill_skillId(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_ProfileSkill_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_ProfileSkill_updatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ProfileSkill", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_profileSkill_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_profileSkillsByProfileId(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_profileSkillsByProfileId(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().ProfileSkillsByProfileID(rctx, fc.Args["profileId"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.ProfileSkill)
+	fc.Result = res
+	return ec.marshalNProfileSkill2ᚕᚖgithubᚗcomᚋnoonyuuᚋnfcᚋbackᚋgraphᚋmodelᚐProfileSkillᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_profileSkillsByProfileId(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_ProfileSkill_id(ctx, field)
+			case "profileId":
+				return ec.fieldContext_ProfileSkill_profileId(ctx, field)
+			case "skillId":
+				return ec.fieldContext_ProfileSkill_skillId(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_ProfileSkill_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_ProfileSkill_updatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ProfileSkill", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_profileSkillsByProfileId_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -5458,6 +6141,40 @@ func (ec *executionContext) unmarshalInputNewProfile(ctx context.Context, obj an
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputNewProfileSkill(ctx context.Context, obj any) (model.NewProfileSkill, error) {
+	var it model.NewProfileSkill
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"profileId", "skillId"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "profileId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("profileId"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ProfileID = data
+		case "skillId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("skillId"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SkillID = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputNewSkill(ctx context.Context, obj any) (model.NewSkill, error) {
 	var it model.NewSkill
 	asMap := map[string]any{}
@@ -5720,6 +6437,20 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "createProfileSkill":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_createProfileSkill(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "deleteProfileSkill":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_deleteProfileSkill(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "createSkill":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_createSkill(ctx, field)
@@ -5889,6 +6620,127 @@ func (ec *executionContext) _Profile(ctx context.Context, sel ast.SelectionSet, 
 	return out
 }
 
+var profileSkillImplementors = []string{"ProfileSkill"}
+
+func (ec *executionContext) _ProfileSkill(ctx context.Context, sel ast.SelectionSet, obj *model.ProfileSkill) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, profileSkillImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ProfileSkill")
+		case "id":
+			out.Values[i] = ec._ProfileSkill_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "profileId":
+			out.Values[i] = ec._ProfileSkill_profileId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "skillId":
+			out.Values[i] = ec._ProfileSkill_skillId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "createdAt":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._ProfileSkill_createdAt(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "updatedAt":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._ProfileSkill_updatedAt(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var queryImplementors = []string{"Query"}
 
 func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) graphql.Marshaler {
@@ -6000,6 +6852,47 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_profileByUserId(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "profileSkill":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_profileSkill(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "profileSkillsByProfileId":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_profileSkillsByProfileId(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
 				return res
 			}
 
@@ -6761,6 +7654,11 @@ func (ec *executionContext) unmarshalNNewProfile2githubᚗcomᚋnoonyuuᚋnfcᚋ
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) unmarshalNNewProfileSkill2githubᚗcomᚋnoonyuuᚋnfcᚋbackᚋgraphᚋmodelᚐNewProfileSkill(ctx context.Context, v any) (model.NewProfileSkill, error) {
+	res, err := ec.unmarshalInputNewProfileSkill(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalNNewSkill2githubᚗcomᚋnoonyuuᚋnfcᚋbackᚋgraphᚋmodelᚐNewSkill(ctx context.Context, v any) (model.NewSkill, error) {
 	res, err := ec.unmarshalInputNewSkill(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -6783,6 +7681,64 @@ func (ec *executionContext) marshalNProfile2ᚖgithubᚗcomᚋnoonyuuᚋnfcᚋba
 		return graphql.Null
 	}
 	return ec._Profile(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNProfileSkill2githubᚗcomᚋnoonyuuᚋnfcᚋbackᚋgraphᚋmodelᚐProfileSkill(ctx context.Context, sel ast.SelectionSet, v model.ProfileSkill) graphql.Marshaler {
+	return ec._ProfileSkill(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNProfileSkill2ᚕᚖgithubᚗcomᚋnoonyuuᚋnfcᚋbackᚋgraphᚋmodelᚐProfileSkillᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.ProfileSkill) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNProfileSkill2ᚖgithubᚗcomᚋnoonyuuᚋnfcᚋbackᚋgraphᚋmodelᚐProfileSkill(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNProfileSkill2ᚖgithubᚗcomᚋnoonyuuᚋnfcᚋbackᚋgraphᚋmodelᚐProfileSkill(ctx context.Context, sel ast.SelectionSet, v *model.ProfileSkill) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._ProfileSkill(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNSkill2githubᚗcomᚋnoonyuuᚋnfcᚋbackᚋgraphᚋmodelᚐSkill(ctx context.Context, sel ast.SelectionSet, v model.Skill) graphql.Marshaler {
@@ -7198,6 +8154,13 @@ func (ec *executionContext) marshalOProfile2ᚖgithubᚗcomᚋnoonyuuᚋnfcᚋba
 		return graphql.Null
 	}
 	return ec._Profile(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOProfileSkill2ᚖgithubᚗcomᚋnoonyuuᚋnfcᚋbackᚋgraphᚋmodelᚐProfileSkill(ctx context.Context, sel ast.SelectionSet, v *model.ProfileSkill) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._ProfileSkill(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOString2string(ctx context.Context, v any) (string, error) {

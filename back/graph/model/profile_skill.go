@@ -3,7 +3,7 @@ package model
 import "time"
 
 type ProfileSkill struct {
-	ID        string    `json:"id"`
+	ID        int32    `json:"id"`
 	ProfileID string    `json:"profile_id"`
 	SkillID   string    `json:"skill_id"`
 	CreatedAt time.Time `json:"created_at"`

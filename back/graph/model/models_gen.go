@@ -24,6 +24,11 @@ type NewProfile struct {
 	Bio            *string `json:"bio,omitempty"`
 }
 
+type NewProfileSkill struct {
+	ProfileID string `json:"profileId"`
+	SkillID   string `json:"skillId"`
+}
+
 type NewSkill struct {
 	Name     string `json:"name"`
 	Category string `json:"category"`
