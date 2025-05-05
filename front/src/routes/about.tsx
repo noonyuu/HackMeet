@@ -6,9 +6,8 @@ export const Route = createFileRoute("/about")({
   component: About,
 });
 
-// GraphQL クエリを明示的に定義（変数付き）
 const SKILL_BY_NAME = gql`
-  query SkillByName($name: String!) {
+  query ($name: String!) {
     skillByName(name: $name) {
       id
       name
@@ -30,7 +29,7 @@ type SkillQueryResult = {
 function About() {
   const { loading, error, data } = useQuery<SkillQueryResult>(SKILL_BY_NAME, {
     variables: { name: "react" }, // 明示的に渡す
-    fetchPolicy: "network-only",
+    fetchPolicy: "network-only",  
   });
 
   const skill = data?.skillByName;

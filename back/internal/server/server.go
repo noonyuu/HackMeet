@@ -17,6 +17,20 @@ import (
 func NewRouter(db *sql.DB) http.Handler {
 	mux := http.NewServeMux()
 
+	// CORSミドルウェア 開発用(仮)
+	cors := func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Access-Control-Allow-Origin", "*")
+			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+			if r.Method == http.MethodOptions {
+				w.WriteHeader(http.StatusOK)
+				return
+			}
+			next.ServeHTTP(w, r)
+		})
+	}
+
 	// Hello エンドポイント
 	mux.HandleFunc("/hello", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Hello World!!!!!!"))
@@ -42,5 +56,5 @@ func NewRouter(db *sql.DB) http.Handler {
 	mux.Handle("/", playground.Handler("GraphQL playground", "/api/query"))
 	mux.Handle("/api/query", srv)
 
-	return mux
+	return cors(mux)
 }
