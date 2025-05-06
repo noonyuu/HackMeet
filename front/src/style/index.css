@@ -1,0 +1,12 @@
+@import "tailwindcss";
+
+@font-face {
+  font-family: "KaiseiDecol-Regular";
+  font-display: swap;
+  src: url("../assets/fonts/KaiseiDecol-Regular.ttf") format("truetype");
+}
+
+@theme {
+  --font-main: "KaiseiDecol-Regular";
+  --text-color-black: #1d1d1d;
+}
