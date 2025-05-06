@@ -12,11 +12,18 @@ export const Button: React.FC<Props> = ({
   variant,
   size,
   icon = false,
+  onClick,
   ...props
 }) => {
+  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (onClick) {
+      onClick(e);
+    }
+  };
   return (
     <button
       className={cn(buttonVariants({ variant, size, icon }), className)}
+      onClick={handleClick}
       {...props}
     />
   );
