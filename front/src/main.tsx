@@ -3,7 +3,7 @@ import { createRoot } from "react-dom/client";
 import { RouterProvider, createRouter } from "@tanstack/react-router";
 import { ApolloClient, ApolloProvider, InMemoryCache } from "@apollo/client";
 
-import "./index.css";
+import "./style/index.css";
 import { routeTree } from "./routeTree.gen";
 
 const client = new ApolloClient({
