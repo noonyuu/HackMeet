@@ -6,4 +6,4 @@ CREATE TABLE IF NOT EXISTS works (
   created_at DATETIME,
   updated_at DATETIME,
   FOREIGN KEY (event_id) REFERENCES events(id)
-);
+) ENGINE=InnoDB;

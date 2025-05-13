@@ -22,6 +22,9 @@ services:
       MYSQL_HOST: ${MYSQL_HOST}
     depends_on:
       - db
+      - redis
+    networks:
+      - redis_network
 
   db:
     image: mysql:8.0
@@ -38,7 +41,21 @@ services:
     volumes:
       - db_data:/var/lib/mysql
       - ./docker/mysql:/ddl
-      - ./docker/mysql/init:/docker-entrypoint-initdb.d
+      - ./docker/mysql/init/all_migrations.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - redis_network
+
+  redis:
+    container_name: redis
+    image: redis:latest
+    ports:
+      - "6379:6379"
+    tty: true
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    networks:
+      - redis_network
 
   nginx:
     image: nginx:latest
@@ -55,3 +72,8 @@ services:
 
 volumes:
   db_data:
+  redis_data:
+
+networks:
+  redis_network:
+    driver: bridge

@@ -1,9 +1,8 @@
 type Profile {
   id: String!
-  userId: String!
   avatarUrl: String
   nickName: String!
-  graduationYear: Int!
+  graduationYear: Int
   affiliation: String
   bio: String
   createdAt: String!
@@ -14,7 +13,7 @@ input NewProfile {
   userId: String!
   avatarUrl: String
   nickName: String!
-  graduationYear: Int!
+  graduationYear: Int
   affiliation: String
   bio: String
 }
@@ -22,7 +21,7 @@ input NewProfile {
 extend type Query {
   profile(id: String!): Profile
   profileByNickName(nickName: String!): Profile
-  profileByUserId(userId: String!): Profile
+  profileByUserId(id: String!): Profile
 }
 
 extend type Mutation {

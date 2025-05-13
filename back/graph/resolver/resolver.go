@@ -2,8 +2,7 @@ package resolver
 
 //go:generate go run github.com/99designs/gqlgen generate
 import (
-	"database/sql"
-
+	"github.com/jmoiron/sqlx"
 	"github.com/noonyuu/nfc/back/graph/model"
 )
 
@@ -12,7 +11,7 @@ import (
 // It serves as dependency injection for your app, add any dependencies you require here.
 
 type Resolver struct {
-	DB       *sql.DB
+	DB       *sqlx.DB
 	user     *model.User
 	users    []*model.User
 	profile  *model.Profile

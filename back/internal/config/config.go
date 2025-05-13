@@ -1,6 +1,9 @@
 package config
 
-import "os"
+import (
+	"log"
+	"os"
+)
 
 type Config struct {
 	DBUser     string
@@ -18,4 +21,13 @@ func Load() *Config {
 		DBHost:     "mysql", // Dockerコンテナ名
 		DBPort:     "3306",
 	}
+}
+
+// Redisの設定
+func RedisAddress() string {
+	address := os.Getenv("REDIS_PORT")
+	if address == "" {
+		log.Fatal("REDIS_PORT is not set")
+	}
+	return address
 }
