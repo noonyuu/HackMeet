@@ -91,7 +91,6 @@ type ComplexityRoot struct {
 		ID             func(childComplexity int) int
 		NickName       func(childComplexity int) int
 		UpdatedAt      func(childComplexity int) int
-		UserID         func(childComplexity int) int
 	}
 
 	ProfileSkill struct {
@@ -107,7 +106,7 @@ type ComplexityRoot struct {
 		EventByName              func(childComplexity int, name string) int
 		Profile                  func(childComplexity int, id string) int
 		ProfileByNickName        func(childComplexity int, nickName string) int
-		ProfileByUserID          func(childComplexity int, userID string) int
+		ProfileByUserID          func(childComplexity int, id string) int
 		ProfileSkill             func(childComplexity int, id int32) int
 		ProfileSkillsByProfileID func(childComplexity int, profileID string) int
 		SkillByName              func(childComplexity int, name string) int
@@ -195,7 +194,7 @@ type QueryResolver interface {
 	EventByName(ctx context.Context, name string) (*model.Event, error)
 	Profile(ctx context.Context, id string) (*model.Profile, error)
 	ProfileByNickName(ctx context.Context, nickName string) (*model.Profile, error)
-	ProfileByUserID(ctx context.Context, userID string) (*model.Profile, error)
+	ProfileByUserID(ctx context.Context, id string) (*model.Profile, error)
 	ProfileSkill(ctx context.Context, id int32) (*model.ProfileSkill, error)
 	ProfileSkillsByProfileID(ctx context.Context, profileID string) ([]*model.ProfileSkill, error)
 	SkillByName(ctx context.Context, name string) (*model.Skill, error)
@@ -507,13 +506,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Profile.UpdatedAt(childComplexity), true
 
-	case "Profile.userId":
-		if e.complexity.Profile.UserID == nil {
-			break
-		}
-
-		return e.complexity.Profile.UserID(childComplexity), true
-
 	case "ProfileSkill.createdAt":
 		if e.complexity.ProfileSkill.CreatedAt == nil {
 			break
@@ -607,7 +599,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Query.ProfileByUserID(childComplexity, args["userId"].(string)), true
+		return e.complexity.Query.ProfileByUserID(childComplexity, args["id"].(string)), true
 
 	case "Query.profileSkill":
 		if e.complexity.Query.ProfileSkill == nil {
@@ -1419,19 +1411,19 @@ func (ec *executionContext) field_Query_profileByNickName_argsNickName(
 func (ec *executionContext) field_Query_profileByUserId_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Query_profileByUserId_argsUserID(ctx, rawArgs)
+	arg0, err := ec.field_Query_profileByUserId_argsID(ctx, rawArgs)
 	if err != nil {
 		return nil, err
 	}
-	args["userId"] = arg0
+	args["id"] = arg0
 	return args, nil
 }
-func (ec *executionContext) field_Query_profileByUserId_argsUserID(
+func (ec *executionContext) field_Query_profileByUserId_argsID(
 	ctx context.Context,
 	rawArgs map[string]any,
 ) (string, error) {
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("userId"))
-	if tmp, ok := rawArgs["userId"]; ok {
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+	if tmp, ok := rawArgs["id"]; ok {
 		return ec.unmarshalNString2string(ctx, tmp)
 	}
 
@@ -2350,8 +2342,6 @@ func (ec *executionContext) fieldContext_Mutation_createProfile(ctx context.Cont
 			switch field.Name {
 			case "id":
 				return ec.fieldContext_Profile_id(ctx, field)
-			case "userId":
-				return ec.fieldContext_Profile_userId(ctx, field)
 			case "avatarUrl":
 				return ec.fieldContext_Profile_avatarUrl(ctx, field)
 			case "nickName":
@@ -3035,50 +3025,6 @@ func (ec *executionContext) fieldContext_Profile_id(_ context.Context, field gra
 	return fc, nil
 }
 
-func (ec *executionContext) _Profile_userId(ctx context.Context, field graphql.CollectedField, obj *model.Profile) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Profile_userId(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.UserID, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Profile_userId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Profile",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _Profile_avatarUrl(ctx context.Context, field graphql.CollectedField, obj *model.Profile) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Profile_avatarUrl(ctx, field)
 	if err != nil {
@@ -3185,14 +3131,11 @@ func (ec *executionContext) _Profile_graduationYear(ctx context.Context, field g
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(int32)
+	res := resTmp.(*int32)
 	fc.Result = res
-	return ec.marshalNInt2int32(ctx, field.Selections, res)
+	return ec.marshalOInt2ᚖint32(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Profile_graduationYear(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -3790,8 +3733,6 @@ func (ec *executionContext) fieldContext_Query_profile(ctx context.Context, fiel
 			switch field.Name {
 			case "id":
 				return ec.fieldContext_Profile_id(ctx, field)
-			case "userId":
-				return ec.fieldContext_Profile_userId(ctx, field)
 			case "avatarUrl":
 				return ec.fieldContext_Profile_avatarUrl(ctx, field)
 			case "nickName":
@@ -3862,8 +3803,6 @@ func (ec *executionContext) fieldContext_Query_profileByNickName(ctx context.Con
 			switch field.Name {
 			case "id":
 				return ec.fieldContext_Profile_id(ctx, field)
-			case "userId":
-				return ec.fieldContext_Profile_userId(ctx, field)
 			case "avatarUrl":
 				return ec.fieldContext_Profile_avatarUrl(ctx, field)
 			case "nickName":
@@ -3910,7 +3849,7 @@ func (ec *executionContext) _Query_profileByUserId(ctx context.Context, field gr
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().ProfileByUserID(rctx, fc.Args["userId"].(string))
+		return ec.resolvers.Query().ProfileByUserID(rctx, fc.Args["id"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3934,8 +3873,6 @@ func (ec *executionContext) fieldContext_Query_profileByUserId(ctx context.Conte
 			switch field.Name {
 			case "id":
 				return ec.fieldContext_Profile_id(ctx, field)
-			case "userId":
-				return ec.fieldContext_Profile_userId(ctx, field)
 			case "avatarUrl":
 				return ec.fieldContext_Profile_avatarUrl(ctx, field)
 			case "nickName":
@@ -8124,7 +8061,7 @@ func (ec *executionContext) unmarshalInputNewProfile(ctx context.Context, obj an
 			it.NickName = data
 		case "graduationYear":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("graduationYear"))
-			data, err := ec.unmarshalNInt2int32(ctx, v)
+			data, err := ec.unmarshalOInt2ᚖint32(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -8656,11 +8593,6 @@ func (ec *executionContext) _Profile(ctx context.Context, sel ast.SelectionSet, 
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
 			}
-		case "userId":
-			out.Values[i] = ec._Profile_userId(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&out.Invalids, 1)
-			}
 		case "avatarUrl":
 			out.Values[i] = ec._Profile_avatarUrl(ctx, field, obj)
 		case "nickName":
@@ -8670,9 +8602,6 @@ func (ec *executionContext) _Profile(ctx context.Context, sel ast.SelectionSet, 
 			}
 		case "graduationYear":
 			out.Values[i] = ec._Profile_graduationYear(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&out.Invalids, 1)
-			}
 		case "affiliation":
 			out.Values[i] = ec._Profile_affiliation(ctx, field, obj)
 		case "bio":
@@ -10981,6 +10910,22 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 		return graphql.Null
 	}
 	res := graphql.MarshalBoolean(*v)
+	return res
+}
+
+func (ec *executionContext) unmarshalOInt2ᚖint32(ctx context.Context, v any) (*int32, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := graphql.UnmarshalInt32(v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOInt2ᚖint32(ctx context.Context, sel ast.SelectionSet, v *int32) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	res := graphql.MarshalInt32(*v)
 	return res
 }
 

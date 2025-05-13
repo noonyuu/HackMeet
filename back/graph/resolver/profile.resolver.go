@@ -6,28 +6,32 @@ package resolver
 
 import (
 	"context"
+	"database/sql"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/noonyuu/nfc/back/graph"
 	"github.com/noonyuu/nfc/back/graph/model"
 )
 
 // CreateProfile is the resolver for the createProfile field.
 func (r *mutationResolver) CreateProfile(ctx context.Context, input model.NewProfile) (*model.Profile, error) {
-	// uuidを生成
-	uid, _ := uuid.NewRandom()
-	// 生成したUUIDを文字列に変換
-	uidString := uid.String()
 	// 現在時刻を取得
 	now := time.Now()
-	// Profile構造体にUUIDと現在時刻をセット
+	// GraduationYearがnilでない場合はsql.NullInt32を使って値を設定
+	var graduationYear sql.NullInt32
+	if input.GraduationYear != nil {
+		graduationYear = sql.NullInt32{
+			Int32: *input.GraduationYear,
+			Valid: true,
+		}
+	} else {
+		graduationYear = sql.NullInt32{Valid: false} // nilの場合は無効とする
+	}
 	profile := &model.Profile{
-		ID:             uidString,
-		UserID:         input.UserID,
+		ID:             input.UserID,
 		AvatarURL:      *input.AvatarURL,
 		NickName:       input.NickName,
-		GraduationYear: input.GraduationYear,
+		GraduationYear: &graduationYear.Int32,
 		Affiliation:    *input.Affiliation,
 		Bio:            *input.Bio,
 		CreatedAt:      now,
@@ -35,10 +39,10 @@ func (r *mutationResolver) CreateProfile(ctx context.Context, input model.NewPro
 	}
 
 	query := `
-	INSERT INTO profiles (id, user_id, avatar_url, nick_name, graduation_year, affiliation, bio, created_at, updated_at)
-	VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+	INSERT INTO profiles (id, avatar_url, nick_name, graduation_year, affiliation, bio, created_at, updated_at)
+	VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 `
-	if _, err := r.DB.Exec(query, profile.ID, profile.UserID, profile.AvatarURL, profile.NickName, profile.GraduationYear, profile.Affiliation, profile.Bio, now, now); err != nil {
+	if _, err := r.DB.Exec(query, profile.ID, profile.AvatarURL, profile.NickName, profile.GraduationYear, profile.Affiliation, profile.Bio, now, now); err != nil {
 		return nil, err
 	}
 	return profile, nil
@@ -57,14 +61,14 @@ func (r *profileResolver) UpdatedAt(ctx context.Context, obj *model.Profile) (st
 // Profile is the resolver for the profile field.
 func (r *queryResolver) Profile(ctx context.Context, id string) (*model.Profile, error) {
 	query := `
-	SELECT id, user_id, avatar_url, nick_name, graduation_year, affiliation, bio, created_at, updated_at
+	SELECT id, avatar_url, nick_name, graduation_year, affiliation, bio, created_at, updated_at
 	FROM profiles
 	WHERE id = ?
 `
 	row := r.DB.QueryRow(query, id)
 	var profile model.Profile
 
-	if err := row.Scan(&profile.ID, &profile.UserID, &profile.AvatarURL, &profile.NickName, &profile.GraduationYear, &profile.Affiliation, &profile.Bio, &profile.CreatedAt, &profile.UpdatedAt); err != nil {
+	if err := row.Scan(&profile.ID, &profile.AvatarURL, &profile.NickName, &profile.GraduationYear, &profile.Affiliation, &profile.Bio, &profile.CreatedAt, &profile.UpdatedAt); err != nil {
 		return nil, err
 	}
 	return &profile, nil
@@ -73,32 +77,53 @@ func (r *queryResolver) Profile(ctx context.Context, id string) (*model.Profile,
 // ProfileByNickName is the resolver for the profileByNickName field.
 func (r *queryResolver) ProfileByNickName(ctx context.Context, nickName string) (*model.Profile, error) {
 	query := `
-	SELECT id, user_id, avatar_url, nick_name, graduation_year, affiliation, bio, created_at, updated_at
+	SELECT id, avatar_url, nick_name, graduation_year, affiliation, bio, created_at, updated_at
 	FROM profiles
 	WHERE nick_name = ?
 `
 	row := r.DB.QueryRow(query, nickName)
 	var profile model.Profile
 
-	if err := row.Scan(&profile.ID, &profile.UserID, &profile.AvatarURL, &profile.NickName, &profile.GraduationYear, &profile.Affiliation, &profile.Bio, &profile.CreatedAt, &profile.UpdatedAt); err != nil {
+	if err := row.Scan(&profile.ID, &profile.AvatarURL, &profile.NickName, &profile.GraduationYear, &profile.Affiliation, &profile.Bio, &profile.CreatedAt, &profile.UpdatedAt); err != nil {
 		return nil, err
 	}
 	return &profile, nil
 }
 
 // ProfileByUserID is the resolver for the profileByUserId field.
-func (r *queryResolver) ProfileByUserID(ctx context.Context, userID string) (*model.Profile, error) {
+func (r *queryResolver) ProfileByUserID(ctx context.Context, id string) (*model.Profile, error) {
 	query := `
-	SELECT id, user_id, avatar_url, nick_name, graduation_year, affiliation, bio, created_at, updated_at
+	SELECT id, avatar_url, nick_name, graduation_year, affiliation, bio, created_at, updated_at
 	FROM profiles
-	WHERE user_id = ?
-`
-	row := r.DB.QueryRow(query, userID)
-	var profile model.Profile
+	WHERE id = ?
+	`
 
-	if err := row.Scan(&profile.ID, &profile.UserID, &profile.AvatarURL, &profile.NickName, &profile.GraduationYear, &profile.Affiliation, &profile.Bio, &profile.CreatedAt, &profile.UpdatedAt); err != nil {
+	row := r.DB.QueryRow(query, id)
+
+	var profile model.Profile
+	var graduationYear sql.NullInt32
+
+	if err := row.Scan(
+		&profile.ID,
+		&profile.AvatarURL,
+		&profile.NickName,
+		&graduationYear,
+		&profile.Affiliation,
+		&profile.Bio,
+		&profile.CreatedAt,
+		&profile.UpdatedAt,
+	); err != nil {
 		return nil, err
 	}
+
+	// sql.NullInt32 → *int32 変換
+	if graduationYear.Valid {
+		// graduationYear.Int32 は int32 型なので、それを *int32 にする
+		profile.GraduationYear = &graduationYear.Int32
+	} else {
+		profile.GraduationYear = nil // NULLの場合は nil をセット
+	}
+
 	return &profile, nil
 }
 

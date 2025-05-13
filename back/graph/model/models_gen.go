@@ -19,7 +19,7 @@ type NewProfile struct {
 	UserID         string  `json:"userId"`
 	AvatarURL      *string `json:"avatarUrl,omitempty"`
 	NickName       string  `json:"nickName"`
-	GraduationYear int32   `json:"graduationYear"`
+	GraduationYear *int32  `json:"graduationYear,omitempty"`
 	Affiliation    *string `json:"affiliation,omitempty"`
 	Bio            *string `json:"bio,omitempty"`
 }
