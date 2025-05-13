@@ -6,4 +6,4 @@ CREATE TABLE IF NOT EXISTS work_skills (
   updated_at DATETIME,
   FOREIGN KEY (work_id) REFERENCES works(id),
   FOREIGN KEY (skill_id) REFERENCES skills(id)
-);
+) ENGINE=InnoDB;

@@ -6,4 +6,4 @@ CREATE TABLE IF NOT EXISTS work_profiles (
   updated_at DATETIME,
   FOREIGN KEY (work_id) REFERENCES works(id),
   FOREIGN KEY (profile_id) REFERENCES profiles(id)
-);
+) ENGINE=InnoDB;

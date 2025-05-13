@@ -5,6 +5,6 @@ CREATE TABLE IF NOT EXISTS profile_skills (
   created_at DATETIME,
   updated_at DATETIME,
   FOREIGN KEY (profile_id) REFERENCES profiles(id),
-  FOREIGN KEY (skill_id) REFERENCES skills(id)
-  UNIQUE KEY (profile_id, skill_id)
-);
+  FOREIGN KEY (skill_id) REFERENCES skills(id),
+  UNIQUE KEY uniq_profile_skill (profile_id, skill_id)
+) ENGINE=InnoDB;
