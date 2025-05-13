@@ -56,6 +56,8 @@ function RouteComponent() {
 
   const handleButtonClick = () => {
     console.log("Button clicked parent");
+    window.location.href =
+      "http://localhost:8080/api/v1/auth/" + "github" + "?redirect_path=/";
   };
 
   return (
@@ -67,7 +69,7 @@ function RouteComponent() {
             <img src={google} alt="google icon" className="size-4" />
             Googleでログイン
           </Button>
-          <Button variant="sns" size="lg" icon>
+          <Button variant="sns" size="lg" icon onClick={handleButtonClick}>
             <img src={github} alt="github icon" className="size-4" />
             GitHubでログイン
           </Button>
