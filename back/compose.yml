@@ -41,7 +41,7 @@ services:
     volumes:
       - db_data:/var/lib/mysql
       - ./docker/mysql:/ddl
-      - ./docker/mysql/init:/docker-entrypoint-initdb.d
+      - ./docker/mysql/init/all_migrations.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - redis_network
 
