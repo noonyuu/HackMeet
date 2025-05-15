@@ -23,6 +23,7 @@ services:
     depends_on:
       - db
       - redis
+      - minio
     networks:
       - redis_network
 
@@ -39,6 +40,8 @@ services:
       - ./storage/.aws:/root/.aws:ro
     working_dir: /work
     command: ["sh", "-c", "rm -rf node_modules && npm install && npm run dev-ts"]
+    networks:
+      - redis_network
 
   db:
     image: mysql:8.0
@@ -84,6 +87,8 @@ services:
     command: ["server", "/data", "--console-address", ":9001"]
     volumes:
       - minio_data:/data
+    networks:
+      - redis_network
 
   nginx:
     image: nginx:latest
@@ -97,6 +102,8 @@ services:
       - app
     extra_hosts:
       - host.docker.internal:host-gateway
+    networks:
+      - redis_network
 
 volumes:
   db_data:
