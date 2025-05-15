@@ -4,7 +4,7 @@ dist
 .env
 /minio/data
 .DS_Store
-/uploads
+/src/uploads
 /.aws
 package-lock.json
 aws.sh
