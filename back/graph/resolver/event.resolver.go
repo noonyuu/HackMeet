@@ -17,12 +17,12 @@ import (
 
 // StartDate is the resolver for the startDate field.
 func (r *eventResolver) StartDate(ctx context.Context, obj *model.Event) (string, error) {
-	return obj.UpdatedAt.Format("2006-01-02 15:04:05"), nil
+	return obj.StartDate.Format("2006-01-02 15:04:05"), nil
 }
 
 // EndDate is the resolver for the endDate field.
 func (r *eventResolver) EndDate(ctx context.Context, obj *model.Event) (string, error) {
-	return obj.UpdatedAt.Format("2006-01-02 15:04:05"), nil
+	return obj.EndDate.Format("2006-01-02 15:04:05"), nil
 }
 
 // CreatedAt is the resolver for the createdAt field.
