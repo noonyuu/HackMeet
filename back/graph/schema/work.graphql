@@ -5,6 +5,7 @@ type Work {
   imageUrl: String!
   createdAt: String!
   updatedAt: String!
+  skills: [Skill!]!
 }
 
 input NewWork {

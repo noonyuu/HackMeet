@@ -84,6 +84,30 @@ func (r *queryResolver) WorkProfile(ctx context.Context, id int32) (*model.WorkP
 		profile.GraduationYear = nil
 	}
 
+	// Work に紐づくスキルを取得してセット
+	skillsQuery := `
+			SELECT s.id, s.name
+			FROM skills s
+			INNER JOIN work_skills ws ON s.id = ws.skill_id
+			WHERE ws.work_id = ?
+		`
+	skillRows, err := r.DB.Query(skillsQuery, id)
+	if err != nil {
+		return nil, err
+	}
+	defer skillRows.Close()
+
+	var skills []*model.Skill
+	for skillRows.Next() {
+		skill := &model.Skill{}
+		if err := skillRows.Scan(&skill.ID, &skill.Name); err != nil {
+			return nil, err
+		}
+		skills = append(skills, skill)
+	}
+	work.Skills = skills
+
+	// Work および Profile を WorkProfile にセット
 	wp.Work = work
 	wp.Profile = profile
 
