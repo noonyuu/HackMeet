@@ -18,4 +18,6 @@ type Resolver struct {
 	profiles []*model.Profile
 	event    *model.Event
 	events   []*model.Event
+	work     *model.Work
+	works    []*model.Work
 }

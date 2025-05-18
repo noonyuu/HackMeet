@@ -41,9 +41,9 @@ type NewUser struct {
 }
 
 type NewWork struct {
-	EventID     string  `json:"eventId"`
 	Title       string  `json:"title"`
 	Description *string `json:"description,omitempty"`
+	ImageURL    string  `json:"imageUrl"`
 }
 
 type NewWorkEvent struct {
