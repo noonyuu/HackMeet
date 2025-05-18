@@ -6,6 +6,7 @@ package resolver
 
 import (
 	"context"
+	"database/sql"
 	"time"
 
 	"github.com/noonyuu/nfc/back/graph"
@@ -45,6 +46,48 @@ func (r *mutationResolver) DeleteWorkProfile(ctx context.Context, id int32) (*mo
 	}
 
 	return &model.WorkProfile{ID: id}, nil
+}
+
+// WorkProfile is the resolver for the workProfile field.
+func (r *queryResolver) WorkProfile(ctx context.Context, id int32) (*model.WorkProfile, error) {
+	query := `
+	SELECT wp.id, wp.work_id, wp.profile_id,
+		w.id, w.title, w.description, w.image_url,
+		p.id, p.avatar_url, p.nick_name, p.graduation_year, p.affiliation, p.bio
+		FROM work_profiles wp
+		JOIN works w ON wp.work_id = w.id
+		JOIN profiles p ON wp.profile_id = p.id
+		WHERE wp.id = ?
+	`
+
+	row := r.DB.QueryRow(query, id)
+
+	wp := &model.WorkProfile{}
+	work := &model.Work{}
+	profile := &model.Profile{}
+
+	var graduationYear sql.NullInt32
+
+	err := row.Scan(
+		&wp.ID, &wp.WorkID, &wp.ProfileID,
+		&work.ID, &work.Title, &work.Description, &work.ImageURL,
+		&profile.ID, &profile.AvatarURL, &profile.NickName, &graduationYear,
+		&profile.Affiliation, &profile.Bio,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	if graduationYear.Valid {
+		profile.GraduationYear = &graduationYear.Int32
+	} else {
+		profile.GraduationYear = nil
+	}
+
+	wp.Work = work
+	wp.Profile = profile
+
+	return wp, nil
 }
 
 // WorkProfilesByWorkID is the resolver for the workProfilesByWorkId field.
