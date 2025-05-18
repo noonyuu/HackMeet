@@ -14,5 +14,8 @@ type Profile struct {
 	CreatedAt      time.Time `json:"created_at"`
 	UpdatedAt      time.Time `json:"updated_at"`
 
-	User *User `json:"user"`
+	User   *User    `json:"user"`
+	Works  []*Work   `json:"works"`
+	Events []*Event  `json:"events"`
+	Skills []*Skill  `json:"skills"`
 }

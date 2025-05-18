@@ -1,9 +1,8 @@
 CREATE TABLE IF NOT EXISTS works (
   id VARCHAR(255) PRIMARY KEY,
-  event_id VARCHAR(255),
   title VARCHAR(255),
   description TEXT,
+  image_url VARCHAR(255),
   created_at DATETIME,
-  updated_at DATETIME,
-  FOREIGN KEY (event_id) REFERENCES events(id)
+  updated_at DATETIME
 ) ENGINE=InnoDB;

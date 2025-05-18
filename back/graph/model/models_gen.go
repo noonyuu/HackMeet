@@ -46,6 +46,11 @@ type NewWork struct {
 	Description *string `json:"description,omitempty"`
 }
 
+type NewWorkEvent struct {
+	WorkID  string `json:"workId"`
+	EventID string `json:"eventId"`
+}
+
 type NewWorkProfile struct {
 	WorkID    string `json:"workId"`
 	ProfileID string `json:"profileId"`

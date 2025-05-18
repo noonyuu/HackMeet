@@ -25,6 +25,13 @@ app.use(express.json()); // application/jsonを扱えるようにする
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
+const s3 = new S3Client({
+  region: "ap-northeast-1",
+  credentials: fromIni({ profile: process.env.AWS_PROFILE }),
+  endpoint: process.env.S3_ENDPOINT,
+  forcePathStyle: true,
+});
+
 app.get("/ping", (_, req) => {
   req.json({ message: "connected from pictogram" });
 });
@@ -40,21 +47,63 @@ app.post("/", upload.single("image"), async (req, res) => {
     return res.status(400).send("No uid provided");
   }
 
-  // const fileName = req.file!.filename;
-  // const category = req.body.category || "uncategorized";
-  // const title = req.body.title;
+  const fileName = req.file!.filename;
 
-  // try {
-  //   const uploadPath = await uploadMain(imagePath, fileName, category);
-  //   if (!uploadPath) throw new Error("Upload failed");
+  try {
+    const uploadPath = await uploadMain(imagePath, fileName, uid);
+    if (!uploadPath) throw new Error("Upload failed");
 
-  //   const s3Key = `${category}/${fileName}`;
+    const s3Key = `${uid}/${fileName}`;
 
-  //   res.send("Image uploaded successfully");
-  // } catch (error) {
-  //   console.error("Error uploading image to S3:", error);
-  //   res.status(500).send("Error uploading image to S3");
-  // }
+    res.status(200).json({
+      key: s3Key,
+    });
+  } catch (error) {
+    console.error("Error uploading image to S3:", error);
+    res.status(500).send("Error uploading image to S3");
+  }
+});
+
+app.get("/get", async (req, res) => {
+  console.log("GET request received");
+  try {
+    const date = req.query.date;
+
+    if (typeof date !== "string" || !date) {
+      res.status(400).send("Error: missing parameters");
+      return;
+    }
+
+    const result = await s3.send(
+      new GetObjectCommand({
+        Bucket: process.env.BUCKET_NAME,
+        Key: date,
+      })
+    );
+
+    if (!result.Body) {
+      res.status(500).send("Error: No response from S3");
+      return;
+    }
+
+    const readableObj = result.Body as Readable;
+    res.setHeader("Content-Type", result.ContentType || "image/png");
+    res.setHeader("Content-Length", result.ContentLength as number);
+
+    readableObj.pipe(res);
+
+    readableObj.on("end", () => {
+      console.log("Readable stream ended");
+    });
+
+    readableObj.on("error", (err) => {
+      console.error("Error in readable stream:", err);
+      res.status(500).send("Error in readable stream");
+    });
+  } catch (error) {
+    console.error("Error processing request:", error);
+    res.status(500).send("Error processing request");
+  }
 });
 
 export default app;

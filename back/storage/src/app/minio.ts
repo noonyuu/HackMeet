@@ -38,10 +38,9 @@ const uploadObject = async (filePath: string, key: string) => {
   }
 };
 
-const uploadMain = async (filePath: string, fileName: string, category: string) => {
+const uploadMain = async (filePath: string, fileName: string, uid: string) => {
   try {
-    const s3Key = `${category}/${fileName}`;
-    console.log("S3 Key:", s3Key);
+    const s3Key = `${uid}/${fileName}`;
     return await uploadObject(filePath, s3Key);
   } catch (error) {
     console.error("Error uploading image to S3:", error);

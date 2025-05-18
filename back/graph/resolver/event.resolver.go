@@ -15,6 +15,16 @@ import (
 	"github.com/noonyuu/nfc/back/graph/model"
 )
 
+// StartDate is the resolver for the startDate field.
+func (r *eventResolver) StartDate(ctx context.Context, obj *model.Event) (string, error) {
+	return obj.StartDate.Format("2006-01-02 15:04:05"), nil
+}
+
+// EndDate is the resolver for the endDate field.
+func (r *eventResolver) EndDate(ctx context.Context, obj *model.Event) (string, error) {
+	return obj.EndDate.Format("2006-01-02 15:04:05"), nil
+}
+
 // CreatedAt is the resolver for the createdAt field.
 func (r *eventResolver) CreatedAt(ctx context.Context, obj *model.Event) (string, error) {
 	return obj.CreatedAt.Format("2006-01-02 15:04:05"), nil
@@ -33,13 +43,22 @@ func (r *mutationResolver) CreateEvent(ctx context.Context, input model.NewEvent
 	uidString := uid.String()
 	// 現在時刻を取得
 	now := time.Now()
+	// startとendのデータ型を変換
+	startDate, err := time.Parse("2006-01-02 15:04:05", input.StartDate)
+	if err != nil {
+		return nil, fmt.Errorf("invalid start date format: %v", err)
+	}
+	endDate, err := time.Parse("2006-01-02 15:04:05", input.EndDate)
+	if err != nil {
+		return nil, fmt.Errorf("invalid end date format: %v", err)
+	}
 	// Event構造体にUUIDと現在時刻をセット
 	event := &model.Event{
 		ID:          uidString,
 		Name:        input.Name,
 		Description: input.Description,
-		StartDate:   input.StartDate,
-		EndDate:     input.EndDate,
+		StartDate:   startDate,
+		EndDate:     endDate,
 		Location:    input.Location,
 		CreatedAt:   now,
 		UpdatedAt:   now,
@@ -51,7 +70,7 @@ func (r *mutationResolver) CreateEvent(ctx context.Context, input model.NewEvent
 		INSERT INTO events (id, name, description, start_date, end_date, location, created_at, updated_at, created_by, updated_by)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`
-	_, err := r.DB.Exec(query, event.ID, event.Name, event.Description, event.StartDate, event.EndDate, event.Location, now, now, event.CreatedBy, event.UpdatedBy)
+	_, err = r.DB.Exec(query, event.ID, event.Name, event.Description, event.StartDate, event.EndDate, event.Location, now, now, event.CreatedBy, event.UpdatedBy)
 	if err != nil {
 		return nil, err
 	}
