@@ -43,7 +43,7 @@ func (u *userPersistence) Create(ctx context.Context, user *model.User, userGoth
 	// エラー発生時にロールバックを保証
 	defer func() {
 		if err != nil {
-			tx.Rollback()
+			_ = tx.Rollback()
 		}
 	}()
 
@@ -97,7 +97,7 @@ func (u *userPersistence) GetByUserID(ctx context.Context, userID string) (*mode
 }
 
 // メールアドレスからユーザー検索
-func (u *userPersistence) FindByEmail(ctx context.Context, email, userID, provider string) (*model.User, error) {
+func (u *userPersistence) FindByEmail(ctx context.Context, email, providerId, provider string) (*model.User, error) {
 	user := &model.User{}
 	err := u.db.QueryRowContext(ctx, selectUserByEmailSQL, email).Scan(
 		&user.ID,
@@ -117,7 +117,7 @@ func (u *userPersistence) FindByEmail(ctx context.Context, email, userID, provid
 
 	// providersテーブルに認証プロバイダーが存在するか確認
 	var exists bool
-	err = u.db.QueryRowContext(ctx, checkAuthProviderSQL, user.ID, userID).Scan(&exists)
+	err = u.db.QueryRowContext(ctx, checkAuthProviderSQL, user.ID, providerId).Scan(&exists)
 
 	if errors.Is(err, sql.ErrNoRows) {
 		providerID, err := uuid.NewV7()
@@ -127,7 +127,7 @@ func (u *userPersistence) FindByEmail(ctx context.Context, email, userID, provid
 
 		now := time.Now()
 		_, err = u.db.ExecContext(ctx, insertAuthProviderSQL,
-			providerID, user.ID, userID, provider, now, now)
+			providerID, user.ID, providerId, provider, now, now)
 
 		if err != nil {
 			return nil, fmt.Errorf("failed to insert auth provider: %w", err)
