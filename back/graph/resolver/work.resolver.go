@@ -6,7 +6,6 @@ package resolver
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -27,14 +26,15 @@ func (r *mutationResolver) CreateWork(ctx context.Context, input model.NewWork) 
 		ID:          uidString,
 		Title:       input.Title,
 		Description: *input.Description,
+		ImageURL:    input.ImageURL,
 		CreatedAt:   now,
 		UpdatedAt:   now,
 	}
 	query := `
-	INSERT INTO works (id, event_id, title, description, created_at, updated_at)
+	INSERT INTO works (id, title, description, image_url created_at, updated_at)
 	VALUES (?, ?, ?, ?, ?, ?)
 `
-	if _, err := r.DB.Exec(query, work.ID, work.Title, work.Description, now, now); err != nil {
+	if _, err := r.DB.Exec(query, work.ID, work.Title, work.ImageURL, work.Description, now, now); err != nil {
 		return nil, err
 	}
 
@@ -44,47 +44,22 @@ func (r *mutationResolver) CreateWork(ctx context.Context, input model.NewWork) 
 // Work is the resolver for the work field.
 func (r *queryResolver) Work(ctx context.Context, id string) (*model.Work, error) {
 	query := `
-	SELECT id, event_id, title, description, created_at, updated_at
+	SELECT id, event_id, title, description, image_url, created_at, updated_at
 	FROM works
 	WHERE id = ?
 `
 	work := &model.Work{}
-	if err := r.DB.QueryRow(query, id).Scan(&work.ID, &work.Title, &work.Description, &work.CreatedAt, &work.UpdatedAt); err != nil {
+	if err := r.DB.QueryRow(query, id).Scan(&work.ID, &work.Title, work.ImageURL, &work.Description, &work.CreatedAt, &work.UpdatedAt); err != nil {
 		return nil, err
 	}
 
 	return work, nil
 }
 
-// WorksByEventID is the resolver for the worksByEventId field.
-func (r *queryResolver) WorksByEventID(ctx context.Context, eventID string) ([]*model.Work, error) {
-	query := `
-	SELECT id, event_id, title, description, created_at, updated_at
-	FROM works
-	WHERE event_id = ?
-`
-	rows, err := r.DB.Query(query, eventID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var works []*model.Work
-	for rows.Next() {
-		work := &model.Work{}
-		if err := rows.Scan(&work.ID, &work.Title, &work.Description, &work.CreatedAt, &work.UpdatedAt); err != nil {
-			return nil, err
-		}
-		works = append(works, work)
-	}
-
-	return works, nil
-}
-
 // WorksByTitle is the resolver for the worksByTitle field.
 func (r *queryResolver) WorksByTitle(ctx context.Context, title string) ([]*model.Work, error) {
 	query := `
-	SELECT id, event_id, title, description, created_at, updated_at
+	SELECT id, event_id, title, description, image_url, created_at, updated_at
 	FROM works
 	WHERE title = ?
 `
@@ -104,11 +79,6 @@ func (r *queryResolver) WorksByTitle(ctx context.Context, title string) ([]*mode
 	}
 
 	return works, nil
-}
-
-// EventID is the resolver for the eventId field.
-func (r *workResolver) EventID(ctx context.Context, obj *model.Work) (string, error) {
-	panic(fmt.Errorf("not implemented: EventID - eventId"))
 }
 
 // CreatedAt is the resolver for the createdAt field.

@@ -1,21 +1,20 @@
 type Work {
   id: String!
-  eventId: String!
   title: String!
-  description: String
+  description: String!
+  imageUrl: String!
   createdAt: String!
   updatedAt: String!
 }
 
 input NewWork {
-  eventId: String!
   title: String!
   description: String
+  imageUrl: String!
 }
 
 extend type Query {
   work(id: String!): Work
-  worksByEventId(eventId: String!): [Work!]!
   worksByTitle(title: String!): [Work!]!
 }
 
