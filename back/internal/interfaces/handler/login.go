@@ -2,7 +2,6 @@ package handler
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -199,7 +198,6 @@ func (u *AuthController) GetUserAfterAuthorization(c *gin.Context) {
 	// アクセストークンからユーザー情報を取得
 	accessToken, err := c.Cookie("access_token")
 	if err == nil && accessToken != "" {
-		fmt.Println("accessToken", accessToken)
 		claims, err := config.ParseToken(accessToken)
 		if err == nil {
 			userID := claims.Id
@@ -258,7 +256,6 @@ func (u *AuthController) GetUserAfterAuthorization(c *gin.Context) {
 	// Redisに保存されているリフレッシュトークンと一致するか確認
 	storedToken, err := u.sessionUseCase.Get(ctx, "refresh_token:"+userID)
 	if err != nil || storedToken.Value != refreshToken {
-		fmt.Println("storedToken", storedToken)
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid refresh token"})
 		return
 	} else {
@@ -287,12 +284,7 @@ func (u *AuthController) GetUserAfterAuthorization(c *gin.Context) {
 		})
 		// ユーザー情報を返す
 		c.JSON(http.StatusOK, gin.H{
-			"id":              userInfo.ID,
-			"nick_name":       userInfo.NickName,
-			"avatar_url":      userInfo.AvatarURL,
-			"graduation_year": userInfo.GraduationYear,
-			"affiliation":     userInfo.Affiliation,
-			"bio":             userInfo.Bio,
+			"id": userInfo.ID,
 		})
 		return
 	}
