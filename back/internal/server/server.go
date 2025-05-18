@@ -85,8 +85,8 @@ func NewRouter(dbMysql *sqlx.DB, dbRedis *redis.Client, graphql *resolver.Resolv
 	})
 
 	mux.Handle("/api/v1/auth/", ginRouter)
-	mux.Handle("/", playground.Handler("GraphQL playground", "/query"))
-	mux.Handle("/query", srv)
+	mux.Handle("/", playground.Handler("GraphQL playground", "/api/query"))
+	mux.Handle("/api/query", srv)
 
 	return cors(mux)
 }
