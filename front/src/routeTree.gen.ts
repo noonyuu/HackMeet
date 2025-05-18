@@ -15,6 +15,9 @@ import { Route as RegisterImport } from './routes/register'
 import { Route as LoginImport } from './routes/login'
 import { Route as AboutImport } from './routes/about'
 import { Route as IndexImport } from './routes/index'
+import { Route as WorksCreateImport } from './routes/works/create'
+import { Route as ProfileEditImport } from './routes/profile/edit'
+import { Route as NfcEventIdWorkIdIndexImport } from './routes/nfc/$eventId/$workId/index'
 
 // Create/Update Routes
 
@@ -39,6 +42,24 @@ const AboutRoute = AboutImport.update({
 const IndexRoute = IndexImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const WorksCreateRoute = WorksCreateImport.update({
+  id: '/works/create',
+  path: '/works/create',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const ProfileEditRoute = ProfileEditImport.update({
+  id: '/profile/edit',
+  path: '/profile/edit',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const NfcEventIdWorkIdIndexRoute = NfcEventIdWorkIdIndexImport.update({
+  id: '/nfc/$eventId/$workId/',
+  path: '/nfc/$eventId/$workId/',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -74,6 +95,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RegisterImport
       parentRoute: typeof rootRoute
     }
+    '/profile/edit': {
+      id: '/profile/edit'
+      path: '/profile/edit'
+      fullPath: '/profile/edit'
+      preLoaderRoute: typeof ProfileEditImport
+      parentRoute: typeof rootRoute
+    }
+    '/works/create': {
+      id: '/works/create'
+      path: '/works/create'
+      fullPath: '/works/create'
+      preLoaderRoute: typeof WorksCreateImport
+      parentRoute: typeof rootRoute
+    }
+    '/nfc/$eventId/$workId/': {
+      id: '/nfc/$eventId/$workId/'
+      path: '/nfc/$eventId/$workId'
+      fullPath: '/nfc/$eventId/$workId'
+      preLoaderRoute: typeof NfcEventIdWorkIdIndexImport
+      parentRoute: typeof rootRoute
+    }
   }
 }
 
@@ -84,6 +126,9 @@ export interface FileRoutesByFullPath {
   '/about': typeof AboutRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/profile/edit': typeof ProfileEditRoute
+  '/works/create': typeof WorksCreateRoute
+  '/nfc/$eventId/$workId': typeof NfcEventIdWorkIdIndexRoute
 }
 
 export interface FileRoutesByTo {
@@ -91,6 +136,9 @@ export interface FileRoutesByTo {
   '/about': typeof AboutRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/profile/edit': typeof ProfileEditRoute
+  '/works/create': typeof WorksCreateRoute
+  '/nfc/$eventId/$workId': typeof NfcEventIdWorkIdIndexRoute
 }
 
 export interface FileRoutesById {
@@ -99,14 +147,39 @@ export interface FileRoutesById {
   '/about': typeof AboutRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/profile/edit': typeof ProfileEditRoute
+  '/works/create': typeof WorksCreateRoute
+  '/nfc/$eventId/$workId/': typeof NfcEventIdWorkIdIndexRoute
 }
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/about' | '/login' | '/register'
+  fullPaths:
+    | '/'
+    | '/about'
+    | '/login'
+    | '/register'
+    | '/profile/edit'
+    | '/works/create'
+    | '/nfc/$eventId/$workId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/about' | '/login' | '/register'
-  id: '__root__' | '/' | '/about' | '/login' | '/register'
+  to:
+    | '/'
+    | '/about'
+    | '/login'
+    | '/register'
+    | '/profile/edit'
+    | '/works/create'
+    | '/nfc/$eventId/$workId'
+  id:
+    | '__root__'
+    | '/'
+    | '/about'
+    | '/login'
+    | '/register'
+    | '/profile/edit'
+    | '/works/create'
+    | '/nfc/$eventId/$workId/'
   fileRoutesById: FileRoutesById
 }
 
@@ -115,6 +188,9 @@ export interface RootRouteChildren {
   AboutRoute: typeof AboutRoute
   LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRoute
+  ProfileEditRoute: typeof ProfileEditRoute
+  WorksCreateRoute: typeof WorksCreateRoute
+  NfcEventIdWorkIdIndexRoute: typeof NfcEventIdWorkIdIndexRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
@@ -122,6 +198,9 @@ const rootRouteChildren: RootRouteChildren = {
   AboutRoute: AboutRoute,
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRoute,
+  ProfileEditRoute: ProfileEditRoute,
+  WorksCreateRoute: WorksCreateRoute,
+  NfcEventIdWorkIdIndexRoute: NfcEventIdWorkIdIndexRoute,
 }
 
 export const routeTree = rootRoute
@@ -137,7 +216,10 @@ export const routeTree = rootRoute
         "/",
         "/about",
         "/login",
-        "/register"
+        "/register",
+        "/profile/edit",
+        "/works/create",
+        "/nfc/$eventId/$workId/"
       ]
     },
     "/": {
@@ -151,6 +233,15 @@ export const routeTree = rootRoute
     },
     "/register": {
       "filePath": "register.tsx"
+    },
+    "/profile/edit": {
+      "filePath": "profile/edit.tsx"
+    },
+    "/works/create": {
+      "filePath": "works/create.tsx"
+    },
+    "/nfc/$eventId/$workId/": {
+      "filePath": "nfc/$eventId/$workId/index.tsx"
     }
   }
 }

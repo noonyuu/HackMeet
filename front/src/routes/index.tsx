@@ -1,112 +1,81 @@
-import { gql, useQuery } from "@apollo/client";
-import { createFileRoute } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { Fab } from "@/components/ui/fab";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+
+import ImageFX from "@/assets/icons/add-work-icon.jpg";
+import { useEffect, useState } from "react";
+import { useAuth } from "@/hooks/useAuth";
 
 export const Route = createFileRoute("/")({
   component: Index,
 });
 
-const PROFILE = gql`
-  query ($id: String!) {
-    profile(id: $id) {
-      id
-      nickName
-    }
-  }
-`;
-
-type Profile = {
-  id: string;
-  nickName: string;
-};
-
-type ProfileQueryResult = {
-  profile: Profile;
-};
+const messages = ["作品を登録しよう！！"];
 
 function Index() {
-  // const { loading, error, data } = useQuery<ProfileQueryResult>(PROFILE, {
-  //   variables: { id: "ab0bedb3-aece-4c49-a8d4-9c8e9942cc2d" },
-  //   fetchPolicy: "network-only",
-  // });
-  // const profile = data?.profile;
-  // if (loading) {
-  //   return <div className="p-2">Loading...</div>;
-  // }
-  // if (error) {
-  //   return <div className="p-2 text-red-500">Error: {error.message}</div>;
-  // }
+  const navigate = useNavigate();
 
-  const fetchWithRefresh = async (url: string, options: RequestInit = {}) => {
-    let response = await fetch(url, {
-      ...options,
-      credentials: "include", // クッキー送信が必要なら include
-    });
+  const [showBubble, setShowBubble] = useState(false);
+  const [messageIndex, setMessageIndex] = useState(0);
 
-    if (response.status === 401) {
-      // アクセストークンが無効 → リフレッシュを試みる
-      const refreshRes = await fetch(
-        "http://localhost:8080/api/v1/auth/refresh",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include", // クッキー型のリフレッシュトークンを使う場合
-        },
-      );
+  useEffect(() => {
+    setShowBubble(true);
+    setMessageIndex((prevIndex) => (prevIndex + 1) % messages.length);
 
-      if (refreshRes.ok) {
-        // 新しいアクセストークンで再試行
-        response = await fetch(url, {
-          ...options,
-          credentials: "include",
-        });
-      } else {
-        throw new Error("リフレッシュに失敗しました。再ログインが必要です。");
-      }
+    // 5秒後に非表示
+    setTimeout(() => setShowBubble(false), 5000);
+
+    // その後は定期的に表示
+    const intervalId = setInterval(() => {
+      setShowBubble(true);
+      setMessageIndex((prevIndex) => (prevIndex + 1) % messages.length);
+      setTimeout(() => setShowBubble(false), 5000);
+    }, 1000000);
+
+    return () => clearInterval(intervalId);
+  }, []);
+
+  const { isAuthenticated, loading: authLoading } = useAuth();
+
+  const handleClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+
+    if (authLoading) {
+      return;
     }
 
-    return response;
-  };
-
-  const handleClick = async () => {
-    try {
-      const response = await fetchWithRefresh(
-        "http://localhost:8080/api/v1/auth/getUser/google",
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log("Response data:", data);
-      } else {
-        console.error("Failed to fetch user:", response.statusText);
-      }
-    } catch (error) {
-      console.error("Error:", error);
-      alert(
-        "セッションが切れている可能性があります。再度ログインしてください。",
-      );
+    if (isAuthenticated) {
+      navigate({
+        to: "/works/create",
+      });
+    } else {
+      navigate({
+        to: "/login",
+      });
     }
   };
+
   return (
     <div className="p-2">
-      <div>Hello from Index!</div>
-      <div className="p-2">
-        {/* {profile ? (
-          <div>
-            <h2>Profile</h2>
-            <ul>
-              <li>ID: {profile.id}</li>
-              <li>NickName: {profile.nickName}</li>
-            </ul>
-          </div>
-        ) : (
-          <div>
-            No profile found
-          </div>
-        )} */}
-        <button onClick={handleClick}>get user</button>
+      <div className="h-1234">Hello from Index!</div>
+      <Fab
+        variant="default"
+        size="lg"
+        className="fixed right-4 bottom-4 z-50"
+        onClick={() => {}}
+      >
+        <a href="/works/edit" onClick={handleClick}>
+          <img src={ImageFX} alt="" className="rounded-full" />
+        </a>
+      </Fab>
+      <div className="fixed right-4 bottom-16 z-50">
+        <div className="relative">
+          {showBubble && (
+            <div className="animate-fade-in absolute right-0 bottom-full mb-2 w-64 rounded-lg bg-white p-4 shadow-lg">
+              <div className="text-sm text-black">{messages[messageIndex]}</div>
+              <div className="absolute right-4 bottom-0 h-3 w-3 translate-y-1/2 rotate-45 transform bg-white"></div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
