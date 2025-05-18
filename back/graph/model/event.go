@@ -6,8 +6,8 @@ type Event struct {
 	ID          string    `json:"id"`
 	Name        string    `json:"name"`
 	Description string    `json:"description"`
-	StartDate   string    `json:"start_date"`
-	EndDate     string    `json:"end_date"`
+	StartDate   time.Time `json:"start_date"`
+	EndDate     time.Time `json:"end_date"`
 	Location    string    `json:"location"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
