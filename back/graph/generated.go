@@ -118,6 +118,7 @@ type ComplexityRoot struct {
 		Work                     func(childComplexity int, id string) int
 		WorkEventsByEventID      func(childComplexity int, eventID string) int
 		WorkEventsByWorkID       func(childComplexity int, workID string) int
+		WorkProfile              func(childComplexity int, id int32) int
 		WorkProfilesByProfileID  func(childComplexity int, profileID string) int
 		WorkProfilesByWorkID     func(childComplexity int, workID string) int
 		WorkSkillsByWorkID       func(childComplexity int, workID string) int
@@ -161,8 +162,10 @@ type ComplexityRoot struct {
 	WorkProfile struct {
 		CreatedAt func(childComplexity int) int
 		ID        func(childComplexity int) int
+		Profile   func(childComplexity int) int
 		ProfileID func(childComplexity int) int
 		UpdatedAt func(childComplexity int) int
+		Work      func(childComplexity int) int
 		WorkID    func(childComplexity int) int
 	}
 
@@ -220,6 +223,7 @@ type QueryResolver interface {
 	WorksByTitle(ctx context.Context, title string) ([]*model.Work, error)
 	WorkEventsByWorkID(ctx context.Context, workID string) ([]*model.WorkEvent, error)
 	WorkEventsByEventID(ctx context.Context, eventID string) ([]*model.WorkEvent, error)
+	WorkProfile(ctx context.Context, id int32) (*model.WorkProfile, error)
 	WorkProfilesByWorkID(ctx context.Context, workID string) ([]*model.WorkProfile, error)
 	WorkProfilesByProfileID(ctx context.Context, profileID string) ([]*model.WorkProfile, error)
 	WorkSkillsByWorkID(ctx context.Context, workID string) ([]*model.WorkSkill, error)
@@ -733,6 +737,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Query.WorkEventsByWorkID(childComplexity, args["workId"].(string)), true
 
+	case "Query.workProfile":
+		if e.complexity.Query.WorkProfile == nil {
+			break
+		}
+
+		args, err := ec.field_Query_workProfile_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.WorkProfile(childComplexity, args["id"].(int32)), true
+
 	case "Query.workProfilesByProfileId":
 		if e.complexity.Query.WorkProfilesByProfileID == nil {
 			break
@@ -949,6 +965,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.WorkProfile.ID(childComplexity), true
 
+	case "WorkProfile.profile":
+		if e.complexity.WorkProfile.Profile == nil {
+			break
+		}
+
+		return e.complexity.WorkProfile.Profile(childComplexity), true
+
 	case "WorkProfile.profileId":
 		if e.complexity.WorkProfile.ProfileID == nil {
 			break
@@ -962,6 +985,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.WorkProfile.UpdatedAt(childComplexity), true
+
+	case "WorkProfile.work":
+		if e.complexity.WorkProfile.Work == nil {
+			break
+		}
+
+		return e.complexity.WorkProfile.Work(childComplexity), true
 
 	case "WorkProfile.workId":
 		if e.complexity.WorkProfile.WorkID == nil {
@@ -1695,6 +1725,29 @@ func (ec *executionContext) field_Query_workEventsByWorkId_argsWorkID(
 	}
 
 	var zeroVal string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_workProfile_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Query_workProfile_argsID(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
+	return args, nil
+}
+func (ec *executionContext) field_Query_workProfile_argsID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (int32, error) {
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+	if tmp, ok := rawArgs["id"]; ok {
+		return ec.unmarshalNInt2int32(ctx, tmp)
+	}
+
+	var zeroVal int32
 	return zeroVal, nil
 }
 
@@ -2958,6 +3011,10 @@ func (ec *executionContext) fieldContext_Mutation_createWorkProfile(ctx context.
 				return ec.fieldContext_WorkProfile_createdAt(ctx, field)
 			case "updatedAt":
 				return ec.fieldContext_WorkProfile_updatedAt(ctx, field)
+			case "work":
+				return ec.fieldContext_WorkProfile_work(ctx, field)
+			case "profile":
+				return ec.fieldContext_WorkProfile_profile(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type WorkProfile", field.Name)
 		},
@@ -3025,6 +3082,10 @@ func (ec *executionContext) fieldContext_Mutation_deleteWorkProfile(ctx context.
 				return ec.fieldContext_WorkProfile_createdAt(ctx, field)
 			case "updatedAt":
 				return ec.fieldContext_WorkProfile_updatedAt(ctx, field)
+			case "work":
+				return ec.fieldContext_WorkProfile_work(ctx, field)
+			case "profile":
+				return ec.fieldContext_WorkProfile_profile(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type WorkProfile", field.Name)
 		},
@@ -4748,6 +4809,77 @@ func (ec *executionContext) fieldContext_Query_workEventsByEventId(ctx context.C
 	return fc, nil
 }
 
+func (ec *executionContext) _Query_workProfile(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_workProfile(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().WorkProfile(rctx, fc.Args["id"].(int32))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.WorkProfile)
+	fc.Result = res
+	return ec.marshalNWorkProfile2ᚖgithubᚗcomᚋnoonyuuᚋnfcᚋbackᚋgraphᚋmodelᚐWorkProfile(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_workProfile(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_WorkProfile_id(ctx, field)
+			case "workId":
+				return ec.fieldContext_WorkProfile_workId(ctx, field)
+			case "profileId":
+				return ec.fieldContext_WorkProfile_profileId(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_WorkProfile_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_WorkProfile_updatedAt(ctx, field)
+			case "work":
+				return ec.fieldContext_WorkProfile_work(ctx, field)
+			case "profile":
+				return ec.fieldContext_WorkProfile_profile(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type WorkProfile", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_workProfile_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_workProfilesByWorkId(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_workProfilesByWorkId(ctx, field)
 	if err != nil {
@@ -4797,6 +4929,10 @@ func (ec *executionContext) fieldContext_Query_workProfilesByWorkId(ctx context.
 				return ec.fieldContext_WorkProfile_createdAt(ctx, field)
 			case "updatedAt":
 				return ec.fieldContext_WorkProfile_updatedAt(ctx, field)
+			case "work":
+				return ec.fieldContext_WorkProfile_work(ctx, field)
+			case "profile":
+				return ec.fieldContext_WorkProfile_profile(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type WorkProfile", field.Name)
 		},
@@ -4864,6 +5000,10 @@ func (ec *executionContext) fieldContext_Query_workProfilesByProfileId(ctx conte
 				return ec.fieldContext_WorkProfile_createdAt(ctx, field)
 			case "updatedAt":
 				return ec.fieldContext_WorkProfile_updatedAt(ctx, field)
+			case "work":
+				return ec.fieldContext_WorkProfile_work(ctx, field)
+			case "profile":
+				return ec.fieldContext_WorkProfile_profile(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type WorkProfile", field.Name)
 		},
@@ -6263,6 +6403,126 @@ func (ec *executionContext) fieldContext_WorkProfile_updatedAt(_ context.Context
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _WorkProfile_work(ctx context.Context, field graphql.CollectedField, obj *model.WorkProfile) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_WorkProfile_work(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Work, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.Work)
+	fc.Result = res
+	return ec.marshalNWork2ᚖgithubᚗcomᚋnoonyuuᚋnfcᚋbackᚋgraphᚋmodelᚐWork(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_WorkProfile_work(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "WorkProfile",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Work_id(ctx, field)
+			case "title":
+				return ec.fieldContext_Work_title(ctx, field)
+			case "description":
+				return ec.fieldContext_Work_description(ctx, field)
+			case "imageUrl":
+				return ec.fieldContext_Work_imageUrl(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Work_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_Work_updatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Work", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _WorkProfile_profile(ctx context.Context, field graphql.CollectedField, obj *model.WorkProfile) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_WorkProfile_profile(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Profile, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.Profile)
+	fc.Result = res
+	return ec.marshalNProfile2ᚖgithubᚗcomᚋnoonyuuᚋnfcᚋbackᚋgraphᚋmodelᚐProfile(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_WorkProfile_profile(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "WorkProfile",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Profile_id(ctx, field)
+			case "avatarUrl":
+				return ec.fieldContext_Profile_avatarUrl(ctx, field)
+			case "nickName":
+				return ec.fieldContext_Profile_nickName(ctx, field)
+			case "graduationYear":
+				return ec.fieldContext_Profile_graduationYear(ctx, field)
+			case "affiliation":
+				return ec.fieldContext_Profile_affiliation(ctx, field)
+			case "bio":
+				return ec.fieldContext_Profile_bio(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Profile_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_Profile_updatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Profile", field.Name)
 		},
 	}
 	return fc, nil
@@ -9740,6 +10000,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "workProfile":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_workProfile(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "workProfilesByWorkId":
 			field := field
 
@@ -10460,6 +10742,16 @@ func (ec *executionContext) _WorkProfile(ctx context.Context, sel ast.SelectionS
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "work":
+			out.Values[i] = ec._WorkProfile_work(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "profile":
+			out.Values[i] = ec._WorkProfile_profile(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
