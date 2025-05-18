@@ -1,0 +1,21 @@
+type WorkEvent {
+  id: Int!
+  workId: String!
+  eventId: String!
+  createdAt: String!
+  updatedAt: String!
+}
+
+input NewWorkEvent {
+  workId: String!
+  eventId: String!
+}
+
+extend type Query {
+  workEventsByWorkId(workId: String!): [WorkEvent!]!
+  workEventsByEventId(eventId: String!): [WorkEvent!]!
+}
+
+extend type Mutation {
+  createWorkEvent(input: NewWorkEvent!): WorkEvent!
+}

@@ -6,6 +6,7 @@ package resolver
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -24,7 +25,6 @@ func (r *mutationResolver) CreateWork(ctx context.Context, input model.NewWork) 
 	// Work構造体にUUIDと現在時刻をセット
 	work := &model.Work{
 		ID:          uidString,
-		EventID:     input.EventID,
 		Title:       input.Title,
 		Description: *input.Description,
 		CreatedAt:   now,
@@ -34,7 +34,7 @@ func (r *mutationResolver) CreateWork(ctx context.Context, input model.NewWork) 
 	INSERT INTO works (id, event_id, title, description, created_at, updated_at)
 	VALUES (?, ?, ?, ?, ?, ?)
 `
-	if _, err := r.DB.Exec(query, work.ID, work.EventID, work.Title, work.Description, now, now); err != nil {
+	if _, err := r.DB.Exec(query, work.ID, work.Title, work.Description, now, now); err != nil {
 		return nil, err
 	}
 
@@ -49,7 +49,7 @@ func (r *queryResolver) Work(ctx context.Context, id string) (*model.Work, error
 	WHERE id = ?
 `
 	work := &model.Work{}
-	if err := r.DB.QueryRow(query, id).Scan(&work.ID, &work.EventID, &work.Title, &work.Description, &work.CreatedAt, &work.UpdatedAt); err != nil {
+	if err := r.DB.QueryRow(query, id).Scan(&work.ID, &work.Title, &work.Description, &work.CreatedAt, &work.UpdatedAt); err != nil {
 		return nil, err
 	}
 
@@ -72,7 +72,7 @@ func (r *queryResolver) WorksByEventID(ctx context.Context, eventID string) ([]*
 	var works []*model.Work
 	for rows.Next() {
 		work := &model.Work{}
-		if err := rows.Scan(&work.ID, &work.EventID, &work.Title, &work.Description, &work.CreatedAt, &work.UpdatedAt); err != nil {
+		if err := rows.Scan(&work.ID, &work.Title, &work.Description, &work.CreatedAt, &work.UpdatedAt); err != nil {
 			return nil, err
 		}
 		works = append(works, work)
@@ -97,13 +97,18 @@ func (r *queryResolver) WorksByTitle(ctx context.Context, title string) ([]*mode
 	var works []*model.Work
 	for rows.Next() {
 		work := &model.Work{}
-		if err := rows.Scan(&work.ID, &work.EventID, &work.Title, &work.Description, &work.CreatedAt, &work.UpdatedAt); err != nil {
+		if err := rows.Scan(&work.ID, &work.Title, &work.Description, &work.CreatedAt, &work.UpdatedAt); err != nil {
 			return nil, err
 		}
 		works = append(works, work)
 	}
 
 	return works, nil
+}
+
+// EventID is the resolver for the eventId field.
+func (r *workResolver) EventID(ctx context.Context, obj *model.Work) (string, error) {
+	panic(fmt.Errorf("not implemented: EventID - eventId"))
 }
 
 // CreatedAt is the resolver for the createdAt field.
