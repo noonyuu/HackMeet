@@ -164,6 +164,58 @@ func (r *queryResolver) WorkProfilesByProfileID(ctx context.Context, profileID s
 	return workProfiles, nil
 }
 
+// WorksByProfileID is the resolver for the worksByProfileId field.
+func (r *queryResolver) WorksByProfileID(ctx context.Context, profileID string) ([]*model.Work, error) {
+	query := `
+	SELECT w.id, w.title, w.description, w.image_url
+	FROM work_profiles wp
+	JOIN works w ON wp.work_id = w.id
+	WHERE wp.profile_id = ?
+	`
+
+	rows, err := r.DB.Query(query, profileID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var works []*model.Work
+
+	for rows.Next() {
+		work := &model.Work{}
+		if err := rows.Scan(&work.ID, &work.Title, &work.Description, &work.ImageURL); err != nil {
+			return nil, err
+		}
+
+		// Work に紐づくスキルを取得
+		skillsQuery := `
+			SELECT s.id, s.name
+			FROM skills s
+			INNER JOIN work_skills ws ON s.id = ws.skill_id
+			WHERE ws.work_id = ?
+		`
+		skillRows, err := r.DB.Query(skillsQuery, work.ID)
+		if err != nil {
+			return nil, err
+		}
+		defer skillRows.Close()
+
+		var skills []*model.Skill
+		for skillRows.Next() {
+			skill := &model.Skill{}
+			if err := skillRows.Scan(&skill.ID, &skill.Name); err != nil {
+				return nil, err
+			}
+			skills = append(skills, skill)
+		}
+		work.Skills = skills
+
+		works = append(works, work)
+	}
+
+	return works, nil
+}
+
 // CreatedAt is the resolver for the createdAt field.
 func (r *workProfileResolver) CreatedAt(ctx context.Context, obj *model.WorkProfile) (string, error) {
 	return obj.CreatedAt.Format("2006-01-02 15:04:05"), nil
