@@ -6,6 +6,7 @@ package resolver
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -31,12 +32,108 @@ func (r *mutationResolver) CreateWork(ctx context.Context, input model.NewWork) 
 		UpdatedAt:   now,
 	}
 	query := `
-	INSERT INTO works (id, title, description, image_url created_at, updated_at)
+	INSERT INTO works (id, title, description, image_url, created_at, updated_at)
 	VALUES (?, ?, ?, ?, ?, ?)
 `
-	if _, err := r.DB.Exec(query, work.ID, work.Title, work.ImageURL, work.Description, now, now); err != nil {
+	if _, err := r.DB.Exec(query, work.ID, work.Title, work.Description, work.ImageURL, now, now); err != nil {
 		return nil, err
 	}
+
+	return work, nil
+}
+
+// CreateProjectEvent is the resolver for the createProjectEvent field.
+func (r *mutationResolver) CreateProjectEvent(ctx context.Context, input model.NewCreateProjectEvent) (*model.Work, error) {
+	// uuidを生成
+	uid, _ := uuid.NewRandom()
+	// 生成したUUIDを文字列に変換
+	uidString := uid.String()
+	// 現在時刻を取得
+	now := time.Now()
+
+	if input.WorkID == nil {
+		// Work構造体にUUIDと現在時刻をセット
+		work := &model.Work{
+			ID:          uidString,
+			Title:       input.Title,
+			Description: input.Description,
+			ImageURL:    input.ImageURL,
+			EventID:     input.EventID,
+			UserID:      input.UserID,
+			CreatedAt:   now,
+			UpdatedAt:   now,
+		}
+
+		// workを登録
+		query := `
+				INSERT INTO works (id, title, description, image_url, created_at, updated_at)
+				VALUES (?, ?, ?, ?, ?, ?)
+			`
+		if _, err := r.DB.Exec(query, work.ID, work.Title, work.Description, work.ImageURL, now, now); err != nil {
+			return nil, err
+		}
+
+		// workとskillを結びつける関連テーブルの登録は
+		for _, skillId := range input.Skills {
+			query = `
+			INSERT INTO work_skills (work_id, skill_id, created_at, updated_at)
+			VALUES (?, ?, ?, ?)
+		`
+			if _, err := r.DB.Exec(query, work.ID, skillId, now, now); err != nil {
+				return nil, err
+			}
+		}
+
+		// useridとworkidを結びつける関連テーブルの登録は、
+		query = `
+				INSERT INTO work_profiles (work_id, profile_id, created_at, updated_at)
+				VALUES (?, ?, ?, ?)
+			`
+		if _, err := r.DB.Exec(query, work.ID, input.UserID, now, now); err != nil {
+			return nil, err
+		}
+
+		// eventidとworkidを結びつける関連テーブルの登録は
+		query = `
+			INSERT INTO work_events (work_id, event_id, created_at, updated_at)
+			VALUES (?, ?, ?, ?)
+		`
+		if _, err := r.DB.Exec(query, work.ID, input.EventID, now, now); err != nil {
+			return nil, err
+		}
+
+		return work, nil
+	}
+
+	// eventidとworkidを結びつける
+	query := `
+			INSERT INTO work_events (work_id, event_id, created_at, updated_at)
+			VALUES (?, ?, ?, ?)
+		`
+	if _, err := r.DB.Exec(query, *input.WorkID, input.EventID, now, now); err != nil {
+		return nil, err
+	}
+
+	// workを取得
+	query = `
+		SELECT w.id, w.title, w.description, w.image_url, w.created_at, w.updated_at
+		FROM works w
+		WHERE w.id = ?
+	`
+	work := &model.Work{}
+	if err := r.DB.QueryRow(query, *input.WorkID).Scan(
+		&work.ID,
+		&work.Title,
+		&work.Description,
+		&work.ImageURL,
+		&work.CreatedAt,
+		&work.UpdatedAt); err != nil {
+		return nil, err
+	}
+
+	// メモリ上のみにEventIDとUserIDを設定
+	work.EventID = input.EventID
+	work.UserID = input.UserID
 
 	return work, nil
 }
@@ -44,14 +141,78 @@ func (r *mutationResolver) CreateWork(ctx context.Context, input model.NewWork) 
 // Work is the resolver for the work field.
 func (r *queryResolver) Work(ctx context.Context, id string) (*model.Work, error) {
 	query := `
-	SELECT id, event_id, title, description, image_url, created_at, updated_at
+	SELECT id, title, image_url, description, created_at, updated_at
 	FROM works
 	WHERE id = ?
 `
 	work := &model.Work{}
-	if err := r.DB.QueryRow(query, id).Scan(&work.ID, &work.Title, work.ImageURL, &work.Description, &work.CreatedAt, &work.UpdatedAt); err != nil {
+	if err := r.DB.QueryRow(query, id).Scan(&work.ID, &work.Title, &work.ImageURL, &work.Description, &work.CreatedAt, &work.UpdatedAt); err != nil {
 		return nil, err
 	}
+
+	// 取得したworkのIDを使って、関連するeventを取得
+	query = `
+		SELECT e.id, e.name
+		FROM events e
+		JOIN work_events we ON e.id = we.event_id
+		WHERE we.work_id = ?
+	`
+	rows, err := r.DB.Query(query, work.ID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var events []*model.Event
+	for rows.Next() {
+		event := &model.Event{}
+		if err := rows.Scan(&event.ID, &event.Name); err != nil {
+			return nil, err
+		}
+		events = append(events, event)
+	}
+	work.Events = events
+	// 取得したworkのIDを使って、関連するprofileを取得
+	query = `
+		SELECT p.id, p.avatar_url, p.nick_name
+		FROM profiles p
+		JOIN work_profiles wp ON p.id = wp.profile_id
+		WHERE wp.work_id = ?
+	`
+	rows, err = r.DB.Query(query, work.ID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var profiles []*model.Profile
+	for rows.Next() {
+		profile := &model.Profile{}
+		if err := rows.Scan(&profile.ID, &profile.AvatarURL, &profile.NickName); err != nil {
+			return nil, err
+		}
+		profiles = append(profiles, profile)
+	}
+	work.Profiles = profiles
+	// 取得したworkのIDを使って、関連するskillを取得
+	query = `
+		SELECT s.id, s.name
+		FROM skills s
+		JOIN work_skills ws ON s.id = ws.skill_id
+		WHERE ws.work_id = ?
+	`
+	rows, err = r.DB.Query(query, work.ID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var skills []*model.Skill
+	for rows.Next() {
+		skill := &model.Skill{}
+		if err := rows.Scan(&skill.ID, &skill.Name); err != nil {
+			return nil, err
+		}
+		skills = append(skills, skill)
+	}
+	work.Skills = skills
 
 	return work, nil
 }
@@ -81,6 +242,75 @@ func (r *queryResolver) WorksByTitle(ctx context.Context, title string) ([]*mode
 	return works, nil
 }
 
+// WorkList is the resolver for the workList field.
+func (r *queryResolver) WorkList(ctx context.Context, first *int32, after *string, last *int32, before *string) ([]*model.Work, error) {
+	var (
+		query     string
+		args      []interface{}
+		limit     int32
+		order     string = "DESC"
+		whereCond string
+	)
+
+	// クエリ構築（カーソルの処理）
+	if after != nil {
+		whereCond = "WHERE created_at < ?"
+		args = append(args, *after)
+	} else if before != nil {
+		whereCond = "WHERE created_at > ?"
+		args = append(args, *before)
+		order = "ASC" // 逆順にしてあとで逆にする
+	}
+
+	// 件数の処理
+	if first != nil {
+		limit = *first
+	} else if last != nil {
+		limit = *last
+	} else {
+		limit = 10 // デフォルト
+	}
+	args = append(args, limit)
+
+	query = fmt.Sprintf(`
+			SELECT id, title, description, image_url, created_at, updated_at
+			FROM works
+			%s
+			ORDER BY created_at %s
+			LIMIT ?
+		`, whereCond, order)
+
+	rows, err := r.DB.Query(query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var works []*model.Work
+	for rows.Next() {
+		work := &model.Work{}
+		if err := rows.Scan(
+			&work.ID,
+			&work.Title,
+			&work.Description,
+			&work.ImageURL,
+			&work.CreatedAt,
+			&work.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		works = append(works, work)
+	}
+	// 昇順で取ったときは逆順にして返す
+	if before != nil && last != nil {
+		for i, j := 0, len(works)-1; i < j; i, j = i+1, j-1 {
+			works[i], works[j] = works[j], works[i]
+		}
+	}
+
+	return works, nil
+}
+
 // CreatedAt is the resolver for the createdAt field.
 func (r *workResolver) CreatedAt(ctx context.Context, obj *model.Work) (string, error) {
 	return obj.CreatedAt.Format("2006-01-02 15:04:05"), nil
@@ -89,6 +319,26 @@ func (r *workResolver) CreatedAt(ctx context.Context, obj *model.Work) (string, 
 // UpdatedAt is the resolver for the updatedAt field.
 func (r *workResolver) UpdatedAt(ctx context.Context, obj *model.Work) (string, error) {
 	return obj.UpdatedAt.Format("2006-01-02 15:04:05"), nil
+}
+
+// EventID is the resolver for the eventId field.
+func (r *workResolver) EventID(ctx context.Context, obj *model.Work) (string, error) {
+	return obj.EventID, nil
+}
+
+// UserID is the resolver for the userId field.
+func (r *workResolver) UserID(ctx context.Context, obj *model.Work) (string, error) {
+	return obj.UserID, nil
+}
+
+// Event is the resolver for the event field.
+func (r *workResolver) Event(ctx context.Context, obj *model.Work) ([]*model.Event, error) {
+	return obj.Events, nil
+}
+
+// Profile is the resolver for the profile field.
+func (r *workResolver) Profile(ctx context.Context, obj *model.Work) ([]*model.Profile, error) {
+	return obj.Profiles, nil
 }
 
 // Work returns graph.WorkResolver implementation.

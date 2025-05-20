@@ -5,6 +5,16 @@ package model
 type Mutation struct {
 }
 
+type NewCreateProjectEvent struct {
+	Title       string   `json:"title"`
+	Description string   `json:"description"`
+	ImageURL    string   `json:"imageUrl"`
+	UserID      string   `json:"userId"`
+	WorkID      *string  `json:"workId,omitempty"`
+	Skills      []string `json:"skills"`
+	EventID     string   `json:"eventId"`
+}
+
 type NewEvent struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
@@ -41,9 +51,11 @@ type NewUser struct {
 }
 
 type NewWork struct {
-	Title       string  `json:"title"`
-	Description *string `json:"description,omitempty"`
-	ImageURL    string  `json:"imageUrl"`
+	Title       string   `json:"title"`
+	Description *string  `json:"description,omitempty"`
+	ImageURL    string   `json:"imageUrl"`
+	UserID      []string `json:"user_id"`
+	Skills      []string `json:"skills"`
 }
 
 type NewWorkEvent struct {
