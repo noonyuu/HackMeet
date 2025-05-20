@@ -25,17 +25,16 @@ CREATE TABLE IF NOT EXISTS users (
   created_at DATETIME,
   updated_at DATETIME
 ) ENGINE=InnoDB;
-CREATE TABLE IF NOT EXISTS providers (
+CREATE TABLE IF NOT EXISTS profiles (
   id VARCHAR(255) PRIMARY KEY,
-  user_id VARCHAR(255),
-  provider_id VARCHAR(255),
-  provider VARCHAR(255),
+  avatar_url VARCHAR(255),
+  nick_name VARCHAR(255),
+  graduation_year INT,
+  affiliation VARCHAR(255),
+  bio TEXT,
   created_at DATETIME,
-  updated_at DATETIME,
-  UNIQUE KEY (user_id, provider_id),
-  CONSTRAINT fk_providers_user_id FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-) ENGINE=InnoDB;
-CREATE TABLE IF NOT EXISTS providers (
+  updated_at DATETIME
+) ENGINE=InnoDB;CREATE TABLE IF NOT EXISTS providers (
   id VARCHAR(255) PRIMARY KEY,
   user_id VARCHAR(255) UNIQUE,
   provider_id VARCHAR(255) UNIQUE,
@@ -57,7 +56,7 @@ CREATE TABLE IF NOT EXISTS works (
   id VARCHAR(255) PRIMARY KEY,
   title VARCHAR(255),
   description TEXT,
-  image_url VARCHAR(255),
+  image_url TEXT,
   created_at DATETIME,
   updated_at DATETIME
 ) ENGINE=InnoDB;
