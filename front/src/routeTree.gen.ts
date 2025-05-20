@@ -15,9 +15,11 @@ import { Route as RegisterImport } from './routes/register'
 import { Route as LoginImport } from './routes/login'
 import { Route as AboutImport } from './routes/about'
 import { Route as IndexImport } from './routes/index'
-import { Route as WorksCreateImport } from './routes/works/create'
+import { Route as NfcIndexImport } from './routes/nfc/index'
 import { Route as ProfileEditImport } from './routes/profile/edit'
-import { Route as NfcEventIdWorkIdIndexImport } from './routes/nfc/$eventId/$workId/index'
+import { Route as WorksCreateIndexImport } from './routes/works/create/index'
+import { Route as NfcWorkIdIndexImport } from './routes/nfc/$workId/index'
+import { Route as WorksCreateEventIdIndexImport } from './routes/works/create/$eventId/index'
 
 // Create/Update Routes
 
@@ -45,9 +47,9 @@ const IndexRoute = IndexImport.update({
   getParentRoute: () => rootRoute,
 } as any)
 
-const WorksCreateRoute = WorksCreateImport.update({
-  id: '/works/create',
-  path: '/works/create',
+const NfcIndexRoute = NfcIndexImport.update({
+  id: '/nfc/',
+  path: '/nfc/',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -57,9 +59,21 @@ const ProfileEditRoute = ProfileEditImport.update({
   getParentRoute: () => rootRoute,
 } as any)
 
-const NfcEventIdWorkIdIndexRoute = NfcEventIdWorkIdIndexImport.update({
-  id: '/nfc/$eventId/$workId/',
-  path: '/nfc/$eventId/$workId/',
+const WorksCreateIndexRoute = WorksCreateIndexImport.update({
+  id: '/works/create/',
+  path: '/works/create/',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const NfcWorkIdIndexRoute = NfcWorkIdIndexImport.update({
+  id: '/nfc/$workId/',
+  path: '/nfc/$workId/',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const WorksCreateEventIdIndexRoute = WorksCreateEventIdIndexImport.update({
+  id: '/works/create/$eventId/',
+  path: '/works/create/$eventId/',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -102,18 +116,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProfileEditImport
       parentRoute: typeof rootRoute
     }
-    '/works/create': {
-      id: '/works/create'
-      path: '/works/create'
-      fullPath: '/works/create'
-      preLoaderRoute: typeof WorksCreateImport
+    '/nfc/': {
+      id: '/nfc/'
+      path: '/nfc'
+      fullPath: '/nfc'
+      preLoaderRoute: typeof NfcIndexImport
       parentRoute: typeof rootRoute
     }
-    '/nfc/$eventId/$workId/': {
-      id: '/nfc/$eventId/$workId/'
-      path: '/nfc/$eventId/$workId'
-      fullPath: '/nfc/$eventId/$workId'
-      preLoaderRoute: typeof NfcEventIdWorkIdIndexImport
+    '/nfc/$workId/': {
+      id: '/nfc/$workId/'
+      path: '/nfc/$workId'
+      fullPath: '/nfc/$workId'
+      preLoaderRoute: typeof NfcWorkIdIndexImport
+      parentRoute: typeof rootRoute
+    }
+    '/works/create/': {
+      id: '/works/create/'
+      path: '/works/create'
+      fullPath: '/works/create'
+      preLoaderRoute: typeof WorksCreateIndexImport
+      parentRoute: typeof rootRoute
+    }
+    '/works/create/$eventId/': {
+      id: '/works/create/$eventId/'
+      path: '/works/create/$eventId'
+      fullPath: '/works/create/$eventId'
+      preLoaderRoute: typeof WorksCreateEventIdIndexImport
       parentRoute: typeof rootRoute
     }
   }
@@ -127,8 +155,10 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/profile/edit': typeof ProfileEditRoute
-  '/works/create': typeof WorksCreateRoute
-  '/nfc/$eventId/$workId': typeof NfcEventIdWorkIdIndexRoute
+  '/nfc': typeof NfcIndexRoute
+  '/nfc/$workId': typeof NfcWorkIdIndexRoute
+  '/works/create': typeof WorksCreateIndexRoute
+  '/works/create/$eventId': typeof WorksCreateEventIdIndexRoute
 }
 
 export interface FileRoutesByTo {
@@ -137,8 +167,10 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/profile/edit': typeof ProfileEditRoute
-  '/works/create': typeof WorksCreateRoute
-  '/nfc/$eventId/$workId': typeof NfcEventIdWorkIdIndexRoute
+  '/nfc': typeof NfcIndexRoute
+  '/nfc/$workId': typeof NfcWorkIdIndexRoute
+  '/works/create': typeof WorksCreateIndexRoute
+  '/works/create/$eventId': typeof WorksCreateEventIdIndexRoute
 }
 
 export interface FileRoutesById {
@@ -148,8 +180,10 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/profile/edit': typeof ProfileEditRoute
-  '/works/create': typeof WorksCreateRoute
-  '/nfc/$eventId/$workId/': typeof NfcEventIdWorkIdIndexRoute
+  '/nfc/': typeof NfcIndexRoute
+  '/nfc/$workId/': typeof NfcWorkIdIndexRoute
+  '/works/create/': typeof WorksCreateIndexRoute
+  '/works/create/$eventId/': typeof WorksCreateEventIdIndexRoute
 }
 
 export interface FileRouteTypes {
@@ -160,8 +194,10 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/profile/edit'
+    | '/nfc'
+    | '/nfc/$workId'
     | '/works/create'
-    | '/nfc/$eventId/$workId'
+    | '/works/create/$eventId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -169,8 +205,10 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/profile/edit'
+    | '/nfc'
+    | '/nfc/$workId'
     | '/works/create'
-    | '/nfc/$eventId/$workId'
+    | '/works/create/$eventId'
   id:
     | '__root__'
     | '/'
@@ -178,8 +216,10 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/profile/edit'
-    | '/works/create'
-    | '/nfc/$eventId/$workId/'
+    | '/nfc/'
+    | '/nfc/$workId/'
+    | '/works/create/'
+    | '/works/create/$eventId/'
   fileRoutesById: FileRoutesById
 }
 
@@ -189,8 +229,10 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRoute
   ProfileEditRoute: typeof ProfileEditRoute
-  WorksCreateRoute: typeof WorksCreateRoute
-  NfcEventIdWorkIdIndexRoute: typeof NfcEventIdWorkIdIndexRoute
+  NfcIndexRoute: typeof NfcIndexRoute
+  NfcWorkIdIndexRoute: typeof NfcWorkIdIndexRoute
+  WorksCreateIndexRoute: typeof WorksCreateIndexRoute
+  WorksCreateEventIdIndexRoute: typeof WorksCreateEventIdIndexRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
@@ -199,8 +241,10 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRoute,
   ProfileEditRoute: ProfileEditRoute,
-  WorksCreateRoute: WorksCreateRoute,
-  NfcEventIdWorkIdIndexRoute: NfcEventIdWorkIdIndexRoute,
+  NfcIndexRoute: NfcIndexRoute,
+  NfcWorkIdIndexRoute: NfcWorkIdIndexRoute,
+  WorksCreateIndexRoute: WorksCreateIndexRoute,
+  WorksCreateEventIdIndexRoute: WorksCreateEventIdIndexRoute,
 }
 
 export const routeTree = rootRoute
@@ -218,8 +262,10 @@ export const routeTree = rootRoute
         "/login",
         "/register",
         "/profile/edit",
-        "/works/create",
-        "/nfc/$eventId/$workId/"
+        "/nfc/",
+        "/nfc/$workId/",
+        "/works/create/",
+        "/works/create/$eventId/"
       ]
     },
     "/": {
@@ -237,11 +283,17 @@ export const routeTree = rootRoute
     "/profile/edit": {
       "filePath": "profile/edit.tsx"
     },
-    "/works/create": {
-      "filePath": "works/create.tsx"
+    "/nfc/": {
+      "filePath": "nfc/index.tsx"
     },
-    "/nfc/$eventId/$workId/": {
-      "filePath": "nfc/$eventId/$workId/index.tsx"
+    "/nfc/$workId/": {
+      "filePath": "nfc/$workId/index.tsx"
+    },
+    "/works/create/": {
+      "filePath": "works/create/index.tsx"
+    },
+    "/works/create/$eventId/": {
+      "filePath": "works/create/$eventId/index.tsx"
     }
   }
 }

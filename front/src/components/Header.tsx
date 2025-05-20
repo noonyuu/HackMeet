@@ -1,19 +1,36 @@
-import { useAuth } from "@/hooks/useAuth";
 import { Link, useMatch } from "@tanstack/react-router";
-import google from "@/assets/icons/google.svg";
-import { Button } from "./ui/button";
 import { useState } from "react";
+import clsx from "clsx";
+
+import google from "@/assets/icons/google.svg";
+import { useAuth } from "@/hooks/useAuth";
+import { Button } from "./ui/button";
 
 export const Header = () => {
   // ログイン or 新規登録時かを判別
   const isRegister = useMatch({ from: "/register", shouldThrow: false });
   const isLogin = useMatch({ from: "/login", shouldThrow: false });
   // 作品登録画面
-  const isEdit = useMatch({ from: "/works/create", shouldThrow: false });
+  const isWorkCreate = useMatch({
+    from: "/works/create/",
+    shouldThrow: false,
+  });
+  const isWorkCreateEvent = useMatch({
+    from: "/works/create/$eventId/",
+    shouldThrow: false,
+  });
   // プロフィール編集画面
   const isProfileEdit = useMatch({ from: "/profile/edit", shouldThrow: false });
+  // nfc読み取り後の画面
+  const isNfc = useMatch({ from: "/nfc/$workId/", shouldThrow: false });
 
-  const isAuth = isRegister || isLogin || isEdit || isProfileEdit;
+  const isAuth =
+    isRegister ||
+    isLogin ||
+    isWorkCreate ||
+    isWorkCreateEvent ||
+    isProfileEdit ||
+    isNfc;
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
 
   const { user, isAuthenticated } = useAuth();
@@ -26,11 +43,17 @@ export const Header = () => {
   return (
     <>
       {isAuth ? (
-        <header className="flex h-14 items-center justify-center border-b border-gray-300">
+        <header
+          className={clsx(
+            "flex h-14 items-center justify-center",
+            isNfc && "bg-mesh bg-black text-white",
+            !isNfc && "border-b border-gray-300",
+          )}
+        >
           <div className="font-main text-2xl">タイトル</div>
         </header>
       ) : (
-        <header className="flex h-25 justify-center border-b border-gray-300 px-8 pt-4">
+        <header className="flex min-h-25 justify-center border-b border-gray-300 px-8 pt-4">
           <div className="font-main flex w-full flex-col">
             <div className="flex flex-row items-center">
               <div className="flex grow text-2xl">タイトル</div>
