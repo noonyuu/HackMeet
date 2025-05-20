@@ -85,6 +85,13 @@ type ComplexityRoot struct {
 		DeleteWorkSkill    func(childComplexity int, id int32) int
 	}
 
+	PageInfo struct {
+		EndCursor       func(childComplexity int) int
+		HasNextPage     func(childComplexity int) int
+		HasPreviousPage func(childComplexity int) int
+		StartCursor     func(childComplexity int) int
+	}
+
 	Profile struct {
 		Affiliation    func(childComplexity int) int
 		AvatarURL      func(childComplexity int) int
@@ -157,6 +164,16 @@ type ComplexityRoot struct {
 		Title       func(childComplexity int) int
 		UpdatedAt   func(childComplexity int) int
 		UserID      func(childComplexity int) int
+	}
+
+	WorkConnection struct {
+		Edges    func(childComplexity int) int
+		PageInfo func(childComplexity int) int
+	}
+
+	WorkEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
 	}
 
 	WorkEvent struct {
@@ -232,7 +249,7 @@ type QueryResolver interface {
 	Users(ctx context.Context) ([]*model.User, error)
 	Work(ctx context.Context, id string) (*model.Work, error)
 	WorksByTitle(ctx context.Context, title string) ([]*model.Work, error)
-	WorkList(ctx context.Context, first *int32, after *string, last *int32, before *string) ([]*model.Work, error)
+	WorkList(ctx context.Context, first *int32, after *string, last *int32, before *string) (*model.WorkConnection, error)
 	WorkEventsByWorkID(ctx context.Context, workID string) ([]*model.WorkEvent, error)
 	WorkEventsByEventID(ctx context.Context, eventID string) ([]*model.WorkEvent, error)
 	WorkProfile(ctx context.Context, id int32) (*model.WorkProfile, error)
@@ -517,6 +534,34 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Mutation.DeleteWorkSkill(childComplexity, args["id"].(int32)), true
+
+	case "PageInfo.endCursor":
+		if e.complexity.PageInfo.EndCursor == nil {
+			break
+		}
+
+		return e.complexity.PageInfo.EndCursor(childComplexity), true
+
+	case "PageInfo.hasNextPage":
+		if e.complexity.PageInfo.HasNextPage == nil {
+			break
+		}
+
+		return e.complexity.PageInfo.HasNextPage(childComplexity), true
+
+	case "PageInfo.hasPreviousPage":
+		if e.complexity.PageInfo.HasPreviousPage == nil {
+			break
+		}
+
+		return e.complexity.PageInfo.HasPreviousPage(childComplexity), true
+
+	case "PageInfo.startCursor":
+		if e.complexity.PageInfo.StartCursor == nil {
+			break
+		}
+
+		return e.complexity.PageInfo.StartCursor(childComplexity), true
 
 	case "Profile.affiliation":
 		if e.complexity.Profile.Affiliation == nil {
@@ -1004,6 +1049,34 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Work.UserID(childComplexity), true
+
+	case "WorkConnection.edges":
+		if e.complexity.WorkConnection.Edges == nil {
+			break
+		}
+
+		return e.complexity.WorkConnection.Edges(childComplexity), true
+
+	case "WorkConnection.pageInfo":
+		if e.complexity.WorkConnection.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.WorkConnection.PageInfo(childComplexity), true
+
+	case "WorkEdge.cursor":
+		if e.complexity.WorkEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.WorkEdge.Cursor(childComplexity), true
+
+	case "WorkEdge.node":
+		if e.complexity.WorkEdge.Node == nil {
+			break
+		}
+
+		return e.complexity.WorkEdge.Node(childComplexity), true
 
 	case "WorkEvent.createdAt":
 		if e.complexity.WorkEvent.CreatedAt == nil {
@@ -3558,6 +3631,176 @@ func (ec *executionContext) fieldContext_Mutation_deleteWorkSkill(ctx context.Co
 	return fc, nil
 }
 
+func (ec *executionContext) _PageInfo_hasNextPage(ctx context.Context, field graphql.CollectedField, obj *model.PageInfo) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PageInfo_hasNextPage(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.HasNextPage, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PageInfo_hasNextPage(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PageInfo",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PageInfo_hasPreviousPage(ctx context.Context, field graphql.CollectedField, obj *model.PageInfo) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PageInfo_hasPreviousPage(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.HasPreviousPage, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PageInfo_hasPreviousPage(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PageInfo",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PageInfo_startCursor(ctx context.Context, field graphql.CollectedField, obj *model.PageInfo) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PageInfo_startCursor(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.StartCursor, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalOString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PageInfo_startCursor(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PageInfo",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PageInfo_endCursor(ctx context.Context, field graphql.CollectedField, obj *model.PageInfo) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PageInfo_endCursor(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.EndCursor, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalOString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PageInfo_endCursor(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PageInfo",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Profile_id(ctx context.Context, field graphql.CollectedField, obj *model.Profile) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Profile_id(ctx, field)
 	if err != nil {
@@ -5041,9 +5284,9 @@ func (ec *executionContext) _Query_workList(ctx context.Context, field graphql.C
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*model.Work)
+	res := resTmp.(*model.WorkConnection)
 	fc.Result = res
-	return ec.marshalNWork2ᚕᚖgithubᚗcomᚋnoonyuuᚋnfcᚋbackᚋgraphᚋmodelᚐWorkᚄ(ctx, field.Selections, res)
+	return ec.marshalNWorkConnection2ᚖgithubᚗcomᚋnoonyuuᚋnfcᚋbackᚋgraphᚋmodelᚐWorkConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Query_workList(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -5054,30 +5297,12 @@ func (ec *executionContext) fieldContext_Query_workList(ctx context.Context, fie
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "id":
-				return ec.fieldContext_Work_id(ctx, field)
-			case "title":
-				return ec.fieldContext_Work_title(ctx, field)
-			case "description":
-				return ec.fieldContext_Work_description(ctx, field)
-			case "imageUrl":
-				return ec.fieldContext_Work_imageUrl(ctx, field)
-			case "createdAt":
-				return ec.fieldContext_Work_createdAt(ctx, field)
-			case "updatedAt":
-				return ec.fieldContext_Work_updatedAt(ctx, field)
-			case "eventId":
-				return ec.fieldContext_Work_eventId(ctx, field)
-			case "userId":
-				return ec.fieldContext_Work_userId(ctx, field)
-			case "event":
-				return ec.fieldContext_Work_event(ctx, field)
-			case "profile":
-				return ec.fieldContext_Work_profile(ctx, field)
-			case "skills":
-				return ec.fieldContext_Work_skills(ctx, field)
+			case "edges":
+				return ec.fieldContext_WorkConnection_edges(ctx, field)
+			case "pageInfo":
+				return ec.fieldContext_WorkConnection_pageInfo(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type Work", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type WorkConnection", field.Name)
 		},
 	}
 	defer func() {
@@ -6741,6 +6966,222 @@ func (ec *executionContext) fieldContext_Work_skills(_ context.Context, field gr
 				return ec.fieldContext_Skill_updatedAt(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Skill", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _WorkConnection_edges(ctx context.Context, field graphql.CollectedField, obj *model.WorkConnection) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_WorkConnection_edges(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Edges, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.WorkEdge)
+	fc.Result = res
+	return ec.marshalNWorkEdge2ᚕᚖgithubᚗcomᚋnoonyuuᚋnfcᚋbackᚋgraphᚋmodelᚐWorkEdgeᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_WorkConnection_edges(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "WorkConnection",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "node":
+				return ec.fieldContext_WorkEdge_node(ctx, field)
+			case "cursor":
+				return ec.fieldContext_WorkEdge_cursor(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type WorkEdge", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _WorkConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *model.WorkConnection) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_WorkConnection_pageInfo(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PageInfo, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.PageInfo)
+	fc.Result = res
+	return ec.marshalNPageInfo2githubᚗcomᚋnoonyuuᚋnfcᚋbackᚋgraphᚋmodelᚐPageInfo(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_WorkConnection_pageInfo(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "WorkConnection",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "hasNextPage":
+				return ec.fieldContext_PageInfo_hasNextPage(ctx, field)
+			case "hasPreviousPage":
+				return ec.fieldContext_PageInfo_hasPreviousPage(ctx, field)
+			case "startCursor":
+				return ec.fieldContext_PageInfo_startCursor(ctx, field)
+			case "endCursor":
+				return ec.fieldContext_PageInfo_endCursor(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type PageInfo", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _WorkEdge_node(ctx context.Context, field graphql.CollectedField, obj *model.WorkEdge) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_WorkEdge_node(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Node, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.Work)
+	fc.Result = res
+	return ec.marshalNWork2ᚖgithubᚗcomᚋnoonyuuᚋnfcᚋbackᚋgraphᚋmodelᚐWork(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_WorkEdge_node(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "WorkEdge",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Work_id(ctx, field)
+			case "title":
+				return ec.fieldContext_Work_title(ctx, field)
+			case "description":
+				return ec.fieldContext_Work_description(ctx, field)
+			case "imageUrl":
+				return ec.fieldContext_Work_imageUrl(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Work_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_Work_updatedAt(ctx, field)
+			case "eventId":
+				return ec.fieldContext_Work_eventId(ctx, field)
+			case "userId":
+				return ec.fieldContext_Work_userId(ctx, field)
+			case "event":
+				return ec.fieldContext_Work_event(ctx, field)
+			case "profile":
+				return ec.fieldContext_Work_profile(ctx, field)
+			case "skills":
+				return ec.fieldContext_Work_skills(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Work", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _WorkEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *model.WorkEdge) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_WorkEdge_cursor(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Cursor, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_WorkEdge_cursor(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "WorkEdge",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -9628,7 +10069,7 @@ func (ec *executionContext) unmarshalInputNewCreateProjectEvent(ctx context.Cont
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"title", "description", "imageUrl", "userId", "workId", "skills", "eventId"}
+	fieldsInOrder := [...]string{"title", "description", "imageUrl", "workId", "userId", "skills", "eventId"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -9656,13 +10097,6 @@ func (ec *executionContext) unmarshalInputNewCreateProjectEvent(ctx context.Cont
 				return it, err
 			}
 			it.ImageURL = data
-		case "userId":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userId"))
-			data, err := ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.UserID = data
 		case "workId":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("workId"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
@@ -9670,6 +10104,13 @@ func (ec *executionContext) unmarshalInputNewCreateProjectEvent(ctx context.Cont
 				return it, err
 			}
 			it.WorkID = data
+		case "userId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userId"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.UserID = data
 		case "skills":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("skills"))
 			data, err := ec.unmarshalNString2ᚕstringᚄ(ctx, v)
@@ -10413,6 +10854,54 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var pageInfoImplementors = []string{"PageInfo"}
+
+func (ec *executionContext) _PageInfo(ctx context.Context, sel ast.SelectionSet, obj *model.PageInfo) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, pageInfoImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("PageInfo")
+		case "hasNextPage":
+			out.Values[i] = ec._PageInfo_hasNextPage(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "hasPreviousPage":
+			out.Values[i] = ec._PageInfo_hasPreviousPage(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "startCursor":
+			out.Values[i] = ec._PageInfo_startCursor(ctx, field, obj)
+		case "endCursor":
+			out.Values[i] = ec._PageInfo_endCursor(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -11697,6 +12186,94 @@ func (ec *executionContext) _Work(ctx context.Context, sel ast.SelectionSet, obj
 	return out
 }
 
+var workConnectionImplementors = []string{"WorkConnection"}
+
+func (ec *executionContext) _WorkConnection(ctx context.Context, sel ast.SelectionSet, obj *model.WorkConnection) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, workConnectionImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("WorkConnection")
+		case "edges":
+			out.Values[i] = ec._WorkConnection_edges(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "pageInfo":
+			out.Values[i] = ec._WorkConnection_pageInfo(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var workEdgeImplementors = []string{"WorkEdge"}
+
+func (ec *executionContext) _WorkEdge(ctx context.Context, sel ast.SelectionSet, obj *model.WorkEdge) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, workEdgeImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("WorkEdge")
+		case "node":
+			out.Values[i] = ec._WorkEdge_node(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "cursor":
+			out.Values[i] = ec._WorkEdge_cursor(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var workEventImplementors = []string{"WorkEvent"}
 
 func (ec *executionContext) _WorkEvent(ctx context.Context, sel ast.SelectionSet, obj *model.WorkEvent) graphql.Marshaler {
@@ -12609,6 +13186,10 @@ func (ec *executionContext) unmarshalNNewWorkSkill2githubᚗcomᚋnoonyuuᚋnfc�
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) marshalNPageInfo2githubᚗcomᚋnoonyuuᚋnfcᚋbackᚋgraphᚋmodelᚐPageInfo(ctx context.Context, sel ast.SelectionSet, v model.PageInfo) graphql.Marshaler {
+	return ec._PageInfo(ctx, sel, &v)
+}
+
 func (ec *executionContext) marshalNProfile2githubᚗcomᚋnoonyuuᚋnfcᚋbackᚋgraphᚋmodelᚐProfile(ctx context.Context, sel ast.SelectionSet, v model.Profile) graphql.Marshaler {
 	return ec._Profile(ctx, sel, &v)
 }
@@ -12942,6 +13523,74 @@ func (ec *executionContext) marshalNWork2ᚖgithubᚗcomᚋnoonyuuᚋnfcᚋback�
 		return graphql.Null
 	}
 	return ec._Work(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNWorkConnection2githubᚗcomᚋnoonyuuᚋnfcᚋbackᚋgraphᚋmodelᚐWorkConnection(ctx context.Context, sel ast.SelectionSet, v model.WorkConnection) graphql.Marshaler {
+	return ec._WorkConnection(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNWorkConnection2ᚖgithubᚗcomᚋnoonyuuᚋnfcᚋbackᚋgraphᚋmodelᚐWorkConnection(ctx context.Context, sel ast.SelectionSet, v *model.WorkConnection) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._WorkConnection(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNWorkEdge2ᚕᚖgithubᚗcomᚋnoonyuuᚋnfcᚋbackᚋgraphᚋmodelᚐWorkEdgeᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.WorkEdge) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNWorkEdge2ᚖgithubᚗcomᚋnoonyuuᚋnfcᚋbackᚋgraphᚋmodelᚐWorkEdge(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNWorkEdge2ᚖgithubᚗcomᚋnoonyuuᚋnfcᚋbackᚋgraphᚋmodelᚐWorkEdge(ctx context.Context, sel ast.SelectionSet, v *model.WorkEdge) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._WorkEdge(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNWorkEvent2githubᚗcomᚋnoonyuuᚋnfcᚋbackᚋgraphᚋmodelᚐWorkEvent(ctx context.Context, sel ast.SelectionSet, v model.WorkEvent) graphql.Marshaler {

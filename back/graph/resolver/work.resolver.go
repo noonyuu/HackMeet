@@ -7,6 +7,8 @@ package resolver
 import (
 	"context"
 	"fmt"
+	"log"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -243,72 +245,136 @@ func (r *queryResolver) WorksByTitle(ctx context.Context, title string) ([]*mode
 }
 
 // WorkList is the resolver for the workList field.
-func (r *queryResolver) WorkList(ctx context.Context, first *int32, after *string, last *int32, before *string) ([]*model.Work, error) {
-	var (
-		query     string
-		args      []interface{}
-		limit     int32
-		order     string = "DESC"
-		whereCond string
-	)
+func (r *queryResolver) WorkList(ctx context.Context, first *int32, after *string, last *int32, before *string) (*model.WorkConnection, error) {
+	limit := 3
+	forward := true
 
-	// クエリ構築（カーソルの処理）
-	if after != nil {
-		whereCond = "WHERE created_at < ?"
-		args = append(args, *after)
-	} else if before != nil {
-		whereCond = "WHERE created_at > ?"
-		args = append(args, *before)
-		order = "ASC" // 逆順にしてあとで逆にする
-	}
-
-	// 件数の処理
 	if first != nil {
-		limit = *first
+		limit = int(*first)
+		forward = true
 	} else if last != nil {
-		limit = *last
-	} else {
-		limit = 10 // デフォルト
+		limit = int(*last)
+		forward = false
 	}
-	args = append(args, limit)
 
-	query = fmt.Sprintf(`
-			SELECT id, title, description, image_url, created_at, updated_at
-			FROM works
-			%s
-			ORDER BY created_at %s
-			LIMIT ?
-		`, whereCond, order)
+	var afterCurs, beforeCurs *model.Cursor
+	var err error
 
-	rows, err := r.DB.Query(query, args...)
+	if after != nil && *after != "" {
+		log.Printf("Received after cursor: %s", *after)
+		afterCurs, err = model.DecodeCursor(*after)
+		if err != nil {
+			return nil, fmt.Errorf("invalid after cursor: %w", err)
+		}
+	}
+
+	if before != nil && *before != "" {
+		beforeCurs, err = model.DecodeCursor(*before)
+		if err != nil {
+			return nil, fmt.Errorf("invalid before cursor: %w", err)
+		}
+	}
+
+	orderDirection := "DESC"
+	comparisonOp1 := "<"
+	comparisonOp2 := "<"
+	if !forward {
+		orderDirection = "ASC"
+		comparisonOp1 = ">"
+		comparisonOp2 = ">"
+	}
+
+	whereConditions := []string{}
+	args := []interface{}{}
+
+	if forward && afterCurs != nil {
+		whereConditions = append(whereConditions,
+			fmt.Sprintf("(created_at %s ? OR (created_at = ? AND id %s ?))", comparisonOp1, comparisonOp2),
+		)
+		args = append(args, afterCurs.CreatedAt, afterCurs.CreatedAt, afterCurs.ID)
+	} else if !forward && beforeCurs != nil {
+		whereConditions = append(whereConditions,
+			fmt.Sprintf("(created_at %s ? OR (created_at = ? AND id %s ?))", comparisonOp1, comparisonOp2),
+		)
+		args = append(args, beforeCurs.CreatedAt, beforeCurs.CreatedAt, beforeCurs.ID)
+	}
+
+	whereClause := ""
+	if len(whereConditions) > 0 {
+		whereClause = "WHERE " + strings.Join(whereConditions, " AND ")
+	}
+
+	query := fmt.Sprintf(`
+		SELECT id, title, description, image_url, created_at, updated_at
+		FROM works
+		%s
+		ORDER BY created_at %s, id %s
+		LIMIT ?
+	`, whereClause, orderDirection, orderDirection)
+
+	args = append(args, limit+1)
+
+	rows, err := r.DB.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var works []*model.Work
+	works := []*model.Work{}
 	for rows.Next() {
-		work := &model.Work{}
-		if err := rows.Scan(
-			&work.ID,
-			&work.Title,
-			&work.Description,
-			&work.ImageURL,
-			&work.CreatedAt,
-			&work.UpdatedAt,
-		); err != nil {
+		w := &model.Work{}
+		if err := rows.Scan(&w.ID, &w.Title, &w.Description, &w.ImageURL, &w.CreatedAt, &w.UpdatedAt); err != nil {
 			return nil, err
 		}
-		works = append(works, work)
+		works = append(works, w)
 	}
-	// 昇順で取ったときは逆順にして返す
-	if before != nil && last != nil {
+
+	hasMore := false
+	if len(works) > limit {
+		hasMore = true
+		works = works[:limit]
+	}
+
+	// ASC で取ったときは並びを戻す必要あり
+	if !forward {
 		for i, j := 0, len(works)-1; i < j; i, j = i+1, j-1 {
 			works[i], works[j] = works[j], works[i]
 		}
 	}
 
-	return works, nil
+	edges := make([]*model.WorkEdge, len(works))
+	for i, w := range works {
+		edges[i] = &model.WorkEdge{
+			Node:   w,
+			Cursor: model.EncodeCursor(model.Cursor{CreatedAt: w.CreatedAt, ID: w.ID}),
+		}
+	}
+
+	var startCursor, endCursor string
+	if len(edges) > 0 {
+		startCursor = edges[0].Cursor
+		endCursor = edges[len(edges)-1].Cursor
+	}
+
+	pageInfo := model.PageInfo{
+		StartCursor:     startCursor,
+		EndCursor:       endCursor,
+		HasNextPage:     false,
+		HasPreviousPage: false,
+	}
+
+	if forward {
+		pageInfo.HasNextPage = hasMore
+		pageInfo.HasPreviousPage = after != nil && *after != ""
+	} else {
+		pageInfo.HasPreviousPage = hasMore
+		pageInfo.HasNextPage = before != nil && *before != ""
+	}
+
+	return &model.WorkConnection{
+		Edges:    edges,
+		PageInfo: pageInfo,
+	}, nil
 }
 
 // CreatedAt is the resolver for the createdAt field.

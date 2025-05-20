@@ -9,8 +9,8 @@ type NewCreateProjectEvent struct {
 	Title       string   `json:"title"`
 	Description string   `json:"description"`
 	ImageURL    string   `json:"imageUrl"`
-	UserID      string   `json:"userId"`
 	WorkID      *string  `json:"workId,omitempty"`
+	UserID      string   `json:"userId"`
 	Skills      []string `json:"skills"`
 	EventID     string   `json:"eventId"`
 }

@@ -1,6 +1,8 @@
 package model
 
-import "time"
+import (
+	"time"
+)
 
 type Work struct {
 	ID          string    `json:"id"`
@@ -16,4 +18,21 @@ type Work struct {
 	Profiles []*Profile `json:"profile"`
 	Events   []*Event   `json:"event"`
 	Skills   []*Skill   `json:"skills"`
+}
+
+type WorkEdge struct {
+	Node   *Work  `json:"node"`
+	Cursor string `json:"cursor"`
+}
+
+type PageInfo struct {
+	HasNextPage     bool   `json:"hasNextPage"`
+	HasPreviousPage bool   `json:"hasPreviousPage"`
+	StartCursor     string `json:"startCursor"`
+	EndCursor       string `json:"endCursor"`
+}
+
+type WorkConnection struct {
+	Edges    []*WorkEdge `json:"edges"`
+	PageInfo PageInfo    `json:"pageInfo"`
 }

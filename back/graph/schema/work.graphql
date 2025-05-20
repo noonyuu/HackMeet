@@ -40,10 +40,27 @@ input NewCreateProjectEvent {
   eventId: String!
 }
 
+type WorkConnection {
+  edges: [WorkEdge!]!
+  pageInfo: PageInfo!
+}
+
+type WorkEdge {
+  node: Work!
+  cursor: String!
+}
+
+type PageInfo {
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
+  endCursor: String
+}
+
 extend type Query {
   work(id: String!): Work
   worksByTitle(title: String!): [Work!]!
-  workList(first: Int, after: String, last: Int, before: String): [Work!]!
+  workList(first: Int, after: String, last: Int, before: String): WorkConnection!
 }
 
 extend type Mutation {
