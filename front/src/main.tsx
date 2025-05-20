@@ -1,14 +1,22 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { RouterProvider, createRouter } from "@tanstack/react-router";
-import { ApolloClient, ApolloProvider, createHttpLink, InMemoryCache } from "@apollo/client";
+import {
+  ApolloClient,
+  ApolloProvider,
+  createHttpLink,
+  InMemoryCache,
+} from "@apollo/client";
 
 import "./style/index.css";
 import { routeTree } from "./routeTree.gen";
 
+// 環境変数
+const HOST_URL = import.meta.env.VITE_HOST_URL || "";
+
 // HTTP リンクの作成
 const httpLink = createHttpLink({
-  uri: "http://localhost:8443/api/query",
+  uri: HOST_URL + "api/query",
   // credentials: "include",
 });
 

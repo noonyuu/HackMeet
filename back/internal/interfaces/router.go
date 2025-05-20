@@ -2,6 +2,7 @@ package interfaces
 
 import (
 	"net/http"
+	"os"
 
 	"github.com/noonyuu/nfc/back/internal/interfaces/handler"
 
@@ -41,8 +42,9 @@ func NewRouter(userHandler *handler.AuthController) http.Handler {
 }
 
 func newCORS() gin.HandlerFunc {
+	hostUrl := os.Getenv("HOST_URL")
 	return func(c *gin.Context) {
-		c.Writer.Header().Set("Access-Control-Allow-Origin", "http://localhost:5173")
+		c.Writer.Header().Set("Access-Control-Allow-Origin", hostUrl)
 		c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 		c.Writer.Header().Set("Access-Control-Allow-Headers", "Origin, Content-Type, Accept, Authorization")
 		c.Writer.Header().Set("Access-Control-Max-Age", "86400")

@@ -18,6 +18,7 @@ const GET_PROFILE = gql`
 const STORAGE_KEY = "nfc_userId";
 
 export function useAuth() {
+  const HOST_URL = import.meta.env.VITE_HOST_URL || "";
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
@@ -34,7 +35,7 @@ export function useAuth() {
     onError: (error) => {
       console.error("Failed to fetch profile:", error);
       setUser(null);
-      setLoading(false); 
+      setLoading(false);
     },
   });
 
@@ -46,7 +47,7 @@ export function useAuth() {
     } else {
       (async () => {
         try {
-          const res = await fetch("http://localhost:8080/api/v1/auth/getUser", {
+          const res = await fetch(`${HOST_URL}api/v1/auth/getUser`, {
             credentials: "include", // Cookieを送る
           });
 
@@ -64,7 +65,7 @@ export function useAuth() {
         }
       })();
     }
-  }, [fetchProfile]);
+  }, [HOST_URL, fetchProfile]);
 
   // ログイン時はlocalStorageに保存しプロフィール取得
   const login = useCallback(

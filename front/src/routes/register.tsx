@@ -10,9 +10,10 @@ export const Route = createFileRoute("/register")({
 });
 
 function RouteComponent() {
+  const HOST_URL = import.meta.env.VITE_HOST_URL || "";
   const handleButtonClick = (provider: string) => {
     window.location.href =
-      "http://localhost:8443/api/v1/auth/" + provider + "?redirect_path=/";
+      HOST_URL + "api/v1/auth/" + provider + "?redirect_path=/";
   };
 
   return (
@@ -41,7 +42,7 @@ function RouteComponent() {
         </div>
         <div className="flex flex-col gap-y-3 py-4">
           <div className="text-center">
-            <Link to="/register">ログインはこちら</Link>
+            <Link to="/login">ログインはこちら</Link>
           </div>
         </div>
       </div>

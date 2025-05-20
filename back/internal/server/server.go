@@ -2,6 +2,7 @@ package server
 
 import (
 	"net/http"
+	"os"
 
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/handler/extension"
@@ -22,6 +23,7 @@ import (
 
 func NewRouter(dbMysql *sqlx.DB, dbRedis *redis.Client, graphql *resolver.Resolver) http.Handler {
 	mux := http.NewServeMux()
+	hostUrl := os.Getenv("HOST_URL")
 
 	auth.NewAuth()
 
@@ -42,7 +44,7 @@ func NewRouter(dbMysql *sqlx.DB, dbRedis *redis.Client, graphql *resolver.Resolv
 	cors := func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			origin := r.Header.Get("Origin")
-			if origin == "http://localhost:5173" {
+			if origin == hostUrl {
 				w.Header().Set("Access-Control-Allow-Origin", origin)
 				w.Header().Set("Access-Control-Allow-Credentials", "true")
 				w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")

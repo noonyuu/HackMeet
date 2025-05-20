@@ -10,9 +10,10 @@ export const Route = createFileRoute("/login")({
 });
 
 function RouteComponent() {
+  const HOST_URL = import.meta.env.VITE_HOST_URL || "";
   const handleButtonClick = (provider: string) => {
     window.location.href =
-      "http://localhost:8443/api/v1/auth/" + provider + "?redirect_path=/";
+      HOST_URL + "api/v1/auth/" + provider + "?redirect_path=/";
   };
 
   return (
