@@ -4,6 +4,9 @@ type WorkEvent {
   eventId: String!
   createdAt: String!
   updatedAt: String!
+
+  works: [Work!]!
+  event: Event!
 }
 
 input NewWorkEvent {

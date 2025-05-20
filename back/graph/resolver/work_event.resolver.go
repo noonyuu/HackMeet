@@ -42,6 +42,11 @@ func (r *workEventResolver) UpdatedAt(ctx context.Context, obj *model.WorkEvent)
 	return obj.UpdatedAt.Format("2006-01-02 15:04:05"), nil
 }
 
+// Works is the resolver for the works field.
+func (r *workEventResolver) Works(ctx context.Context, obj *model.WorkEvent) ([]*model.Work, error) {
+	return []*model.Work{}, nil
+}
+
 // WorkEvent returns graph.WorkEventResolver implementation.
 func (r *Resolver) WorkEvent() graph.WorkEventResolver { return &workEventResolver{r} }
 
