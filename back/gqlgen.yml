@@ -166,3 +166,9 @@ models:
     fields:
       user:
         resolver: true
+  Work:
+    fields:
+      eventId:
+        resolver: true
+      userId:
+        resolver: true
