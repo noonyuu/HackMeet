@@ -40,8 +40,10 @@ func NewAuth() {
 	}
 	gothic.Store = store
 
+	hostUrl := os.Getenv("HOST_URL")
+
 	goth.UseProviders(
-		google.New(googleClientId, googleClientSecret, "http://localhost:8080/api/v1/auth/google/callback", "email", "profile"),
-		github.New(githubClientId, githubClientSecret, "http://localhost:8080/api/v1/auth/github/callback", "user:email", "read:user"),
+		google.New(googleClientId, googleClientSecret, hostUrl+"api/v1/auth/google/callback", "email", "profile"),
+		github.New(githubClientId, githubClientSecret, hostUrl+"api/v1/auth/github/callback", "user:email", "read:user"),
 	)
 }

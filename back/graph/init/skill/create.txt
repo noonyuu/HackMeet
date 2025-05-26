@@ -1,0 +1,25 @@
+mutation {
+  createSkill(input: {
+    name: "React"
+    category: "フロント"
+  }){
+    id
+    name
+  }
+
+  s2: createSkill(input: {
+    name: "Next"
+    category: "フロント"
+  }){
+    id
+    name
+  }
+
+  s3: createSkill(input: {
+    name: "Go"
+    category: "バック"
+  }){
+    id
+    name
+  }
+}

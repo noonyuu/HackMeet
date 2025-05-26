@@ -8,9 +8,11 @@ import nfcRouters from "./app/root";
 require("dotenv").config();
 const app = express();
 const router = express.Router();
+// 環境変数の読み込み
+const HOST_URL = process.env.HOST_URL || "";
 
 const corsOptions = {
-  origin: ["http://localhost:5173"],
+  origin: [HOST_URL],
   methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
   optionsSuccessStatus: 200,
 };

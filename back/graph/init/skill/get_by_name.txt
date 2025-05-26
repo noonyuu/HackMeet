@@ -1,0 +1,6 @@
+query {
+  skillByName(name: "React") {
+    id
+    name
+  }
+}

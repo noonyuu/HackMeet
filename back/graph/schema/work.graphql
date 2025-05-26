@@ -5,19 +5,64 @@ type Work {
   imageUrl: String!
   createdAt: String!
   updatedAt: String!
+
+  eventId: String
+  userId: String!
+
+  event: [Event]!
+  profile: [Profile!]!
+  skills: [Skill!]!
 }
 
+# 作品のみ登録する
 input NewWork {
   title: String!
   description: String
   imageUrl: String!
+  # 中間
+  user_id: [String!]!
+  skills: [String!]!
+}
+
+# イベントベースで作成する
+input NewCreateProjectEvent {
+  title: String!
+  description: String!
+  imageUrl: String!
+
+  # 新規で作成する場合はnull
+  # 既存の作品を指定する場合はその作品のID
+  workId: String
+  eventId: String
+  # 中間
+  userId: String!
+  skills: [String!]!
+}
+
+type WorkConnection {
+  edges: [WorkEdge!]!
+  pageInfo: PageInfo!
+}
+
+type WorkEdge {
+  node: Work!
+  cursor: String!
+}
+
+type PageInfo {
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
+  endCursor: String
 }
 
 extend type Query {
   work(id: String!): Work
   worksByTitle(title: String!): [Work!]!
+  workList(first: Int, after: String, last: Int, before: String): WorkConnection!
 }
 
 extend type Mutation {
   createWork(input: NewWork!): Work!
+  createProjectEvent(input: NewCreateProjectEvent!): Work!
 }

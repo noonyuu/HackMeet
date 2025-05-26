@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/noonyuu/nfc/back/graph/model"
@@ -119,7 +120,7 @@ func (u *AuthController) GetAuthCallbackFunction(c *gin.Context) {
 		MaxAge:   60 * 60 * 24 * 30, // 30日
 	})
 
-	c.Redirect(http.StatusFound, "http://localhost:5173/")
+	c.Redirect(http.StatusFound, os.Getenv("HOST_URL"))
 }
 
 func (u *AuthController) RefreshAccessToken(c *gin.Context) {

@@ -23,3 +23,11 @@ export const ProjectSchema = v.object({
     v.minLength(1, "少なくとも1つ以上選択してください"),
   ),
 });
+
+export const EventProjectSchema = v.object({
+  ProjectSchema,
+  eventId: v.pipe(
+    v.string("イベントIDは必須です"),
+    v.nonEmpty("イベントIDは必須です"),
+  ),
+});
