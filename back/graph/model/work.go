@@ -12,7 +12,7 @@ type Work struct {
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
 
-	EventID string `json:"event_id"`
+	EventID *string `json:"event_id"`
 	UserID  string `json:"user_id"`
 
 	Profiles []*Profile `json:"profile"`

@@ -65,9 +65,9 @@ func NewRouter(dbMysql *sqlx.DB, dbRedis *redis.Client, graphql *resolver.Resolv
 	})
 
 	// /pingエンドポイントをサーバールーターに直接追加
-	mux.HandleFunc("/ping", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/api/ping", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`{"messages": "ping!!!"}`))
+		w.Write([]byte(`{"messages": "ping!!!!!!!!"}`))
 	})
 
 	// GraphQL handler 設定
@@ -86,8 +86,11 @@ func NewRouter(dbMysql *sqlx.DB, dbRedis *redis.Client, graphql *resolver.Resolv
 		Cache: lru.New[string](100),
 	})
 
+	// 既存のエンドポイントへのルーティング
 	mux.Handle("/api/v1/auth/", ginRouter)
 	mux.Handle("/", playground.Handler("GraphQL playground", "/api/query"))
+
+	// GraphQLクエリエンドポイントのみを設定し、プレイグラウンドは明示的に設定しない
 	mux.Handle("/api/query", srv)
 
 	return cors(mux)

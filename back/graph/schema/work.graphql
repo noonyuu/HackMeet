@@ -6,7 +6,7 @@ type Work {
   createdAt: String!
   updatedAt: String!
 
-  eventId: String!
+  eventId: String
   userId: String!
 
   event: [Event]!
@@ -33,11 +33,10 @@ input NewCreateProjectEvent {
   # 新規で作成する場合はnull
   # 既存の作品を指定する場合はその作品のID
   workId: String
-
+  eventId: String
   # 中間
   userId: String!
   skills: [String!]!
-  eventId: String!
 }
 
 type WorkConnection {

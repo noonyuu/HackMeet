@@ -53,19 +53,17 @@ func (r *mutationResolver) CreateProjectEvent(ctx context.Context, input model.N
 	// 現在時刻を取得
 	now := time.Now()
 
-	if input.WorkID == nil {
-		// Work構造体にUUIDと現在時刻をセット
-		work := &model.Work{
-			ID:          uidString,
-			Title:       input.Title,
-			Description: input.Description,
-			ImageURL:    input.ImageURL,
-			EventID:     input.EventID,
-			UserID:      input.UserID,
-			CreatedAt:   now,
-			UpdatedAt:   now,
-		}
+	// Work構造体にUUIDと現在時刻をセット
+	work := &model.Work{
+		ID:          uidString,
+		Title:       input.Title,
+		Description: input.Description,
+		ImageURL:    input.ImageURL,
+		CreatedAt:   now,
+		UpdatedAt:   now,
+	}
 
+	if input.WorkID == nil {
 		// workを登録
 		query := `
 				INSERT INTO works (id, title, description, image_url, created_at, updated_at)
@@ -96,12 +94,14 @@ func (r *mutationResolver) CreateProjectEvent(ctx context.Context, input model.N
 		}
 
 		// eventidとworkidを結びつける関連テーブルの登録は
-		query = `
+		if input.EventID != nil {
+			query = `
 			INSERT INTO work_events (work_id, event_id, created_at, updated_at)
 			VALUES (?, ?, ?, ?)
 		`
-		if _, err := r.DB.Exec(query, work.ID, input.EventID, now, now); err != nil {
-			return nil, err
+			if _, err := r.DB.Exec(query, work.ID, input.EventID, now, now); err != nil {
+				return nil, err
+			}
 		}
 
 		return work, nil
@@ -115,27 +115,6 @@ func (r *mutationResolver) CreateProjectEvent(ctx context.Context, input model.N
 	if _, err := r.DB.Exec(query, *input.WorkID, input.EventID, now, now); err != nil {
 		return nil, err
 	}
-
-	// workを取得
-	query = `
-		SELECT w.id, w.title, w.description, w.image_url, w.created_at, w.updated_at
-		FROM works w
-		WHERE w.id = ?
-	`
-	work := &model.Work{}
-	if err := r.DB.QueryRow(query, *input.WorkID).Scan(
-		&work.ID,
-		&work.Title,
-		&work.Description,
-		&work.ImageURL,
-		&work.CreatedAt,
-		&work.UpdatedAt); err != nil {
-		return nil, err
-	}
-
-	// メモリ上のみにEventIDとUserIDを設定
-	work.EventID = input.EventID
-	work.UserID = input.UserID
 
 	return work, nil
 }
@@ -388,8 +367,12 @@ func (r *workResolver) UpdatedAt(ctx context.Context, obj *model.Work) (string, 
 }
 
 // EventID is the resolver for the eventId field.
-func (r *workResolver) EventID(ctx context.Context, obj *model.Work) (string, error) {
-	return obj.EventID, nil
+func (r *workResolver) EventID(ctx context.Context, obj *model.Work) (*string, error) {
+	if obj.EventID == nil {
+		return nil, nil
+	}
+	eventID := *obj.EventID
+	return &eventID, nil
 }
 
 // UserID is the resolver for the userId field.

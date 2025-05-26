@@ -269,7 +269,7 @@ type UserResolver interface {
 type WorkResolver interface {
 	CreatedAt(ctx context.Context, obj *model.Work) (string, error)
 	UpdatedAt(ctx context.Context, obj *model.Work) (string, error)
-	EventID(ctx context.Context, obj *model.Work) (string, error)
+	EventID(ctx context.Context, obj *model.Work) (*string, error)
 	UserID(ctx context.Context, obj *model.Work) (string, error)
 	Event(ctx context.Context, obj *model.Work) ([]*model.Event, error)
 	Profile(ctx context.Context, obj *model.Work) ([]*model.Profile, error)
@@ -6720,14 +6720,11 @@ func (ec *executionContext) _Work_eventId(ctx context.Context, field graphql.Col
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Work_eventId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -10069,7 +10066,7 @@ func (ec *executionContext) unmarshalInputNewCreateProjectEvent(ctx context.Cont
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"title", "description", "imageUrl", "workId", "userId", "skills", "eventId"}
+	fieldsInOrder := [...]string{"title", "description", "imageUrl", "workId", "eventId", "userId", "skills"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -10104,6 +10101,13 @@ func (ec *executionContext) unmarshalInputNewCreateProjectEvent(ctx context.Cont
 				return it, err
 			}
 			it.WorkID = data
+		case "eventId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("eventId"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.EventID = data
 		case "userId":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userId"))
 			data, err := ec.unmarshalNString2string(ctx, v)
@@ -10118,13 +10122,6 @@ func (ec *executionContext) unmarshalInputNewCreateProjectEvent(ctx context.Cont
 				return it, err
 			}
 			it.Skills = data
-		case "eventId":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("eventId"))
-			data, err := ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.EventID = data
 		}
 	}
 
@@ -12017,16 +12014,13 @@ func (ec *executionContext) _Work(ctx context.Context, sel ast.SelectionSet, obj
 		case "eventId":
 			field := field
 
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
 				defer func() {
 					if r := recover(); r != nil {
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
 				res = ec._Work_eventId(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
 				return res
 			}
 
