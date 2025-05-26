@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { gql, useMutation, useQuery } from "@apollo/client";
+import { useMutation, useQuery } from "@apollo/client";
 import { createFileRoute, useParams } from "@tanstack/react-router";
 import { valibotResolver } from "@hookform/resolvers/valibot";
 import { useForm, FormProvider } from "react-hook-form";
@@ -9,78 +9,17 @@ import imageDelete from "@/assets/icons/circle-x.svg";
 import { Card } from "@/components/ui/card/card";
 import { useAuth } from "@/hooks/useAuth";
 import { EventProjectSchema } from "@/schema/work";
+// graphql
+import { GET_SKILLS } from "@/graph/skill";
+import { CREATE_WORK, GET_USER_WORKS } from "@/graph/work";
+// types
+import { ProjectInfoQueryResult } from "@/types/project";
+import { Skill } from "@/types/skill";
+import { UserWork } from "@/types/user";
 
 export const Route = createFileRoute("/works/create/$eventId/")({
   component: RouteComponent,
 });
-
-// 技術スタックを取得するクエリを追加
-const GET_SKILLS = gql`
-  query GetSkills {
-    skills {
-      id
-      name
-      category
-    }
-  }
-`;
-
-// 作品一覧取得クエリ
-const GET_USER_WORKS = gql`
-  query ($profileId: String!) {
-    worksByProfileId(profileId: $profileId) {
-      id
-      title
-      description
-      imageUrl
-      skills {
-        id
-        name
-      }
-    }
-  }
-`;
-
-// 作品作成ミューテーション
-const CREATE_WORK = gql`
-  mutation CreateProjectEvent($input: NewCreateProjectEvent!) {
-    createProjectEvent(input: $input) {
-      title
-      description
-      imageUrl
-      skills {
-        name
-      }
-      eventId
-      userId
-    }
-  }
-`;
-
-type CreateProject = {
-  title: string;
-  description: string;
-  imageFile: File | string | null;
-  techs: string[];
-};
-
-type ProjectInfoQueryResult = {
-  createWork: CreateProject;
-};
-
-type Skill = {
-  id: string;
-  name: string;
-  category: string;
-};
-
-type UserWork = {
-  id: string;
-  title: string;
-  description: string;
-  imageUrl: string;
-  skills: Skill[];
-};
 
 function RouteComponent() {
   const HOST_URL = import.meta.env.VITE_HOST_URL || "";
