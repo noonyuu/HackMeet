@@ -3,7 +3,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronUp, Grid, Scan } from "lucide-react";
 
-import type { CardData } from "@/models/card";
+import type { CardData } from "@/types/card";
 import { IOSAppSwitcher } from "@/components/IosAppSwitcher";
 import { Cards } from "./Card";
 

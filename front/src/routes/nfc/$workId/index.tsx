@@ -1,38 +1,16 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, useParams } from "@tanstack/react-router";
-import { gql, useQuery } from "@apollo/client";
+import { useQuery } from "@apollo/client";
 import { AlertTriangle, Scan } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 
-import { CardData } from "@/models/card";
+import { CardData } from "@/types/card";
 import { CardStack } from "@/components/CardStack";
+import { GET_NFC_DATA } from "@/graph/work";
 
 export const Route = createFileRoute("/nfc/$workId/")({
   component: RouteComponent,
 });
-
-const GET_NFC_DATA = gql`
-  query ($id: Int!) {
-    workProfile(id: $id) {
-      id
-      work {
-        title
-        description
-        imageUrl
-        skills {
-          id
-          name
-        }
-      }
-      profile {
-        nickName
-        graduationYear
-        affiliation
-        bio
-      }
-    }
-  }
-`;
 
 type CardQueryResult = {
   workProfile: CardData;

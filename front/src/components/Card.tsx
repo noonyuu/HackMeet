@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import type { CardData } from "@/models/card";
+import type { CardData } from "@/types/card";
 
 interface CardProps {
   data: CardData;
@@ -31,8 +31,7 @@ export function Cards({ data, compact = false }: CardProps) {
 
         <div className={`${compact ? "p-2" : "p-4"} flex flex-1 flex-col`}>
           <div className="mb-3 flex items-center gap-2">
-            <div className="rounded-full bg-blue-900/30 p-1">
-            </div>
+            <div className="rounded-full bg-blue-900/30 p-1"></div>
             <p
               className={`text-blue-100/80 ${compact ? "text-[10px]" : "text-sm"}`}
             >

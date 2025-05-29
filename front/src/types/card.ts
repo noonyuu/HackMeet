@@ -1,3 +1,5 @@
+import { Profile } from "./user";
+
 export type Skill = {
   id: string;
   name: string;
@@ -10,15 +12,10 @@ export type Work = {
   skills: Skill[];
 };
 
-export type Profile = {
-  nickName: string;
-  graduationYear: string;
-  affiliation: string;
-  bio: string;
-};
+type CardProfile = Pick<Profile, "nickName" | "graduationYear" | "affiliation" | "bio">;
 
 export type CardData = {
   id: string;
   work: Work;
-  profile: Profile;
+  profile: CardProfile;
 };

@@ -81,3 +81,26 @@ export const PROJECT_LIST = gql`
     }
   }
 `;
+
+export const GET_NFC_DATA = gql`
+  query ($id: Int!) {
+    workProfile(id: $id) {
+      id
+      work {
+        title
+        description
+        imageUrl
+        skills {
+          id
+          name
+        }
+      }
+      profile {
+        nickName
+        graduationYear
+        affiliation
+        bio
+      }
+    }
+  }
+`;

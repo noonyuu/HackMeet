@@ -13,7 +13,7 @@ export type Profile = {
   avatarUrl: string | null;
   nickName: string;
   graduationYear: number | null;
-  affiliation: number | null;
+  affiliation: string | null;
   bio: string | null;
   createdAt: string;
   updatedAt: string;
