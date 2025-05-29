@@ -7,3 +7,14 @@ export type UserWork = {
   imageUrl: string;
   skills: Skill[];
 };
+
+export type Profile = {
+  id: string;
+  avatarUrl: string | null;
+  nickName: string;
+  graduationYear: number | null;
+  affiliation: number | null;
+  bio: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
