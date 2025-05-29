@@ -66,7 +66,7 @@ export const Header = () => {
                         className="size-8 rounded-full"
                       />
                       {isMenuOpen && (
-                        <div className="absolute top-16 right-8 h-96 w-52 rounded-md border border-gray-200 bg-white p-3">
+                        <div className="absolute top-16 right-8 h-96 w-52 rounded-md border border-gray-200 bg-white p-3 z-100">
                           <div className="flex size-full flex-col justify-start">
                             <div className="flex grow flex-col">
                               <div className="text-center">
