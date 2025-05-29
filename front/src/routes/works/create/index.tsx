@@ -196,16 +196,24 @@ function RouteComponent() {
                 const data = await response.json();
                 const s3Url = data.key;
 
-                const projectData = {
-                  userId: user?.id || "",
-                  eventId: null,
+                // ユーザーIDの存在確認
+                if (!user?.id) {
+                  alert(
+                    "ユーザー情報が見つかりません。再度ログインしてください。",
+                  );
+                  console.error("Error creating project: User ID is missing");
+                  return;
+                }
+
+                const projectInputData = {
                   title: formData.title,
-                  description: formData.description,
+                  description: formData.description || null,
                   imageUrl: s3Url,
-                  workId: null,
+                  userIds: [user.id],
+                  skills: formData.techs as string[],
                 };
 
-                await createProject({ variables: { input: projectData } });
+                await createProject({ variables: { input: projectInputData } });
                 alert("登録が完了しました");
                 methods.reset({
                   title: "",

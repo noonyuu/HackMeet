@@ -1,6 +1,10 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery } from "@apollo/client";
-import { createFileRoute, useParams } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  useNavigate,
+  useParams,
+} from "@tanstack/react-router";
 import { valibotResolver } from "@hookform/resolvers/valibot";
 import { useForm, FormProvider } from "react-hook-form";
 
@@ -11,7 +15,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { EventProjectSchema } from "@/schema/work";
 // graphql
 import { GET_SKILLS } from "@/graph/skill";
-import { CREATE_WORK, GET_USER_WORKS } from "@/graph/work";
+import { CREATE_WORK_EVENT, GET_USER_WORKS } from "@/graph/work";
 // types
 import { ProjectInfoQueryResult } from "@/types/project";
 import { Skill } from "@/types/skill";
@@ -23,6 +27,7 @@ export const Route = createFileRoute("/works/create/$eventId/")({
 
 function RouteComponent() {
   const HOST_URL = import.meta.env.VITE_HOST_URL || "";
+  const navigate = useNavigate();
   const { eventId } = useParams({ from: "/works/create/$eventId/" });
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [currentSelect, setCurrentSelect] = useState("");
@@ -60,7 +65,7 @@ function RouteComponent() {
   } = methods;
 
   const [createProject, { loading: submitLoading }] =
-    useMutation<ProjectInfoQueryResult>(CREATE_WORK);
+    useMutation<ProjectInfoQueryResult>(CREATE_WORK_EVENT);
 
   // スキル一覧を取得
   const { data: skillsData, loading: skillsLoading } = useQuery(GET_SKILLS);
@@ -370,18 +375,27 @@ function RouteComponent() {
                   imageUrl = data.key;
                 }
 
-                const projectData = {
-                  userId: user?.id || "",
-                  eventId: formData.eventId,
+                // ユーザーIDの存在確認
+                if (!user?.id) {
+                  alert(
+                    "ユーザー情報が見つかりません。再度ログインしてください。",
+                  );
+                  console.error("Error creating project: User ID is missing");
+                  return;
+                }
+
+                const projectInputData = {
                   title: formData.ProjectSchema.title,
-                  description: formData.ProjectSchema.description,
+                  description: formData.ProjectSchema.description || null,
                   imageUrl: imageUrl,
-                  skills: formData.ProjectSchema.techs,
+                  userIds: [user.id],
+                  eventId: formData.eventId,
+                  skills: formData.ProjectSchema.techs as string[],
                   workId: !isNewWork ? selectedWorkId : null,
                 };
 
-                await createProject({ variables: { input: projectData } });
-
+                await createProject({ variables: { input: projectInputData } });
+                navigate({ to: "/" }); // 作品登録後にトップページへリダイレクト
                 // 送信成功後の処理
                 alert("作品を登録しました");
               } catch (e) {

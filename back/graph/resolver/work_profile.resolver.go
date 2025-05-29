@@ -105,7 +105,14 @@ func (r *queryResolver) WorkProfile(ctx context.Context, id int32) (*model.WorkP
 		}
 		skills = append(skills, skill)
 	}
-	work.Skills = skills
+	
+	var skillVals []model.Skill
+	for _, s := range skills {
+		if s != nil {
+			skillVals = append(skillVals, *s)
+		}
+	}
+	work.Skills = skillVals
 
 	// Work および Profile を WorkProfile にセット
 	wp.Work = work
@@ -208,7 +215,14 @@ func (r *queryResolver) WorksByProfileID(ctx context.Context, profileID string) 
 			}
 			skills = append(skills, skill)
 		}
-		work.Skills = skills
+
+		var skillVals []model.Skill
+		for _, s := range skills {
+			if s != nil {
+				skillVals = append(skillVals, *s)
+			}
+		}
+		work.Skills = skillVals
 
 		works = append(works, work)
 	}

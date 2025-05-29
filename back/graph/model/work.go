@@ -8,16 +8,16 @@ type Work struct {
 	ID          string    `json:"id"`
 	Title       string    `json:"title"`
 	Description string    `json:"description"`
-	ImageURL    string    `json:"image_url"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
+	ImageURL    string    `json:"imageUrl"`
+	CreatedAt   time.Time `json:"createdAt"`
+	UpdatedAt   time.Time `json:"updatedAt"`
 
-	EventID *string `json:"event_id"`
-	UserID  string `json:"user_id"`
+	EventID *string  `json:"eventId"`
+	UserIDs []string `json:"userIds"`
 
-	Profiles []*Profile `json:"profile"`
-	Events   []*Event   `json:"event"`
-	Skills   []*Skill   `json:"skills"`
+	Profiles []Profile `json:"profile"`
+	Events   []*Event  `json:"event"`
+	Skills   []Skill   `json:"skills"`
 }
 
 type WorkEdge struct {
@@ -26,10 +26,10 @@ type WorkEdge struct {
 }
 
 type PageInfo struct {
-	HasNextPage     bool   `json:"hasNextPage"`
-	HasPreviousPage bool   `json:"hasPreviousPage"`
-	StartCursor     string `json:"startCursor"`
-	EndCursor       string `json:"endCursor"`
+	HasNextPage     bool    `json:"hasNextPage"`
+	HasPreviousPage bool    `json:"hasPreviousPage"`
+	StartCursor     *string `json:"startCursor"`
+	EndCursor       *string `json:"endCursor"`
 }
 
 type WorkConnection struct {

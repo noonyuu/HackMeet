@@ -6,6 +6,7 @@ package resolver
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"log"
 	"strings"
@@ -28,172 +29,309 @@ func (r *mutationResolver) CreateWork(ctx context.Context, input model.NewWork) 
 	work := &model.Work{
 		ID:          uidString,
 		Title:       input.Title,
-		Description: *input.Description,
+		Description: "",
 		ImageURL:    input.ImageURL,
 		CreatedAt:   now,
 		UpdatedAt:   now,
+		UserIDs:     input.UserIds,
 	}
+
+	if input.Description != nil {
+		work.Description = *input.Description
+	}
+
+	// トランザクションを開始
+	tx, err := r.DB.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer func() {
+		if p := recover(); p != nil {
+			log.Printf("Panic recovered, rolling back: %v", p)
+			tx.Rollback()
+			panic(p)
+		} else if err != nil { // 名前付きリターンerrをチェック
+			log.Printf("Error occurred [%v], rolling back.", err)
+			if rbErr := tx.Rollback(); rbErr != nil {
+				log.Printf("Error during deferred rollback: %v", rbErr)
+			}
+		} else {
+			// 正常終了の場合はコミットされるので何もしない
+		}
+	}()
+
 	query := `
-	INSERT INTO works (id, title, description, image_url, created_at, updated_at)
-	VALUES (?, ?, ?, ?, ?, ?)
-`
-	if _, err := r.DB.Exec(query, work.ID, work.Title, work.Description, work.ImageURL, now, now); err != nil {
-		return nil, err
+		INSERT INTO works (id, title, description, image_url, created_at, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?)
+	`
+	if _, err = tx.ExecContext(ctx, query, work.ID, work.Title, work.Description, work.ImageURL, now, now); err != nil {
+		log.Printf("Error inserting into works with transaction: %v", err) // ログ追加
+		// err 変数にエラーをセットし、deferでロールバックされるようにする
+		return nil, fmt.Errorf("failed to insert work with transaction: %w", err)
+	}
+
+	// work_skills テーブルへの保存
+	if len(input.Skills) > 0 {
+		skillQuery := `INSERT INTO work_skills (work_id, skill_id, created_at, updated_at) VALUES (?, ?, ?, ?)`
+		for _, skillID := range input.Skills {
+			if _, err := tx.ExecContext(ctx, skillQuery, work.ID, skillID, now, now); err != nil {
+				return nil, fmt.Errorf("failed to insert work_skill: %w", err)
+			}
+		}
+	}
+
+	// work_profiles テーブルへの保存
+	if len(input.UserIds) > 0 {
+		profileQuery := `INSERT INTO work_profiles (work_id, profile_id, created_at, updated_at) VALUES (?, ?, ?, ?)`
+		for _, userID := range input.UserIds {
+			if _, err := tx.ExecContext(ctx, profileQuery, work.ID, userID, now, now); err != nil {
+				return nil, fmt.Errorf("failed to insert work_profile: %w", err)
+			}
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
 	return work, nil
 }
 
 // CreateProjectEvent is the resolver for the createProjectEvent field.
-func (r *mutationResolver) CreateProjectEvent(ctx context.Context, input model.NewCreateProjectEvent) (*model.Work, error) {
-	// uuidを生成
-	uid, _ := uuid.NewRandom()
-	// 生成したUUIDを文字列に変換
-	uidString := uid.String()
-	// 現在時刻を取得
+func (r *mutationResolver) CreateProjectEvent(ctx context.Context, input model.NewCreateProjectEvent) (respWork *model.Work, err error) { // 名前付きリターンパラメータ
 	now := time.Now()
+	var workID string
 
-	// Work構造体にUUIDと現在時刻をセット
-	work := &model.Work{
-		ID:          uidString,
+	tx, txErr := r.DB.BeginTx(ctx, nil)
+	if txErr != nil {
+		return nil, fmt.Errorf("failed to begin transaction: %w", txErr)
+	}
+	defer func() {
+		if p := recover(); p != nil {
+			log.Printf("Panic recovered in CreateProjectEvent, rolling back: %v", p)
+			_ = tx.Rollback() // Rollbackエラーはここでは無視することも多いが、ログは推奨
+			panic(p)
+		} else if err != nil { // 名前付きリターンパラメータ 'err' をチェック
+			log.Printf("Error occurred in CreateProjectEvent [%v], rolling back.", err)
+			if rbErr := tx.Rollback(); rbErr != nil {
+				log.Printf("Error during deferred rollback: %v", rbErr)
+			}
+		}
+		// err が nil の場合は、Commitが成功したか、Commitの必要がなかった(エラー早期リターン)
+	}()
+
+	// 返却用Workオブジェクトの準備
+	respWork = &model.Work{
 		Title:       input.Title,
-		Description: input.Description,
+		Description: input.Description, // バリデーションで必須チェックされている想定
 		ImageURL:    input.ImageURL,
 		CreatedAt:   now,
 		UpdatedAt:   now,
+		EventID:     input.EventID,
+		UserIDs:     input.UserIds,
 	}
 
-	if input.WorkID == nil {
-		// workを登録
+	if input.WorkID == nil { // 新規 Work 作成
+		uid, _ := uuid.NewRandom()
+		workID = uid.String()
+		respWork.ID = workID
+
+		log.Printf("Attempting to insert new work: %s", workID)
 		query := `
-				INSERT INTO works (id, title, description, image_url, created_at, updated_at)
-				VALUES (?, ?, ?, ?, ?, ?)
-			`
-		if _, err := r.DB.Exec(query, work.ID, work.Title, work.Description, work.ImageURL, now, now); err != nil {
-			return nil, err
+            INSERT INTO works (id, title, description, image_url, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?)
+        `
+		if _, execErr := tx.ExecContext(ctx, query, respWork.ID, respWork.Title, respWork.Description, respWork.ImageURL, respWork.CreatedAt, respWork.UpdatedAt); execErr != nil {
+			err = fmt.Errorf("failed to insert work: %w", execErr)
+			log.Printf("Error: %v", err)
+			return nil, err // defer が err を見てロールバック
 		}
+		log.Printf("Successfully inserted work: %s", workID)
 
-		// workとskillを結びつける関連テーブルの登録は
-		for _, skillId := range input.Skills {
-			query = `
-			INSERT INTO work_skills (work_id, skill_id, created_at, updated_at)
-			VALUES (?, ?, ?, ?)
-		`
-			if _, err := r.DB.Exec(query, work.ID, skillId, now, now); err != nil {
-				return nil, err
+		// work_skills の登録
+		if len(input.Skills) > 0 {
+			skillQuery := `INSERT INTO work_skills (work_id, skill_id, created_at, updated_at) VALUES (?, ?, ?, ?)`
+			for _, skillID := range input.Skills {
+				if _, execErr := tx.ExecContext(ctx, skillQuery, workID, skillID, now, now); execErr != nil {
+					err = fmt.Errorf("failed to insert work_skill for new work: %w", execErr)
+					log.Printf("Error: %v", err)
+					return nil, err
+				}
 			}
+			log.Printf("Successfully inserted work_skills for work: %s", workID)
 		}
 
-		// useridとworkidを結びつける関連テーブルの登録は、
-		query = `
-				INSERT INTO work_profiles (work_id, profile_id, created_at, updated_at)
-				VALUES (?, ?, ?, ?)
-			`
-		if _, err := r.DB.Exec(query, work.ID, input.UserID, now, now); err != nil {
-			return nil, err
+		// work_profiles の登録
+		if len(input.UserIds) > 0 {
+			profileQuery := `INSERT INTO work_profiles (work_id, profile_id, created_at, updated_at) VALUES (?, ?, ?, ?)`
+			for _, userID := range input.UserIds {
+				if _, execErr := tx.ExecContext(ctx, profileQuery, workID, userID, now, now); execErr != nil {
+					err = fmt.Errorf("failed to insert work_profile for new work: %w", execErr)
+					log.Printf("Error: %v", err)
+					return nil, err
+				}
+			}
+			log.Printf("Successfully inserted work_profiles for work: %s", workID)
 		}
 
-		// eventidとworkidを結びつける関連テーブルの登録は
+		// work_events の登録
 		if input.EventID != nil {
-			query = `
-			INSERT INTO work_events (work_id, event_id, created_at, updated_at)
-			VALUES (?, ?, ?, ?)
-		`
-			if _, err := r.DB.Exec(query, work.ID, input.EventID, now, now); err != nil {
+			// 前回の外部キーエラーの修正がDBスキーマに適用されているか確認してください。
+			// (work_events.event_id が events.id を参照するように)
+			eventQuery := `INSERT INTO work_events (work_id, event_id, created_at, updated_at) VALUES (?, ?, ?, ?)`
+			if _, execErr := tx.ExecContext(ctx, eventQuery, workID, *input.EventID, now, now); execErr != nil {
+				err = fmt.Errorf("failed to insert work_event for new work: %w", execErr)
+				log.Printf("Error: %v", err)
 				return nil, err
 			}
+			log.Printf("Successfully inserted work_event for work: %s", workID)
+		}
+	} else { // 既存 Work へのイベント紐付け (現在のコードではイベント紐付けのみ)
+		workID = *input.WorkID
+		respWork.ID = workID
+
+		if input.EventID == nil {
+			err = fmt.Errorf("EventID is required when linking to an existing work via CreateProjectEvent")
+			log.Printf("Error: %v", err)
+			return nil, err
 		}
 
-		return work, nil
+		log.Printf("Attempting to insert work_event for existing work: %s, event_id: %s", workID, *input.EventID)
+		eventQuery := `INSERT INTO work_events (work_id, event_id, created_at, updated_at) VALUES (?, ?, ?, ?)`
+		if _, execErr := tx.ExecContext(ctx, eventQuery, workID, *input.EventID, now, now); execErr != nil {
+			err = fmt.Errorf("failed to insert work_event for existing work %s: %w", workID, execErr)
+			log.Printf("Error: %v", err)
+			return nil, err
+		}
+		log.Printf("Successfully inserted work_event for existing work: %s", workID)
+		// 注意: このパスでは、respWorkのTitle, Descriptionなどはinputから来た値のままです。
+		// 既存のWorkの最新情報を返したい場合は、ここでDBからWorkを再取得する必要があります。
 	}
 
-	// eventidとworkidを結びつける
-	query := `
-			INSERT INTO work_events (work_id, event_id, created_at, updated_at)
-			VALUES (?, ?, ?, ?)
-		`
-	if _, err := r.DB.Exec(query, *input.WorkID, input.EventID, now, now); err != nil {
+	// 全ての処理が成功した場合、トランザクションをコミット
+	if commitErr := tx.Commit(); commitErr != nil {
+		err = fmt.Errorf("failed to commit transaction: %w", commitErr)
+		log.Printf("Error committing transaction: %v", err)
 		return nil, err
 	}
 
-	return work, nil
+	log.Printf("Transaction committed successfully for work_id: %s", workID)
+	return respWork, nil // 正常終了、err は nil
 }
 
 // Work is the resolver for the work field.
 func (r *queryResolver) Work(ctx context.Context, id string) (*model.Work, error) {
 	query := `
-	SELECT id, title, image_url, description, created_at, updated_at
-	FROM works
-	WHERE id = ?
-`
+		SELECT id, title, image_url, description, created_at, updated_at, event_id
+		FROM works
+		WHERE id = ?
+	`
 	work := &model.Work{}
-	if err := r.DB.QueryRow(query, id).Scan(&work.ID, &work.Title, &work.ImageURL, &work.Description, &work.CreatedAt, &work.UpdatedAt); err != nil {
+	// event_id を受け取るためにScanの引数を増やす
+	var eventID sql.NullString // event_idがNULLの場合に対応
+	if err := r.DB.QueryRowContext(ctx, query, id).Scan(&work.ID, &work.Title, &work.ImageURL, &work.Description, &work.CreatedAt, &work.UpdatedAt, &eventID); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("work with id %s not found", id)
+		}
 		return nil, err
 	}
+	if eventID.Valid {
+		work.EventID = &eventID.String
+	}
+
+	var userIDs []string
+	profileQuery := `SELECT profile_id FROM work_profiles WHERE work_id = ?`
+	profileRows, err := r.DB.QueryContext(ctx, profileQuery, work.ID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query user IDs for work: %w", err)
+	}
+	defer profileRows.Close()
+	for profileRows.Next() {
+		var userID string
+		if err := profileRows.Scan(&userID); err != nil {
+			return nil, fmt.Errorf("failed to scan user ID: %w", err)
+		}
+		userIDs = append(userIDs, userID)
+	}
+	work.UserIDs = userIDs
 
 	// 取得したworkのIDを使って、関連するeventを取得
-	query = `
+	eventQuery := `
 		SELECT e.id, e.name
 		FROM events e
 		JOIN work_events we ON e.id = we.event_id
 		WHERE we.work_id = ?
 	`
-	rows, err := r.DB.Query(query, work.ID)
+	event_rows, err := r.DB.QueryContext(ctx, eventQuery, work.ID)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer event_rows.Close()
 	var events []*model.Event
-	for rows.Next() {
+	for event_rows.Next() {
 		event := &model.Event{}
-		if err := rows.Scan(&event.ID, &event.Name); err != nil {
+		if err := event_rows.Scan(&event.ID, &event.Name); err != nil {
 			return nil, err
 		}
 		events = append(events, event)
 	}
-	work.Events = events
+	if len(events) > 0 { // イベントがある場合のみセット
+		work.Events = events
+	} else {
+		work.Events = make([]*model.Event, 0)
+	}
+
 	// 取得したworkのIDを使って、関連するprofileを取得
-	query = `
+	profileObjQuery := `
 		SELECT p.id, p.avatar_url, p.nick_name
 		FROM profiles p
 		JOIN work_profiles wp ON p.id = wp.profile_id
 		WHERE wp.work_id = ?
 	`
-	rows, err = r.DB.Query(query, work.ID)
+	profileObjRows, err := r.DB.QueryContext(ctx, profileObjQuery, work.ID)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
-	var profiles []*model.Profile
-	for rows.Next() {
-		profile := &model.Profile{}
-		if err := rows.Scan(&profile.ID, &profile.AvatarURL, &profile.NickName); err != nil {
+	defer profileObjRows.Close()
+	var profiles []model.Profile
+	for profileObjRows.Next() {
+		profile := model.Profile{}
+		if err := profileObjRows.Scan(&profile.ID, &profile.AvatarURL, &profile.NickName); err != nil {
 			return nil, err
 		}
-		profiles = append(profiles, profile)
+		profiles = append(profiles, profile) // profileをそのまま追加
 	}
-	work.Profiles = profiles
+	if len(profiles) > 0 {
+		work.Profiles = profiles
+	} else {
+		work.Profiles = make([]model.Profile, 0) // GraphQLスキーマに合わせる
+	}
+
 	// 取得したworkのIDを使って、関連するskillを取得
-	query = `
+	skillQuery := `
 		SELECT s.id, s.name
 		FROM skills s
 		JOIN work_skills ws ON s.id = ws.skill_id
 		WHERE ws.work_id = ?
 	`
-	rows, err = r.DB.Query(query, work.ID)
+	skill_rows, err := r.DB.QueryContext(ctx, skillQuery, work.ID)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
-	var skills []*model.Skill
-	for rows.Next() {
-		skill := &model.Skill{}
-		if err := rows.Scan(&skill.ID, &skill.Name); err != nil {
+	defer skill_rows.Close()
+	var skills []model.Skill
+	for skill_rows.Next() {
+		skill := model.Skill{}
+		if err := skill_rows.Scan(&skill.ID, &skill.Name); err != nil {
 			return nil, err
 		}
-		skills = append(skills, skill)
+		skills = append(skills, skill) // skillをそのまま追加
 	}
-	work.Skills = skills
+	if len(skills) > 0 {
+		work.Skills = skills
+	} else {
+		work.Skills = make([]model.Skill, 0)
+	}
 
 	return work, nil
 }
@@ -201,21 +339,25 @@ func (r *queryResolver) Work(ctx context.Context, id string) (*model.Work, error
 // WorksByTitle is the resolver for the worksByTitle field.
 func (r *queryResolver) WorksByTitle(ctx context.Context, title string) ([]*model.Work, error) {
 	query := `
-	SELECT id, event_id, title, description, image_url, created_at, updated_at
-	FROM works
-	WHERE title = ?
-`
-	rows, err := r.DB.Query(query, title)
+		SELECT id, event_id, title, description, image_url, created_at, updated_at
+		FROM works
+		WHERE title = ?
+	`
+	base_rows, err := r.DB.QueryContext(ctx, query, title)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer base_rows.Close()
 
 	var works []*model.Work
-	for rows.Next() {
+	for base_rows.Next() {
 		work := &model.Work{}
-		if err := rows.Scan(&work.ID, &work.Title, &work.Description, &work.CreatedAt, &work.UpdatedAt); err != nil {
+		var eventID sql.NullString
+		if err := base_rows.Scan(&work.ID, &work.Title, &work.Description, &work.ImageURL, &work.CreatedAt, &work.UpdatedAt, &eventID); err != nil {
 			return nil, err
+		}
+		if eventID.Valid {
+			work.EventID = &eventID.String
 		}
 		works = append(works, work)
 	}
@@ -283,6 +425,7 @@ func (r *queryResolver) WorkList(ctx context.Context, first *int32, after *strin
 		whereClause = "WHERE " + strings.Join(whereConditions, " AND ")
 	}
 
+	// SQLクエリから event_id を削除
 	query := fmt.Sprintf(`
 		SELECT id, title, description, image_url, created_at, updated_at
 		FROM works
@@ -295,17 +438,154 @@ func (r *queryResolver) WorkList(ctx context.Context, first *int32, after *strin
 
 	rows, err := r.DB.QueryContext(ctx, query, args...)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to query works: %w", err)
 	}
 	defer rows.Close()
 
 	works := []*model.Work{}
 	for rows.Next() {
 		w := &model.Work{}
+		// rows.Scan から event_id のスキャンを削除
 		if err := rows.Scan(&w.ID, &w.Title, &w.Description, &w.ImageURL, &w.CreatedAt, &w.UpdatedAt); err != nil {
-			return nil, err
+			rows.Close()
+			return nil, fmt.Errorf("failed to scan work: %w", err)
 		}
 		works = append(works, w)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("error during rows iteration: %w", err)
+	}
+
+	if len(works) > 0 {
+		workIDs := make([]string, 0, len(works))
+		for _, w := range works {
+			workIDs = append(workIDs, w.ID)
+			w.Events = make([]*model.Event, 0)
+			w.Profiles = make([]model.Profile, 0)
+			w.Skills = make([]model.Skill, 0)
+			w.UserIDs = make([]string, 0)
+		}
+
+		placeholders := make([]string, len(workIDs))
+		idArgs := make([]interface{}, len(workIDs))
+		for i, id := range workIDs {
+			placeholders[i] = "?"
+			idArgs[i] = id
+		}
+		inClause := strings.Join(placeholders, ",")
+
+		userIDsQuery := fmt.Sprintf(`SELECT work_id, profile_id FROM work_profiles WHERE work_id IN (%s)`, inClause)
+		userIDRows, err := r.DB.QueryContext(ctx, userIDsQuery, idArgs...)
+		if err != nil {
+			return nil, fmt.Errorf("failed to query user IDs for work list: %w", err)
+		}
+		userIDsByWorkID := make(map[string][]string)
+		for userIDRows.Next() {
+			var workID, userID string
+			if err := userIDRows.Scan(&workID, &userID); err != nil {
+				userIDRows.Close()
+				return nil, fmt.Errorf("failed to scan work_id/profile_id: %w", err)
+			}
+			userIDsByWorkID[workID] = append(userIDsByWorkID[workID], userID)
+		}
+		userIDRows.Close()
+		if err = userIDRows.Err(); err != nil {
+			return nil, fmt.Errorf("error during userIDRows iteration: %w", err)
+		}
+
+		eventQuery := fmt.Sprintf(`
+			SELECT we.work_id, e.id, e.name
+			FROM events e
+			JOIN work_events we ON e.id = we.event_id
+			WHERE we.work_id IN (%s)`, inClause)
+		eventRows, err := r.DB.QueryContext(ctx, eventQuery, idArgs...)
+		if err != nil {
+			return nil, fmt.Errorf("failed to query events for work list: %w", err)
+		}
+		eventsByWorkID := make(map[string][]*model.Event)
+		for eventRows.Next() {
+			var workID string
+			event := &model.Event{}
+			if err := eventRows.Scan(&workID, &event.ID, &event.Name); err != nil {
+				eventRows.Close()
+				return nil, fmt.Errorf("failed to scan event for work list: %w", err)
+			}
+			eventsByWorkID[workID] = append(eventsByWorkID[workID], event)
+		}
+		eventRows.Close()
+		if err = eventRows.Err(); err != nil {
+			return nil, fmt.Errorf("error during eventRows iteration: %w", err)
+		}
+
+		profileQuery := fmt.Sprintf(`
+			SELECT wp.work_id, p.id, p.avatar_url, p.nick_name
+			FROM profiles p
+			JOIN work_profiles wp ON p.id = wp.profile_id
+			WHERE wp.work_id IN (%s)`, inClause)
+		profileRows, err := r.DB.QueryContext(ctx, profileQuery, idArgs...)
+		if err != nil {
+			return nil, fmt.Errorf("failed to query profiles for work list: %w", err)
+		}
+		profilesByWorkID := make(map[string][]model.Profile)
+		for profileRows.Next() {
+			var workID string
+			profile := model.Profile{}
+			if err := profileRows.Scan(&workID, &profile.ID, &profile.AvatarURL, &profile.NickName); err != nil {
+				profileRows.Close()
+				return nil, fmt.Errorf("failed to scan profile for work list: %w", err)
+			}
+			profilesByWorkID[workID] = append(profilesByWorkID[workID], profile)
+		}
+		profileRows.Close()
+		if err = profileRows.Err(); err != nil {
+			return nil, fmt.Errorf("error during profileRows iteration: %w", err)
+		}
+
+		skillQuery := fmt.Sprintf(`
+			SELECT ws.work_id, s.id, s.name
+			FROM skills s
+			JOIN work_skills ws ON s.id = ws.skill_id
+			WHERE ws.work_id IN (%s)`, inClause)
+		skillRows, err := r.DB.QueryContext(ctx, skillQuery, idArgs...)
+		if err != nil {
+			return nil, fmt.Errorf("failed to query skills for work list: %w", err)
+		}
+		skillsByWorkID := make(map[string][]model.Skill)
+		for skillRows.Next() {
+			var workID string
+			skill := model.Skill{}
+			if err := skillRows.Scan(&workID, &skill.ID, &skill.Name); err != nil {
+				skillRows.Close()
+				return nil, fmt.Errorf("failed to scan skill for work list: %w", err)
+			}
+			skillsByWorkID[workID] = append(skillsByWorkID[workID], skill)
+		}
+		skillRows.Close()
+		if err = skillRows.Err(); err != nil {
+			return nil, fmt.Errorf("error during skillRows iteration: %w", err)
+		}
+
+		for _, work := range works {
+			if ids, ok := userIDsByWorkID[work.ID]; ok {
+				work.UserIDs = ids
+			}
+			if evts, ok := eventsByWorkID[work.ID]; ok {
+				work.Events = evts
+				// --- ここで EventID を設定 ---
+				if len(work.Events) > 0 {
+					// 最初のイベントのIDを work.EventID に設定
+					// work.Events[0] が nil でないことを保証する必要があるが、
+					// eventsByWorkID に追加する際に nil の event は含めていない前提
+					work.EventID = &work.Events[0].ID
+				}
+			}
+			if profs, ok := profilesByWorkID[work.ID]; ok {
+				work.Profiles = profs
+			}
+			if skls, ok := skillsByWorkID[work.ID]; ok {
+				work.Skills = skls
+			}
+		}
 	}
 
 	hasMore := false
@@ -314,8 +594,7 @@ func (r *queryResolver) WorkList(ctx context.Context, first *int32, after *strin
 		works = works[:limit]
 	}
 
-	// ASC で取ったときは並びを戻す必要あり
-	if !forward {
+	if !forward && len(works) > 0 {
 		for i, j := 0, len(works)-1; i < j; i, j = i+1, j-1 {
 			works[i], works[j] = works[j], works[i]
 		}
@@ -323,31 +602,41 @@ func (r *queryResolver) WorkList(ctx context.Context, first *int32, after *strin
 
 	edges := make([]*model.WorkEdge, len(works))
 	for i, w := range works {
+		cursorStr := model.EncodeCursor(model.Cursor{CreatedAt: w.CreatedAt, ID: w.ID})
+		if err != nil {
+			return nil, fmt.Errorf("failed to encode cursor for work %s: %w", w.ID, err)
+		}
 		edges[i] = &model.WorkEdge{
 			Node:   w,
-			Cursor: model.EncodeCursor(model.Cursor{CreatedAt: w.CreatedAt, ID: w.ID}),
+			Cursor: cursorStr,
 		}
 	}
 
-	var startCursor, endCursor string
+	var startCursorStr, endCursorStr string
 	if len(edges) > 0 {
-		startCursor = edges[0].Cursor
-		endCursor = edges[len(edges)-1].Cursor
+		startCursorStr = edges[0].Cursor
+		endCursorStr = edges[len(edges)-1].Cursor
 	}
 
 	pageInfo := model.PageInfo{
-		StartCursor:     startCursor,
-		EndCursor:       endCursor,
+		StartCursor:     nil, // 初期値はnil
+		EndCursor:       nil, // 初期値はnil
 		HasNextPage:     false,
 		HasPreviousPage: false,
+	}
+	if startCursorStr != "" {
+		pageInfo.StartCursor = &startCursorStr
+	}
+	if endCursorStr != "" {
+		pageInfo.EndCursor = &endCursorStr
 	}
 
 	if forward {
 		pageInfo.HasNextPage = hasMore
-		pageInfo.HasPreviousPage = after != nil && *after != ""
+		pageInfo.HasPreviousPage = (after != nil && *after != "")
 	} else {
 		pageInfo.HasPreviousPage = hasMore
-		pageInfo.HasNextPage = before != nil && *before != ""
+		pageInfo.HasNextPage = (before != nil && *before != "")
 	}
 
 	return &model.WorkConnection{
@@ -358,36 +647,37 @@ func (r *queryResolver) WorkList(ctx context.Context, first *int32, after *strin
 
 // CreatedAt is the resolver for the createdAt field.
 func (r *workResolver) CreatedAt(ctx context.Context, obj *model.Work) (string, error) {
-	return obj.CreatedAt.Format("2006-01-02 15:04:05"), nil
+	return obj.CreatedAt.Format(time.RFC3339), nil
 }
 
 // UpdatedAt is the resolver for the updatedAt field.
 func (r *workResolver) UpdatedAt(ctx context.Context, obj *model.Work) (string, error) {
-	return obj.UpdatedAt.Format("2006-01-02 15:04:05"), nil
+	return obj.UpdatedAt.Format(time.RFC3339), nil
 }
 
 // EventID is the resolver for the eventId field.
 func (r *workResolver) EventID(ctx context.Context, obj *model.Work) (*string, error) {
-	if obj.EventID == nil {
-		return nil, nil
-	}
-	eventID := *obj.EventID
-	return &eventID, nil
-}
-
-// UserID is the resolver for the userId field.
-func (r *workResolver) UserID(ctx context.Context, obj *model.Work) (string, error) {
-	return obj.UserID, nil
+	return obj.EventID, nil
 }
 
 // Event is the resolver for the event field.
 func (r *workResolver) Event(ctx context.Context, obj *model.Work) ([]*model.Event, error) {
+	if obj.Events == nil {
+		return make([]*model.Event, 0), nil
+	}
 	return obj.Events, nil
 }
 
 // Profile is the resolver for the profile field.
 func (r *workResolver) Profile(ctx context.Context, obj *model.Work) ([]*model.Profile, error) {
-	return obj.Profiles, nil
+	if obj.Profiles == nil {
+		return make([]*model.Profile, 0), nil
+	}
+	profiles := make([]*model.Profile, len(obj.Profiles))
+	for i, p := range obj.Profiles {
+		profiles[i] = &p
+	}
+	return profiles, nil
 }
 
 // Work returns graph.WorkResolver implementation.

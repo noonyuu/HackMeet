@@ -1,25 +1,13 @@
 import { useEffect, useState, useCallback } from "react";
-import { gql, useLazyQuery } from "@apollo/client";
-import { User } from "@/models/user";
-
-const GET_PROFILE = gql`
-  query ($id: String!) {
-    profileByUserId(id: $id) {
-      id
-      avatarUrl
-      nickName
-      graduationYear
-      affiliation
-      bio
-    }
-  }
-`;
+import { useLazyQuery } from "@apollo/client";
+import { Profile } from "@/types/user";
+import { GET_PROFILE } from "@/graph/user";
 
 const STORAGE_KEY = "nfc_userId";
 
 export function useAuth() {
   const HOST_URL = import.meta.env.VITE_HOST_URL || "";
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<Profile | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
   const [fetchProfile] = useLazyQuery(GET_PROFILE, {

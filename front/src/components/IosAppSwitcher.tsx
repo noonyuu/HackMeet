@@ -7,7 +7,7 @@ import {
 } from "framer-motion";
 import { ChevronDown, Search, Grid3X3 } from "lucide-react";
 
-import type { CardData } from "@/models/card";
+import type { CardData } from "@/types/card";
 import { Cards } from "./Card";
 
 interface IOSAppSwitcherProps {
@@ -36,7 +36,7 @@ export function IOSAppSwitcher({
   const filteredCards = cards.filter(
     (card) =>
       card.profile.nickName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      card.profile.affiliation
+      card.profile.affiliation!
         .toLowerCase()
         .includes(searchQuery.toLowerCase()),
   );

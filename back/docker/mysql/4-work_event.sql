@@ -5,5 +5,5 @@ CREATE TABLE IF NOT EXISTS work_events (
   created_at DATETIME,
   updated_at DATETIME,
   FOREIGN KEY (work_id) REFERENCES works(id),
-  FOREIGN KEY (event_id) REFERENCES profiles(id)
+  FOREIGN KEY (event_id) REFERENCES events(id)
 ) ENGINE=InnoDB;
