@@ -163,7 +163,7 @@ type ComplexityRoot struct {
 		Skills      func(childComplexity int) int
 		Title       func(childComplexity int) int
 		UpdatedAt   func(childComplexity int) int
-		UserID      func(childComplexity int) int
+		UserIDs     func(childComplexity int) int
 	}
 
 	WorkConnection struct {
@@ -270,7 +270,7 @@ type WorkResolver interface {
 	CreatedAt(ctx context.Context, obj *model.Work) (string, error)
 	UpdatedAt(ctx context.Context, obj *model.Work) (string, error)
 	EventID(ctx context.Context, obj *model.Work) (*string, error)
-	UserID(ctx context.Context, obj *model.Work) (string, error)
+
 	Event(ctx context.Context, obj *model.Work) ([]*model.Event, error)
 	Profile(ctx context.Context, obj *model.Work) ([]*model.Profile, error)
 }
@@ -1043,12 +1043,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Work.UpdatedAt(childComplexity), true
 
-	case "Work.userId":
-		if e.complexity.Work.UserID == nil {
+	case "Work.userIds":
+		if e.complexity.Work.UserIDs == nil {
 			break
 		}
 
-		return e.complexity.Work.UserID(childComplexity), true
+		return e.complexity.Work.UserIDs(childComplexity), true
 
 	case "WorkConnection.edges":
 		if e.complexity.WorkConnection.Edges == nil {
@@ -3179,8 +3179,8 @@ func (ec *executionContext) fieldContext_Mutation_createWork(ctx context.Context
 				return ec.fieldContext_Work_updatedAt(ctx, field)
 			case "eventId":
 				return ec.fieldContext_Work_eventId(ctx, field)
-			case "userId":
-				return ec.fieldContext_Work_userId(ctx, field)
+			case "userIds":
+				return ec.fieldContext_Work_userIds(ctx, field)
 			case "event":
 				return ec.fieldContext_Work_event(ctx, field)
 			case "profile":
@@ -3258,8 +3258,8 @@ func (ec *executionContext) fieldContext_Mutation_createProjectEvent(ctx context
 				return ec.fieldContext_Work_updatedAt(ctx, field)
 			case "eventId":
 				return ec.fieldContext_Work_eventId(ctx, field)
-			case "userId":
-				return ec.fieldContext_Work_userId(ctx, field)
+			case "userIds":
+				return ec.fieldContext_Work_userIds(ctx, field)
 			case "event":
 				return ec.fieldContext_Work_event(ctx, field)
 			case "profile":
@@ -3742,9 +3742,9 @@ func (ec *executionContext) _PageInfo_startCursor(ctx context.Context, field gra
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*string)
 	fc.Result = res
-	return ec.marshalOString2string(ctx, field.Selections, res)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_PageInfo_startCursor(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -3783,9 +3783,9 @@ func (ec *executionContext) _PageInfo_endCursor(ctx context.Context, field graph
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*string)
 	fc.Result = res
-	return ec.marshalOString2string(ctx, field.Selections, res)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_PageInfo_endCursor(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -5153,8 +5153,8 @@ func (ec *executionContext) fieldContext_Query_work(ctx context.Context, field g
 				return ec.fieldContext_Work_updatedAt(ctx, field)
 			case "eventId":
 				return ec.fieldContext_Work_eventId(ctx, field)
-			case "userId":
-				return ec.fieldContext_Work_userId(ctx, field)
+			case "userIds":
+				return ec.fieldContext_Work_userIds(ctx, field)
 			case "event":
 				return ec.fieldContext_Work_event(ctx, field)
 			case "profile":
@@ -5232,8 +5232,8 @@ func (ec *executionContext) fieldContext_Query_worksByTitle(ctx context.Context,
 				return ec.fieldContext_Work_updatedAt(ctx, field)
 			case "eventId":
 				return ec.fieldContext_Work_eventId(ctx, field)
-			case "userId":
-				return ec.fieldContext_Work_userId(ctx, field)
+			case "userIds":
+				return ec.fieldContext_Work_userIds(ctx, field)
 			case "event":
 				return ec.fieldContext_Work_event(ctx, field)
 			case "profile":
@@ -5727,8 +5727,8 @@ func (ec *executionContext) fieldContext_Query_worksByProfileId(ctx context.Cont
 				return ec.fieldContext_Work_updatedAt(ctx, field)
 			case "eventId":
 				return ec.fieldContext_Work_eventId(ctx, field)
-			case "userId":
-				return ec.fieldContext_Work_userId(ctx, field)
+			case "userIds":
+				return ec.fieldContext_Work_userIds(ctx, field)
 			case "event":
 				return ec.fieldContext_Work_event(ctx, field)
 			case "profile":
@@ -6639,7 +6639,7 @@ func (ec *executionContext) _Work_createdAt(ctx context.Context, field graphql.C
 	}
 	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNDateTime2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Work_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -6649,7 +6649,7 @@ func (ec *executionContext) fieldContext_Work_createdAt(_ context.Context, field
 		IsMethod:   true,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type DateTime does not have child fields")
 		},
 	}
 	return fc, nil
@@ -6683,7 +6683,7 @@ func (ec *executionContext) _Work_updatedAt(ctx context.Context, field graphql.C
 	}
 	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNDateTime2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Work_updatedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -6693,7 +6693,7 @@ func (ec *executionContext) fieldContext_Work_updatedAt(_ context.Context, field
 		IsMethod:   true,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type DateTime does not have child fields")
 		},
 	}
 	return fc, nil
@@ -6740,8 +6740,8 @@ func (ec *executionContext) fieldContext_Work_eventId(_ context.Context, field g
 	return fc, nil
 }
 
-func (ec *executionContext) _Work_userId(ctx context.Context, field graphql.CollectedField, obj *model.Work) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Work_userId(ctx, field)
+func (ec *executionContext) _Work_userIds(ctx context.Context, field graphql.CollectedField, obj *model.Work) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Work_userIds(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -6754,7 +6754,7 @@ func (ec *executionContext) _Work_userId(ctx context.Context, field graphql.Coll
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Work().UserID(rctx, obj)
+		return obj.UserIDs, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -6766,17 +6766,17 @@ func (ec *executionContext) _Work_userId(ctx context.Context, field graphql.Coll
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.([]string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Work_userId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Work_userIds(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Work",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
 		},
@@ -6805,14 +6805,11 @@ func (ec *executionContext) _Work_event(ctx context.Context, field graphql.Colle
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
 	res := resTmp.([]*model.Event)
 	fc.Result = res
-	return ec.marshalNEvent2ᚕᚖgithubᚗcomᚋnoonyuuᚋnfcᚋbackᚋgraphᚋmodelᚐEvent(ctx, field.Selections, res)
+	return ec.marshalOEvent2ᚕᚖgithubᚗcomᚋnoonyuuᚋnfcᚋbackᚋgraphᚋmodelᚐEvent(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Work_event(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -6938,9 +6935,9 @@ func (ec *executionContext) _Work_skills(ctx context.Context, field graphql.Coll
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*model.Skill)
+	res := resTmp.([]model.Skill)
 	fc.Result = res
-	return ec.marshalNSkill2ᚕᚖgithubᚗcomᚋnoonyuuᚋnfcᚋbackᚋgraphᚋmodelᚐSkillᚄ(ctx, field.Selections, res)
+	return ec.marshalNSkill2ᚕgithubᚗcomᚋnoonyuuᚋnfcᚋbackᚋgraphᚋmodelᚐSkillᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Work_skills(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -7125,8 +7122,8 @@ func (ec *executionContext) fieldContext_WorkEdge_node(_ context.Context, field 
 				return ec.fieldContext_Work_updatedAt(ctx, field)
 			case "eventId":
 				return ec.fieldContext_Work_eventId(ctx, field)
-			case "userId":
-				return ec.fieldContext_Work_userId(ctx, field)
+			case "userIds":
+				return ec.fieldContext_Work_userIds(ctx, field)
 			case "event":
 				return ec.fieldContext_Work_event(ctx, field)
 			case "profile":
@@ -7457,8 +7454,8 @@ func (ec *executionContext) fieldContext_WorkEvent_works(_ context.Context, fiel
 				return ec.fieldContext_Work_updatedAt(ctx, field)
 			case "eventId":
 				return ec.fieldContext_Work_eventId(ctx, field)
-			case "userId":
-				return ec.fieldContext_Work_userId(ctx, field)
+			case "userIds":
+				return ec.fieldContext_Work_userIds(ctx, field)
 			case "event":
 				return ec.fieldContext_Work_event(ctx, field)
 			case "profile":
@@ -7811,8 +7808,8 @@ func (ec *executionContext) fieldContext_WorkProfile_work(_ context.Context, fie
 				return ec.fieldContext_Work_updatedAt(ctx, field)
 			case "eventId":
 				return ec.fieldContext_Work_eventId(ctx, field)
-			case "userId":
-				return ec.fieldContext_Work_userId(ctx, field)
+			case "userIds":
+				return ec.fieldContext_Work_userIds(ctx, field)
 			case "event":
 				return ec.fieldContext_Work_event(ctx, field)
 			case "profile":
@@ -10066,7 +10063,7 @@ func (ec *executionContext) unmarshalInputNewCreateProjectEvent(ctx context.Cont
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"title", "description", "imageUrl", "workId", "eventId", "userId", "skills"}
+	fieldsInOrder := [...]string{"title", "description", "imageUrl", "workId", "eventId", "userIds", "skills"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -10108,13 +10105,13 @@ func (ec *executionContext) unmarshalInputNewCreateProjectEvent(ctx context.Cont
 				return it, err
 			}
 			it.EventID = data
-		case "userId":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userId"))
-			data, err := ec.unmarshalNString2string(ctx, v)
+		case "userIds":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userIds"))
+			data, err := ec.unmarshalNString2ᚕstringᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.UserID = data
+			it.UserIds = data
 		case "skills":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("skills"))
 			data, err := ec.unmarshalNString2ᚕstringᚄ(ctx, v)
@@ -10375,7 +10372,7 @@ func (ec *executionContext) unmarshalInputNewWork(ctx context.Context, obj any) 
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"title", "description", "imageUrl", "user_id", "skills"}
+	fieldsInOrder := [...]string{"title", "description", "imageUrl", "userIds", "skills"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -10403,13 +10400,13 @@ func (ec *executionContext) unmarshalInputNewWork(ctx context.Context, obj any) 
 				return it, err
 			}
 			it.ImageURL = data
-		case "user_id":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("user_id"))
+		case "userIds":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userIds"))
 			data, err := ec.unmarshalNString2ᚕstringᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.UserID = data
+			it.UserIds = data
 		case "skills":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("skills"))
 			data, err := ec.unmarshalNString2ᚕstringᚄ(ctx, v)
@@ -12044,55 +12041,21 @@ func (ec *executionContext) _Work(ctx context.Context, sel ast.SelectionSet, obj
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-		case "userId":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Work_userId(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
-				return res
+		case "userIds":
+			out.Values[i] = ec._Work_userIds(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
 			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "event":
 			field := field
 
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
 				defer func() {
 					if r := recover(); r != nil {
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
 				res = ec._Work_event(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
 				return res
 			}
 
@@ -13063,46 +13026,23 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 	return res
 }
 
-func (ec *executionContext) marshalNEvent2githubᚗcomᚋnoonyuuᚋnfcᚋbackᚋgraphᚋmodelᚐEvent(ctx context.Context, sel ast.SelectionSet, v model.Event) graphql.Marshaler {
-	return ec._Event(ctx, sel, &v)
+func (ec *executionContext) unmarshalNDateTime2string(ctx context.Context, v any) (string, error) {
+	res, err := graphql.UnmarshalString(v)
+	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNEvent2ᚕᚖgithubᚗcomᚋnoonyuuᚋnfcᚋbackᚋgraphᚋmodelᚐEvent(ctx context.Context, sel ast.SelectionSet, v []*model.Event) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
+func (ec *executionContext) marshalNDateTime2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
+	res := graphql.MarshalString(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
 	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalOEvent2ᚖgithubᚗcomᚋnoonyuuᚋnfcᚋbackᚋgraphᚋmodelᚐEvent(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
+	return res
+}
 
-	}
-	wg.Wait()
-
-	return ret
+func (ec *executionContext) marshalNEvent2githubᚗcomᚋnoonyuuᚋnfcᚋbackᚋgraphᚋmodelᚐEvent(ctx context.Context, sel ast.SelectionSet, v model.Event) graphql.Marshaler {
+	return ec._Event(ctx, sel, &v)
 }
 
 func (ec *executionContext) marshalNEvent2ᚖgithubᚗcomᚋnoonyuuᚋnfcᚋbackᚋgraphᚋmodelᚐEvent(ctx context.Context, sel ast.SelectionSet, v *model.Event) graphql.Marshaler {
@@ -13302,6 +13242,50 @@ func (ec *executionContext) marshalNProfileSkill2ᚖgithubᚗcomᚋnoonyuuᚋnfc
 
 func (ec *executionContext) marshalNSkill2githubᚗcomᚋnoonyuuᚋnfcᚋbackᚋgraphᚋmodelᚐSkill(ctx context.Context, sel ast.SelectionSet, v model.Skill) graphql.Marshaler {
 	return ec._Skill(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNSkill2ᚕgithubᚗcomᚋnoonyuuᚋnfcᚋbackᚋgraphᚋmodelᚐSkillᚄ(ctx context.Context, sel ast.SelectionSet, v []model.Skill) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNSkill2githubᚗcomᚋnoonyuuᚋnfcᚋbackᚋgraphᚋmodelᚐSkill(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) marshalNSkill2ᚕᚖgithubᚗcomᚋnoonyuuᚋnfcᚋbackᚋgraphᚋmodelᚐSkillᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Skill) graphql.Marshaler {
@@ -14036,6 +14020,47 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 	}
 	res := graphql.MarshalBoolean(*v)
 	return res
+}
+
+func (ec *executionContext) marshalOEvent2ᚕᚖgithubᚗcomᚋnoonyuuᚋnfcᚋbackᚋgraphᚋmodelᚐEvent(ctx context.Context, sel ast.SelectionSet, v []*model.Event) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOEvent2ᚖgithubᚗcomᚋnoonyuuᚋnfcᚋbackᚋgraphᚋmodelᚐEvent(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
 }
 
 func (ec *executionContext) marshalOEvent2ᚖgithubᚗcomᚋnoonyuuᚋnfcᚋbackᚋgraphᚋmodelᚐEvent(ctx context.Context, sel ast.SelectionSet, v *model.Event) graphql.Marshaler {

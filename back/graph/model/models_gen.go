@@ -11,7 +11,7 @@ type NewCreateProjectEvent struct {
 	ImageURL    string   `json:"imageUrl"`
 	WorkID      *string  `json:"workId,omitempty"`
 	EventID     *string  `json:"eventId,omitempty"`
-	UserID      string   `json:"userId"`
+	UserIds     []string `json:"userIds"`
 	Skills      []string `json:"skills"`
 }
 
@@ -54,7 +54,7 @@ type NewWork struct {
 	Title       string   `json:"title"`
 	Description *string  `json:"description,omitempty"`
 	ImageURL    string   `json:"imageUrl"`
-	UserID      []string `json:"user_id"`
+	UserIds     []string `json:"userIds"`
 	Skills      []string `json:"skills"`
 }
 
