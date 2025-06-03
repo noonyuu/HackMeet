@@ -7,6 +7,7 @@ package resolver
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"time"
 
 	"github.com/noonyuu/nfc/back/graph"
@@ -15,37 +16,87 @@ import (
 
 // CreateProfile is the resolver for the createProfile field.
 func (r *mutationResolver) CreateProfile(ctx context.Context, input model.NewProfile) (*model.Profile, error) {
-	// 現在時刻を取得
 	now := time.Now()
-	// GraduationYearがnilでない場合はsql.NullInt32を使って値を設定
+
+	var avatarURL sql.NullString
+	if input.AvatarURL != nil {
+		avatarURL = sql.NullString{String: *input.AvatarURL, Valid: true}
+	} else {
+		avatarURL = sql.NullString{Valid: false}
+	}
+
 	var graduationYear sql.NullInt32
 	if input.GraduationYear != nil {
-		graduationYear = sql.NullInt32{
-			Int32: *input.GraduationYear,
-			Valid: true,
-		}
+		graduationYear = sql.NullInt32{Int32: *input.GraduationYear, Valid: true}
 	} else {
-		graduationYear = sql.NullInt32{Valid: false} // nilの場合は無効とする
+		graduationYear = sql.NullInt32{Valid: false}
 	}
-	profile := &model.Profile{
-		ID:             input.UserID,
-		AvatarURL:      *input.AvatarURL,
-		NickName:       input.NickName,
-		GraduationYear: &graduationYear.Int32,
-		Affiliation:    *input.Affiliation,
-		Bio:            *input.Bio,
-		CreatedAt:      now,
-		UpdatedAt:      now,
+
+	var affiliation sql.NullString
+	if input.Affiliation != nil {
+		affiliation = sql.NullString{String: *input.Affiliation, Valid: true}
+	} else {
+		affiliation = sql.NullString{Valid: false}
+	}
+
+	var bio sql.NullString
+	if input.Bio != nil {
+		bio = sql.NullString{String: *input.Bio, Valid: true}
+	} else {
+		bio = sql.NullString{Valid: false}
+	}
+
+	profileToInsert := &model.Profile{
+		ID:        input.UserID,
+		CreatedAt: now,
+		UpdatedAt: now,
+	}
+
+	if avatarURL.Valid {
+		profileToInsert.AvatarURL = avatarURL.String
+	} else {
+		profileToInsert.AvatarURL = ""
+	}
+
+	profileToInsert.NickName = input.NickName
+
+	if graduationYear.Valid {
+		profileToInsert.GraduationYear = &graduationYear.Int32
+	} else {
+		profileToInsert.GraduationYear = nil
+	}
+
+	if affiliation.Valid {
+		profileToInsert.Affiliation = &affiliation.String
+	} else {
+		profileToInsert.Affiliation = nil
+	}
+
+	if bio.Valid {
+		profileToInsert.Bio = &bio.String
+	} else {
+		profileToInsert.Bio = nil
 	}
 
 	query := `
-	INSERT INTO profiles (id, avatar_url, nick_name, graduation_year, affiliation, bio, created_at, updated_at)
-	VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  INSERT INTO profiles (id, avatar_url, nick_name, graduation_year, affiliation, bio, created_at, updated_at)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 `
-	if _, err := r.DB.Exec(query, profile.ID, profile.AvatarURL, profile.NickName, profile.GraduationYear, profile.Affiliation, profile.Bio, now, now); err != nil {
-		return nil, err
+	_, err := r.DB.ExecContext(ctx, query,
+		profileToInsert.ID,
+		avatarURL,
+		profileToInsert.NickName,
+		graduationYear,
+		affiliation,
+		bio,
+		profileToInsert.CreatedAt,
+		profileToInsert.UpdatedAt,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to insert profile: %w", err)
 	}
-	return profile, nil
+
+	return profileToInsert, nil
 }
 
 // CreatedAt is the resolver for the createdAt field.
@@ -61,16 +112,65 @@ func (r *profileResolver) UpdatedAt(ctx context.Context, obj *model.Profile) (st
 // Profile is the resolver for the profile field.
 func (r *queryResolver) Profile(ctx context.Context, id string) (*model.Profile, error) {
 	query := `
-	SELECT id, avatar_url, nick_name, graduation_year, affiliation, bio, created_at, updated_at
-	FROM profiles
-	WHERE id = ?
+  SELECT id, avatar_url, nick_name, graduation_year, affiliation, bio, created_at, updated_at
+  FROM profiles
+  WHERE id = ?
 `
-	row := r.DB.QueryRow(query, id)
-	var profile model.Profile
+	row := r.DB.QueryRowContext(ctx, query, id)
 
-	if err := row.Scan(&profile.ID, &profile.AvatarURL, &profile.NickName, &profile.GraduationYear, &profile.Affiliation, &profile.Bio, &profile.CreatedAt, &profile.UpdatedAt); err != nil {
-		return nil, err
+	var profile model.Profile
+	var avatarURL sql.NullString
+	var nickName sql.NullString
+	var graduationYear sql.NullInt32
+	var affiliation sql.NullString
+	var bio sql.NullString
+
+	if err := row.Scan(
+		&profile.ID,
+		&avatarURL,
+		&nickName,
+		&graduationYear,
+		&affiliation,
+		&bio,
+		&profile.CreatedAt,
+		&profile.UpdatedAt,
+	); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("failed to scan profile by ID %s: %w", id, err)
 	}
+
+	if avatarURL.Valid {
+		profile.AvatarURL = avatarURL.String
+	} else {
+		profile.AvatarURL = ""
+	}
+
+	if nickName.Valid {
+		profile.NickName = nickName.String
+	} else {
+		profile.NickName = ""
+	}
+
+	if graduationYear.Valid {
+		profile.GraduationYear = &graduationYear.Int32
+	} else {
+		profile.GraduationYear = nil
+	}
+
+	if affiliation.Valid {
+		profile.Affiliation = &affiliation.String
+	} else {
+		profile.Affiliation = nil
+	}
+
+	if bio.Valid {
+		profile.Bio = &bio.String
+	} else {
+		profile.Bio = nil
+	}
+
 	return &profile, nil
 }
 
@@ -82,10 +182,58 @@ func (r *queryResolver) ProfileByNickName(ctx context.Context, nickName string) 
 	WHERE nick_name = ?
 `
 	row := r.DB.QueryRow(query, nickName)
-	var profile model.Profile
 
-	if err := row.Scan(&profile.ID, &profile.AvatarURL, &profile.NickName, &profile.GraduationYear, &profile.Affiliation, &profile.Bio, &profile.CreatedAt, &profile.UpdatedAt); err != nil {
-		return nil, err
+	var profile model.Profile
+	var avatarURL sql.NullString
+	var nickNames sql.NullString
+	var graduationYear sql.NullInt32
+	var affiliation sql.NullString
+	var bio sql.NullString
+
+	if err := row.Scan(
+		&profile.ID,
+		&avatarURL,
+		&nickNames,
+		&graduationYear,
+		&affiliation,
+		&bio,
+		&profile.CreatedAt,
+		&profile.UpdatedAt,
+	); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("failed to scan profile by user name %s: %w", nickName, err)
+	}
+
+	if avatarURL.Valid {
+		profile.AvatarURL = avatarURL.String
+	} else {
+		profile.AvatarURL = ""
+	}
+
+	if nickNames.Valid {
+		profile.NickName = nickNames.String
+	} else {
+		profile.NickName = ""
+	}
+
+	if graduationYear.Valid {
+		profile.GraduationYear = &graduationYear.Int32
+	} else {
+		profile.GraduationYear = nil
+	}
+
+	if affiliation.Valid {
+		profile.Affiliation = &affiliation.String
+	} else {
+		profile.Affiliation = nil
+	}
+
+	if bio.Valid {
+		profile.Bio = &bio.String
+	} else {
+		profile.Bio = nil
 	}
 	return &profile, nil
 }
@@ -93,35 +241,64 @@ func (r *queryResolver) ProfileByNickName(ctx context.Context, nickName string) 
 // ProfileByUserID is the resolver for the profileByUserId field.
 func (r *queryResolver) ProfileByUserID(ctx context.Context, id string) (*model.Profile, error) {
 	query := `
-	SELECT id, avatar_url, nick_name, graduation_year, affiliation, bio, created_at, updated_at
-	FROM profiles
-	WHERE id = ?
-	`
+  SELECT id, avatar_url, nick_name, graduation_year, affiliation, bio, created_at, updated_at
+  FROM profiles
+  WHERE id = ?
+  `
 
-	row := r.DB.QueryRow(query, id)
+	row := r.DB.QueryRowContext(ctx, query, id)
 
 	var profile model.Profile
+	var avatarURL sql.NullString
+	var nickName sql.NullString
 	var graduationYear sql.NullInt32
+	var affiliation sql.NullString
+	var bio sql.NullString
 
 	if err := row.Scan(
 		&profile.ID,
-		&profile.AvatarURL,
-		&profile.NickName,
+		&avatarURL,
+		&nickName,
 		&graduationYear,
-		&profile.Affiliation,
-		&profile.Bio,
+		&affiliation,
+		&bio,
 		&profile.CreatedAt,
 		&profile.UpdatedAt,
 	); err != nil {
-		return nil, err
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("failed to scan profile data for ID %s: %w", id, err)
 	}
 
-	// sql.NullInt32 → *int32 変換
+	if avatarURL.Valid {
+		profile.AvatarURL = avatarURL.String
+	} else {
+		profile.AvatarURL = ""
+	}
+
+	if nickName.Valid {
+		profile.NickName = nickName.String
+	} else {
+		profile.NickName = ""
+	}
+
 	if graduationYear.Valid {
-		// graduationYear.Int32 は int32 型なので、それを *int32 にする
 		profile.GraduationYear = &graduationYear.Int32
 	} else {
-		profile.GraduationYear = nil // NULLの場合は nil をセット
+		profile.GraduationYear = nil
+	}
+
+	if affiliation.Valid {
+		profile.Affiliation = &affiliation.String
+	} else {
+		profile.Affiliation = nil
+	}
+
+	if bio.Valid {
+		profile.Bio = &bio.String
+	} else {
+		profile.Bio = nil
 	}
 
 	return &profile, nil

@@ -98,7 +98,8 @@ func (r *mutationResolver) CreateWork(ctx context.Context, input model.NewWork) 
 }
 
 // CreateProjectEvent is the resolver for the createProjectEvent field.
-func (r *mutationResolver) CreateProjectEvent(ctx context.Context, input model.NewCreateProjectEvent) (respWork *model.Work, err error) { // 名前付きリターンパラメータ
+func (r *mutationResolver) CreateProjectEvent(ctx context.Context, input model.NewCreateProjectEvent) (respWork *model.Work, err error) {
+	// 名前付きリターンパラメータ
 	now := time.Now()
 	var workID string
 

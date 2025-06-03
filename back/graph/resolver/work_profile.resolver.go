@@ -67,12 +67,14 @@ func (r *queryResolver) WorkProfile(ctx context.Context, id int32) (*model.WorkP
 	profile := &model.Profile{}
 
 	var graduationYear sql.NullInt32
+	var affiliation sql.NullString
+	var bio sql.NullString
 
 	err := row.Scan(
 		&wp.ID, &wp.WorkID, &wp.ProfileID,
 		&work.ID, &work.Title, &work.Description, &work.ImageURL,
 		&profile.ID, &profile.AvatarURL, &profile.NickName, &graduationYear,
-		&profile.Affiliation, &profile.Bio,
+		&affiliation, &bio,
 	)
 	if err != nil {
 		return nil, err
@@ -82,6 +84,18 @@ func (r *queryResolver) WorkProfile(ctx context.Context, id int32) (*model.WorkP
 		profile.GraduationYear = &graduationYear.Int32
 	} else {
 		profile.GraduationYear = nil
+	}
+
+	if affiliation.Valid {
+		profile.Affiliation = &affiliation.String
+	} else {
+		profile.Affiliation = nil
+	}
+
+	if bio.Valid {
+		profile.Bio = &bio.String
+	} else {
+		profile.Bio = nil
 	}
 
 	// Work に紐づくスキルを取得してセット
@@ -105,7 +119,7 @@ func (r *queryResolver) WorkProfile(ctx context.Context, id int32) (*model.WorkP
 		}
 		skills = append(skills, skill)
 	}
-	
+
 	var skillVals []model.Skill
 	for _, s := range skills {
 		if s != nil {
