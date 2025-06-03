@@ -84,6 +84,8 @@ function Index() {
       last: null,
       before: null,
     });
+    // 情報更新後にスクロールをトップに戻す
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handlePreviousPage = () => {
@@ -96,6 +98,8 @@ function Index() {
       last: 12,
       before: startCursor,
     });
+    // 情報更新後にスクロールをトップに戻す
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleWorkClick = (work: Work) => {
