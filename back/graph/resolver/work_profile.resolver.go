@@ -105,7 +105,7 @@ func (r *queryResolver) WorkProfile(ctx context.Context, id int32) (*model.WorkP
 			INNER JOIN work_skills ws ON s.id = ws.skill_id
 			WHERE ws.work_id = ?
 		`
-	skillRows, err := r.DB.Query(skillsQuery, id)
+	skillRows, err := r.DB.Query(skillsQuery, work.ID)
 	if err != nil {
 		return nil, err
 	}
