@@ -1,4 +1,4 @@
-import { Link, useMatch } from "@tanstack/react-router";
+import { Link, useMatch, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import clsx from "clsx";
 
@@ -7,6 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "./ui/button";
 
 export const Header = () => {
+  const navigate = useNavigate();
   // ログイン or 新規登録時かを判別
   const isRegister = useMatch({ from: "/register", shouldThrow: false });
   const isLogin = useMatch({ from: "/login", shouldThrow: false });
@@ -33,11 +34,18 @@ export const Header = () => {
     isNfc;
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
 
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, logout } = useAuth();
 
   const handleMenuClick = () => {
     console.log("handleMenuClick");
     setIsMenuOpen((prev) => !prev);
+  };
+
+  const handleLogout = () => {
+    console.log("logout");
+    setIsMenuOpen(false);
+    logout();
+    navigate({ to: "/" });
   };
 
   return (
@@ -66,14 +74,17 @@ export const Header = () => {
                         className="size-8 rounded-full"
                       />
                       {isMenuOpen && (
-                        <div className="absolute top-16 right-8 h-96 w-52 rounded-md border border-gray-200 bg-white p-3 z-100">
+                        <div className="absolute top-16 right-8 z-100 h-96 w-52 rounded-md border border-gray-200 bg-white p-3">
                           <div className="flex size-full flex-col justify-start">
                             <div className="flex grow flex-col">
                               <div className="text-center">
                                 <Link to="/profile/edit">プロフィール確認</Link>
                               </div>
                             </div>
-                            <div className="grow-0 text-center">
+                            <div
+                              className="grow-0 text-center"
+                              onClick={handleLogout}
+                            >
                               <a>ログアウト</a>
                             </div>
                           </div>

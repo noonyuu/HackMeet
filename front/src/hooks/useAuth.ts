@@ -66,10 +66,16 @@ export function useAuth() {
   );
 
   // ログアウト時はlocalStorageをクリアしてuserをリセット
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
+    const res = await fetch(`${HOST_URL}api/v1/auth/logout`, {
+      credentials: "include", // Cookieを送る
+    });
+    if (!res.ok) {
+      console.error("Logout failed:", res.status);
+    }
     localStorage.removeItem(STORAGE_KEY);
     setUser(null);
-  }, []);
+  }, [HOST_URL]);
 
   const isAuthenticated = user !== null;
 
