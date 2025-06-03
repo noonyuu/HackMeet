@@ -16,18 +16,22 @@ import (
 
 // CreateProfile is the resolver for the createProfile field.
 func (r *mutationResolver) CreateProfile(ctx context.Context, input model.NewProfile) (*model.Profile, error) {
-	// 現在時刻を取得
 	now := time.Now()
-	// GraduationYearがnilでない場合はsql.NullInt32を使って値を設定
+
+	var avatarURL sql.NullString
+	if input.AvatarURL != nil {
+		avatarURL = sql.NullString{String: *input.AvatarURL, Valid: true}
+	} else {
+		avatarURL = sql.NullString{Valid: false}
+	}
+
 	var graduationYear sql.NullInt32
 	if input.GraduationYear != nil {
-		graduationYear = sql.NullInt32{
-			Int32: *input.GraduationYear,
-			Valid: true,
-		}
+		graduationYear = sql.NullInt32{Int32: *input.GraduationYear, Valid: true}
 	} else {
-		graduationYear = sql.NullInt32{Valid: false} // nilの場合は無効とする
+		graduationYear = sql.NullInt32{Valid: false}
 	}
+  
 	profile := &model.Profile{
 		ID:             input.UserID,
 		AvatarURL:      *input.AvatarURL,
@@ -37,16 +41,72 @@ func (r *mutationResolver) CreateProfile(ctx context.Context, input model.NewPro
 		Bio:            input.Bio,
 		CreatedAt:      now,
 		UpdatedAt:      now,
+
+	var affiliation sql.NullString
+	if input.Affiliation != nil {
+		affiliation = sql.NullString{String: *input.Affiliation, Valid: true}
+	} else {
+		affiliation = sql.NullString{Valid: false}
+	}
+
+	var bio sql.NullString
+	if input.Bio != nil {
+		bio = sql.NullString{String: *input.Bio, Valid: true}
+	} else {
+		bio = sql.NullString{Valid: false}
+	}
+
+	profileToInsert := &model.Profile{
+		ID:        input.UserID,
+		CreatedAt: now,
+		UpdatedAt: now,
+	}
+
+	if avatarURL.Valid {
+		profileToInsert.AvatarURL = avatarURL.String
+	} else {
+		profileToInsert.AvatarURL = ""
+	}
+
+	profileToInsert.NickName = input.NickName
+
+	if graduationYear.Valid {
+		profileToInsert.GraduationYear = &graduationYear.Int32
+	} else {
+		profileToInsert.GraduationYear = nil
+	}
+
+	if affiliation.Valid {
+		profileToInsert.Affiliation = &affiliation.String
+	} else {
+		profileToInsert.Affiliation = nil
+	}
+
+	if bio.Valid {
+		profileToInsert.Bio = &bio.String
+	} else {
+		profileToInsert.Bio = nil
 	}
 
 	query := `
-	INSERT INTO profiles (id, avatar_url, nick_name, graduation_year, affiliation, bio, created_at, updated_at)
-	VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  INSERT INTO profiles (id, avatar_url, nick_name, graduation_year, affiliation, bio, created_at, updated_at)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 `
-	if _, err := r.DB.Exec(query, profile.ID, profile.AvatarURL, profile.NickName, profile.GraduationYear, profile.Affiliation, profile.Bio, now, now); err != nil {
-		return nil, err
+	_, err := r.DB.ExecContext(ctx, query,
+		profileToInsert.ID,
+		avatarURL,
+		profileToInsert.NickName,
+		graduationYear,
+		affiliation,
+		bio,
+		profileToInsert.CreatedAt,
+		profileToInsert.UpdatedAt,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to insert profile: %w", err)
 	}
-	return profile, nil
+
+	return profileToInsert, nil
 }
 
 // UpdateProfile is the resolver for the updateProfile field.
@@ -138,16 +198,65 @@ func (r *profileResolver) UpdatedAt(ctx context.Context, obj *model.Profile) (st
 // Profile is the resolver for the profile field.
 func (r *queryResolver) Profile(ctx context.Context, id string) (*model.Profile, error) {
 	query := `
-	SELECT id, avatar_url, nick_name, graduation_year, affiliation, bio, created_at, updated_at
-	FROM profiles
-	WHERE id = ?
+  SELECT id, avatar_url, nick_name, graduation_year, affiliation, bio, created_at, updated_at
+  FROM profiles
+  WHERE id = ?
 `
-	row := r.DB.QueryRow(query, id)
-	var profile model.Profile
+	row := r.DB.QueryRowContext(ctx, query, id)
 
-	if err := row.Scan(&profile.ID, &profile.AvatarURL, &profile.NickName, &profile.GraduationYear, &profile.Affiliation, &profile.Bio, &profile.CreatedAt, &profile.UpdatedAt); err != nil {
-		return nil, err
+	var profile model.Profile
+	var avatarURL sql.NullString
+	var nickName sql.NullString
+	var graduationYear sql.NullInt32
+	var affiliation sql.NullString
+	var bio sql.NullString
+
+	if err := row.Scan(
+		&profile.ID,
+		&avatarURL,
+		&nickName,
+		&graduationYear,
+		&affiliation,
+		&bio,
+		&profile.CreatedAt,
+		&profile.UpdatedAt,
+	); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("failed to scan profile by ID %s: %w", id, err)
 	}
+
+	if avatarURL.Valid {
+		profile.AvatarURL = avatarURL.String
+	} else {
+		profile.AvatarURL = ""
+	}
+
+	if nickName.Valid {
+		profile.NickName = nickName.String
+	} else {
+		profile.NickName = ""
+	}
+
+	if graduationYear.Valid {
+		profile.GraduationYear = &graduationYear.Int32
+	} else {
+		profile.GraduationYear = nil
+	}
+
+	if affiliation.Valid {
+		profile.Affiliation = &affiliation.String
+	} else {
+		profile.Affiliation = nil
+	}
+
+	if bio.Valid {
+		profile.Bio = &bio.String
+	} else {
+		profile.Bio = nil
+	}
+
 	return &profile, nil
 }
 
@@ -159,10 +268,58 @@ func (r *queryResolver) ProfileByNickName(ctx context.Context, nickName string) 
 	WHERE nick_name = ?
 `
 	row := r.DB.QueryRow(query, nickName)
-	var profile model.Profile
 
-	if err := row.Scan(&profile.ID, &profile.AvatarURL, &profile.NickName, &profile.GraduationYear, &profile.Affiliation, &profile.Bio, &profile.CreatedAt, &profile.UpdatedAt); err != nil {
-		return nil, err
+	var profile model.Profile
+	var avatarURL sql.NullString
+	var nickNames sql.NullString
+	var graduationYear sql.NullInt32
+	var affiliation sql.NullString
+	var bio sql.NullString
+
+	if err := row.Scan(
+		&profile.ID,
+		&avatarURL,
+		&nickNames,
+		&graduationYear,
+		&affiliation,
+		&bio,
+		&profile.CreatedAt,
+		&profile.UpdatedAt,
+	); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("failed to scan profile by user name %s: %w", nickName, err)
+	}
+
+	if avatarURL.Valid {
+		profile.AvatarURL = avatarURL.String
+	} else {
+		profile.AvatarURL = ""
+	}
+
+	if nickNames.Valid {
+		profile.NickName = nickNames.String
+	} else {
+		profile.NickName = ""
+	}
+
+	if graduationYear.Valid {
+		profile.GraduationYear = &graduationYear.Int32
+	} else {
+		profile.GraduationYear = nil
+	}
+
+	if affiliation.Valid {
+		profile.Affiliation = &affiliation.String
+	} else {
+		profile.Affiliation = nil
+	}
+
+	if bio.Valid {
+		profile.Bio = &bio.String
+	} else {
+		profile.Bio = nil
 	}
 	return &profile, nil
 }
@@ -175,10 +332,9 @@ func (r *queryResolver) ProfileByUserID(ctx context.Context, id string) (*model.
   WHERE id = ?
   `
 
-	row := r.DB.QueryRowContext(ctx, query, id) // Contextを使用する QueryRowContext を推奨
+	row := r.DB.QueryRowContext(ctx, query, id)
 
 	var profile model.Profile
-	// NULLになりうる全てのフィールドをスキャンするための一時変数を定義
 	var avatarURL sql.NullString
 	var nickName sql.NullString
 	var graduationYear sql.NullInt32
@@ -187,8 +343,8 @@ func (r *queryResolver) ProfileByUserID(ctx context.Context, id string) (*model.
 
 	if err := row.Scan(
 		&profile.ID,
-		&avatarURL, // sql.NullString avatarURL にスキャン
-		&nickName,  // sql.NullString nickName にスキャン
+		&avatarURL,
+		&nickName,
 		&graduationYear,
 		&affiliation,
 		&bio,
@@ -196,52 +352,35 @@ func (r *queryResolver) ProfileByUserID(ctx context.Context, id string) (*model.
 		&profile.UpdatedAt,
 	); err != nil {
 		if err == sql.ErrNoRows {
-			// データが見つからなかった場合は、GraphQLの仕様に合わせて nil を返すか、エラーを返す
-			// ここでは nil, nil としているが、エラーを返した方が良い場合もある
-			return nil, nil // または fmt.Errorf("profile with ID %s not found", id)
+			return nil, nil
 		}
-		// その他のScanエラー
 		return nil, fmt.Errorf("failed to scan profile data for ID %s: %w", id, err)
 	}
 
-	// --- スキャンした値を model.Profile に設定 ---
-
-	// AvatarURL (model.Profile.AvatarURL は string型)
 	if avatarURL.Valid {
 		profile.AvatarURL = avatarURL.String
 	} else {
-		profile.AvatarURL = "" // DBがNULLの場合、空文字列を設定 (GraphQLスキーマは null許容の String)
+		profile.AvatarURL = ""
 	}
 
-	// NickName (model.Profile.NickName は string型, GraphQLスキーマは String!)
 	if nickName.Valid {
 		profile.NickName = nickName.String
 	} else {
-		// GraphQLスキーマでは NickName は String! (非null許容) です。
-		// DBからNULLが返るのはデータ不整合の可能性があります。
-		// アプリケーションの仕様に基づき、エラーとするか、デフォルト値を設定するかなどを検討してください。
-		// ここでは暫定的に空文字列を設定しますが、ログ出力やエラー通知が推奨されます。
-		// log.Printf("Warning: NickName for profile ID %s is NULL in DB, but schema requires non-null. Setting to empty string.", id)
 		profile.NickName = ""
-		// または、エラーを返す場合:
-		// return nil, fmt.Errorf("critical data integrity issue: NickName is NULL for profile ID %s", id)
 	}
-
-	// GraduationYear (model.Profile.GraduationYear は *int32型)
+  
 	if graduationYear.Valid {
 		profile.GraduationYear = &graduationYear.Int32
 	} else {
 		profile.GraduationYear = nil
 	}
 
-	// Affiliation (model.Profile.Affiliation は *string型)
 	if affiliation.Valid {
 		profile.Affiliation = &affiliation.String
 	} else {
 		profile.Affiliation = nil
 	}
 
-	// Bio (model.Profile.Bio は *string型)
 	if bio.Valid {
 		profile.Bio = &bio.String
 	} else {
