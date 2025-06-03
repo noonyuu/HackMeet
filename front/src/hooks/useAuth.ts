@@ -3,7 +3,7 @@ import { useLazyQuery } from "@apollo/client";
 import { Profile } from "@/types/user";
 import { GET_PROFILE } from "@/graph/user";
 
-const STORAGE_KEY = "nfc_userId";
+export const STORAGE_KEY = "nfc_userId";
 
 export function useAuth() {
   const HOST_URL = import.meta.env.VITE_HOST_URL || "";
@@ -22,6 +22,7 @@ export function useAuth() {
     },
     onError: (error) => {
       console.error("Failed to fetch profile:", error);
+      // ローカルストレージからユーザーIDを削除
       setUser(null);
       setLoading(false);
     },

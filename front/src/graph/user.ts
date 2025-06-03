@@ -12,3 +12,16 @@ export const GET_PROFILE = gql`
     }
   }
 `;
+
+export const UPDATE_PROFILE = gql`
+  mutation UpdateProfile($input: UpdateProfile!) {
+    updateProfile(input: $input) {
+      id
+      avatarUrl
+      nickName
+      graduationYear
+      affiliation
+      bio
+    }
+  }
+`;

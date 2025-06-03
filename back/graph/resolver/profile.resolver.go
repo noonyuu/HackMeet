@@ -31,6 +31,16 @@ func (r *mutationResolver) CreateProfile(ctx context.Context, input model.NewPro
 	} else {
 		graduationYear = sql.NullInt32{Valid: false}
 	}
+  
+	profile := &model.Profile{
+		ID:             input.UserID,
+		AvatarURL:      *input.AvatarURL,
+		NickName:       input.NickName,
+		GraduationYear: &graduationYear.Int32,
+		Affiliation:    input.Affiliation,
+		Bio:            input.Bio,
+		CreatedAt:      now,
+		UpdatedAt:      now,
 
 	var affiliation sql.NullString
 	if input.Affiliation != nil {
@@ -97,6 +107,82 @@ func (r *mutationResolver) CreateProfile(ctx context.Context, input model.NewPro
 	}
 
 	return profileToInsert, nil
+}
+
+// UpdateProfile is the resolver for the updateProfile field.
+func (r *mutationResolver) UpdateProfile(ctx context.Context, input model.UpdateProfile) (*model.Profile, error) {
+	// 現在時刻を取得
+	now := time.Now()
+
+	// GraduationYearの処理 (これはDBに渡すための準備として適切です)
+	var graduationYear sql.NullInt32
+	if input.GraduationYear != nil {
+		graduationYear = sql.NullInt32{
+			Int32: *input.GraduationYear,
+			Valid: true,
+		}
+	} else {
+		graduationYear = sql.NullInt32{Valid: false}
+	}
+
+	updateQuery := `
+		UPDATE profiles
+		SET
+			avatar_url = COALESCE(?, avatar_url),
+			nick_name = COALESCE(?, nick_name),
+			graduation_year = COALESCE(?, graduation_year),
+			affiliation = COALESCE(?, affiliation),
+			bio = COALESCE(?, bio),
+			updated_at = ?
+		WHERE id = ?
+	`
+	_, err := r.DB.ExecContext(ctx, updateQuery,
+		input.AvatarURL,
+		input.NickName,
+		graduationYear,
+		input.Affiliation,
+		input.Bio,
+		now,
+		input.ID,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update profile in database: %w", err)
+	}
+
+	selectQuery := `
+	SELECT id, avatar_url, nick_name, graduation_year, affiliation, bio, created_at, updated_at
+	FROM profiles
+	WHERE id = ?
+	`
+	row := r.DB.QueryRowContext(ctx, selectQuery, input.ID)
+
+	var fetchedProfile model.Profile
+	var dbGraduationYear sql.NullInt32
+
+	if err := row.Scan(
+		&fetchedProfile.ID,
+		&fetchedProfile.AvatarURL,
+		&fetchedProfile.NickName,
+		&dbGraduationYear,
+		&fetchedProfile.Affiliation,
+		&fetchedProfile.Bio,
+		&fetchedProfile.CreatedAt,
+		&fetchedProfile.UpdatedAt,
+	); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("profile with id %s not found after update", input.ID) // 更新直後なので通常は見つかるはず
+		}
+		return nil, fmt.Errorf("failed to fetch profile after update: %w", err)
+	}
+
+	// sql.NullInt32 から model.Profile の *int32 へ変換
+	if dbGraduationYear.Valid {
+		fetchedProfile.GraduationYear = &dbGraduationYear.Int32
+	} else {
+		fetchedProfile.GraduationYear = nil // DBでNULLだった場合はnilにする
+	}
+
+	return &fetchedProfile, nil
 }
 
 // CreatedAt is the resolver for the createdAt field.
@@ -282,7 +368,7 @@ func (r *queryResolver) ProfileByUserID(ctx context.Context, id string) (*model.
 	} else {
 		profile.NickName = ""
 	}
-
+  
 	if graduationYear.Valid {
 		profile.GraduationYear = &graduationYear.Int32
 	} else {
