@@ -75,3 +75,12 @@ type NewWorkSkill struct {
 
 type Query struct {
 }
+
+type UpdateProfile struct {
+	ID             string  `json:"id"`
+	AvatarURL      *string `json:"avatarUrl,omitempty"`
+	NickName       *string `json:"nickName,omitempty"`
+	GraduationYear *int32  `json:"graduationYear,omitempty"`
+	Affiliation    *string `json:"affiliation,omitempty"`
+	Bio            *string `json:"bio,omitempty"`
+}

@@ -7,6 +7,7 @@ package resolver
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"time"
 
 	"github.com/noonyuu/nfc/back/graph"
@@ -32,8 +33,8 @@ func (r *mutationResolver) CreateProfile(ctx context.Context, input model.NewPro
 		AvatarURL:      *input.AvatarURL,
 		NickName:       input.NickName,
 		GraduationYear: &graduationYear.Int32,
-		Affiliation:    *input.Affiliation,
-		Bio:            *input.Bio,
+		Affiliation:    input.Affiliation,
+		Bio:            input.Bio,
 		CreatedAt:      now,
 		UpdatedAt:      now,
 	}
@@ -46,6 +47,82 @@ func (r *mutationResolver) CreateProfile(ctx context.Context, input model.NewPro
 		return nil, err
 	}
 	return profile, nil
+}
+
+// UpdateProfile is the resolver for the updateProfile field.
+func (r *mutationResolver) UpdateProfile(ctx context.Context, input model.UpdateProfile) (*model.Profile, error) {
+	// 現在時刻を取得
+	now := time.Now()
+
+	// GraduationYearの処理 (これはDBに渡すための準備として適切です)
+	var graduationYear sql.NullInt32
+	if input.GraduationYear != nil {
+		graduationYear = sql.NullInt32{
+			Int32: *input.GraduationYear,
+			Valid: true,
+		}
+	} else {
+		graduationYear = sql.NullInt32{Valid: false}
+	}
+
+	updateQuery := `
+		UPDATE profiles
+		SET
+			avatar_url = COALESCE(?, avatar_url),
+			nick_name = COALESCE(?, nick_name),
+			graduation_year = COALESCE(?, graduation_year),
+			affiliation = COALESCE(?, affiliation),
+			bio = COALESCE(?, bio),
+			updated_at = ?
+		WHERE id = ?
+	`
+	_, err := r.DB.ExecContext(ctx, updateQuery,
+		input.AvatarURL,
+		input.NickName,
+		graduationYear,
+		input.Affiliation,
+		input.Bio,
+		now,
+		input.ID,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update profile in database: %w", err)
+	}
+
+	selectQuery := `
+	SELECT id, avatar_url, nick_name, graduation_year, affiliation, bio, created_at, updated_at
+	FROM profiles
+	WHERE id = ?
+	`
+	row := r.DB.QueryRowContext(ctx, selectQuery, input.ID)
+
+	var fetchedProfile model.Profile
+	var dbGraduationYear sql.NullInt32
+
+	if err := row.Scan(
+		&fetchedProfile.ID,
+		&fetchedProfile.AvatarURL,
+		&fetchedProfile.NickName,
+		&dbGraduationYear,
+		&fetchedProfile.Affiliation,
+		&fetchedProfile.Bio,
+		&fetchedProfile.CreatedAt,
+		&fetchedProfile.UpdatedAt,
+	); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("profile with id %s not found after update", input.ID) // 更新直後なので通常は見つかるはず
+		}
+		return nil, fmt.Errorf("failed to fetch profile after update: %w", err)
+	}
+
+	// sql.NullInt32 から model.Profile の *int32 へ変換
+	if dbGraduationYear.Valid {
+		fetchedProfile.GraduationYear = &dbGraduationYear.Int32
+	} else {
+		fetchedProfile.GraduationYear = nil // DBでNULLだった場合はnilにする
+	}
+
+	return &fetchedProfile, nil
 }
 
 // CreatedAt is the resolver for the createdAt field.
@@ -93,35 +170,82 @@ func (r *queryResolver) ProfileByNickName(ctx context.Context, nickName string) 
 // ProfileByUserID is the resolver for the profileByUserId field.
 func (r *queryResolver) ProfileByUserID(ctx context.Context, id string) (*model.Profile, error) {
 	query := `
-	SELECT id, avatar_url, nick_name, graduation_year, affiliation, bio, created_at, updated_at
-	FROM profiles
-	WHERE id = ?
-	`
+  SELECT id, avatar_url, nick_name, graduation_year, affiliation, bio, created_at, updated_at
+  FROM profiles
+  WHERE id = ?
+  `
 
-	row := r.DB.QueryRow(query, id)
+	row := r.DB.QueryRowContext(ctx, query, id) // Contextを使用する QueryRowContext を推奨
 
 	var profile model.Profile
+	// NULLになりうる全てのフィールドをスキャンするための一時変数を定義
+	var avatarURL sql.NullString
+	var nickName sql.NullString
 	var graduationYear sql.NullInt32
+	var affiliation sql.NullString
+	var bio sql.NullString
 
 	if err := row.Scan(
 		&profile.ID,
-		&profile.AvatarURL,
-		&profile.NickName,
+		&avatarURL, // sql.NullString avatarURL にスキャン
+		&nickName,  // sql.NullString nickName にスキャン
 		&graduationYear,
-		&profile.Affiliation,
-		&profile.Bio,
+		&affiliation,
+		&bio,
 		&profile.CreatedAt,
 		&profile.UpdatedAt,
 	); err != nil {
-		return nil, err
+		if err == sql.ErrNoRows {
+			// データが見つからなかった場合は、GraphQLの仕様に合わせて nil を返すか、エラーを返す
+			// ここでは nil, nil としているが、エラーを返した方が良い場合もある
+			return nil, nil // または fmt.Errorf("profile with ID %s not found", id)
+		}
+		// その他のScanエラー
+		return nil, fmt.Errorf("failed to scan profile data for ID %s: %w", id, err)
 	}
 
-	// sql.NullInt32 → *int32 変換
+	// --- スキャンした値を model.Profile に設定 ---
+
+	// AvatarURL (model.Profile.AvatarURL は string型)
+	if avatarURL.Valid {
+		profile.AvatarURL = avatarURL.String
+	} else {
+		profile.AvatarURL = "" // DBがNULLの場合、空文字列を設定 (GraphQLスキーマは null許容の String)
+	}
+
+	// NickName (model.Profile.NickName は string型, GraphQLスキーマは String!)
+	if nickName.Valid {
+		profile.NickName = nickName.String
+	} else {
+		// GraphQLスキーマでは NickName は String! (非null許容) です。
+		// DBからNULLが返るのはデータ不整合の可能性があります。
+		// アプリケーションの仕様に基づき、エラーとするか、デフォルト値を設定するかなどを検討してください。
+		// ここでは暫定的に空文字列を設定しますが、ログ出力やエラー通知が推奨されます。
+		// log.Printf("Warning: NickName for profile ID %s is NULL in DB, but schema requires non-null. Setting to empty string.", id)
+		profile.NickName = ""
+		// または、エラーを返す場合:
+		// return nil, fmt.Errorf("critical data integrity issue: NickName is NULL for profile ID %s", id)
+	}
+
+	// GraduationYear (model.Profile.GraduationYear は *int32型)
 	if graduationYear.Valid {
-		// graduationYear.Int32 は int32 型なので、それを *int32 にする
 		profile.GraduationYear = &graduationYear.Int32
 	} else {
-		profile.GraduationYear = nil // NULLの場合は nil をセット
+		profile.GraduationYear = nil
+	}
+
+	// Affiliation (model.Profile.Affiliation は *string型)
+	if affiliation.Valid {
+		profile.Affiliation = &affiliation.String
+	} else {
+		profile.Affiliation = nil
+	}
+
+	// Bio (model.Profile.Bio は *string型)
+	if bio.Valid {
+		profile.Bio = &bio.String
+	} else {
+		profile.Bio = nil
 	}
 
 	return &profile, nil

@@ -18,3 +18,8 @@ export type Profile = {
   createdAt: string;
   updatedAt: string;
 };
+
+export type UpdateProfile = Pick<
+  Profile,
+  "id" | "nickName" | "graduationYear" | "affiliation" | "bio"
+>;

@@ -18,6 +18,15 @@ input NewProfile {
   bio: String
 }
 
+input UpdateProfile {
+  id: String!
+  avatarUrl: String
+  nickName: String
+  graduationYear: Int
+  affiliation: String
+  bio: String
+}
+
 extend type Query {
   profile(id: String!): Profile
   profileByNickName(nickName: String!): Profile
@@ -26,4 +35,5 @@ extend type Query {
 
 extend type Mutation {
   createProfile(input: NewProfile!): Profile!
+  updateProfile(input: UpdateProfile!): Profile!
 }

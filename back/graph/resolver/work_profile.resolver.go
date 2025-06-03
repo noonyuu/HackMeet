@@ -105,7 +105,7 @@ func (r *queryResolver) WorkProfile(ctx context.Context, id int32) (*model.WorkP
 		}
 		skills = append(skills, skill)
 	}
-	
+
 	var skillVals []model.Skill
 	for _, s := range skills {
 		if s != nil {
