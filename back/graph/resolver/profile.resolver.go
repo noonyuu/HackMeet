@@ -120,9 +120,9 @@ func (r *mutationResolver) UpdateProfile(ctx context.Context, input model.Update
 		SET
 			avatar_url = COALESCE(?, avatar_url),
 			nick_name = COALESCE(?, nick_name),
-			graduation_year = COALESCE(?, graduation_year),
-			affiliation = COALESCE(?, affiliation),
-			bio = COALESCE(?, bio),
+			graduation_year = ?,
+			affiliation = ?,
+			bio = ?,
 			updated_at = ?
 		WHERE id = ?
 	`
