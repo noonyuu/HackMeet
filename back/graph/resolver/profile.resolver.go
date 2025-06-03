@@ -31,16 +31,6 @@ func (r *mutationResolver) CreateProfile(ctx context.Context, input model.NewPro
 	} else {
 		graduationYear = sql.NullInt32{Valid: false}
 	}
-  
-	profile := &model.Profile{
-		ID:             input.UserID,
-		AvatarURL:      *input.AvatarURL,
-		NickName:       input.NickName,
-		GraduationYear: &graduationYear.Int32,
-		Affiliation:    input.Affiliation,
-		Bio:            input.Bio,
-		CreatedAt:      now,
-		UpdatedAt:      now,
 
 	var affiliation sql.NullString
 	if input.Affiliation != nil {
@@ -130,9 +120,9 @@ func (r *mutationResolver) UpdateProfile(ctx context.Context, input model.Update
 		SET
 			avatar_url = COALESCE(?, avatar_url),
 			nick_name = COALESCE(?, nick_name),
-			graduation_year = COALESCE(?, graduation_year),
-			affiliation = COALESCE(?, affiliation),
-			bio = COALESCE(?, bio),
+			graduation_year = ?,
+			affiliation = ?,
+			bio = ?,
 			updated_at = ?
 		WHERE id = ?
 	`
@@ -368,7 +358,7 @@ func (r *queryResolver) ProfileByUserID(ctx context.Context, id string) (*model.
 	} else {
 		profile.NickName = ""
 	}
-  
+
 	if graduationYear.Valid {
 		profile.GraduationYear = &graduationYear.Int32
 	} else {
