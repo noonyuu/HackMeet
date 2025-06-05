@@ -31,10 +31,7 @@ func NewRouter(userHandler *handler.AuthController) http.Handler {
 		})
 		v1.GET("/:provider/callback", userHandler.GetAuthCallbackFunction)
 		v1.GET("/getUser", userHandler.GetUserAfterAuthorization)
-		v1.GET("/logout/:provider", func(c *gin.Context) {
-			gothic.Logout(c.Writer, c.Request)
-			c.Redirect(http.StatusTemporaryRedirect, "/")
-		})
+		v1.GET("/logout", userHandler.Logout)
 		v1.POST("/refresh", userHandler.RefreshAccessToken)
 	}
 
