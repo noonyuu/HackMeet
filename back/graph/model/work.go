@@ -8,16 +8,19 @@ type Work struct {
 	ID          string    `json:"id"`
 	Title       string    `json:"title"`
 	Description string    `json:"description"`
-	ImageURL    string    `json:"imageUrl"`
 	CreatedAt   time.Time `json:"createdAt"`
 	UpdatedAt   time.Time `json:"updatedAt"`
 
-	EventID *string  `json:"eventId"`
-	UserIDs []string `json:"userIds"`
+	EventID        *string   `json:"eventId"`
+	UserIDs        []string  `json:"userIds"`
+	ImageID        []string  `json:"imageIds"`
+	DiagramImageID []*string `json:"diagramImageIds"`
 
-	Profiles []Profile `json:"profile"`
-	Events   []*Event  `json:"event"`
-	Skills   []Skill   `json:"skills"`
+	Profiles      []Profile       `json:"profile"`
+	Events        []*Event        `json:"event"`
+	Skills        []Skill         `json:"skills"`
+	Images        []*Image        `json:"images"`
+	DiagramImages []*DiagramImage `json:"diagramImages"`
 }
 
 type WorkEdge struct {
@@ -35,4 +38,18 @@ type PageInfo struct {
 type WorkConnection struct {
 	Edges    []*WorkEdge `json:"edges"`
 	PageInfo PageInfo    `json:"pageInfo"`
+}
+
+type Image struct {
+	ID        string    `json:"id"`
+	ImageURL  string    `json:"imageUrl"`
+	CreatedAt time.Time `json:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt"`
+}
+
+type DiagramImage struct {
+	ID        string    `json:"id"`
+	ImageURL  string    `json:"imageUrl"`
+	CreatedAt time.Time `json:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt"`
 }
