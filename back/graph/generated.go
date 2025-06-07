@@ -154,17 +154,18 @@ type ComplexityRoot struct {
 	}
 
 	Work struct {
-		CreatedAt   func(childComplexity int) int
-		Description func(childComplexity int) int
-		Event       func(childComplexity int) int
-		EventID     func(childComplexity int) int
-		ID          func(childComplexity int) int
-		ImageURL    func(childComplexity int) int
-		Profile     func(childComplexity int) int
-		Skills      func(childComplexity int) int
-		Title       func(childComplexity int) int
-		UpdatedAt   func(childComplexity int) int
-		UserIDs     func(childComplexity int) int
+		CreatedAt       func(childComplexity int) int
+		Description     func(childComplexity int) int
+		DiagramImageURL func(childComplexity int) int
+		Event           func(childComplexity int) int
+		EventID         func(childComplexity int) int
+		ID              func(childComplexity int) int
+		ImageURL        func(childComplexity int) int
+		Profile         func(childComplexity int) int
+		Skills          func(childComplexity int) int
+		Title           func(childComplexity int) int
+		UpdatedAt       func(childComplexity int) int
+		UserIDs         func(childComplexity int) int
 	}
 
 	WorkConnection struct {
@@ -273,6 +274,8 @@ type WorkResolver interface {
 	UpdatedAt(ctx context.Context, obj *model.Work) (string, error)
 	EventID(ctx context.Context, obj *model.Work) (*string, error)
 
+	ImageURL(ctx context.Context, obj *model.Work) ([]string, error)
+	DiagramImageURL(ctx context.Context, obj *model.Work) ([]*string, error)
 	Event(ctx context.Context, obj *model.Work) ([]*model.Event, error)
 	Profile(ctx context.Context, obj *model.Work) ([]*model.Profile, error)
 }
@@ -1000,6 +1003,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Work.Description(childComplexity), true
+
+	case "Work.diagramImageUrl":
+		if e.complexity.Work.DiagramImageURL == nil {
+			break
+		}
+
+		return e.complexity.Work.DiagramImageURL(childComplexity), true
 
 	case "Work.event":
 		if e.complexity.Work.Event == nil {
@@ -3282,8 +3292,6 @@ func (ec *executionContext) fieldContext_Mutation_createWork(ctx context.Context
 				return ec.fieldContext_Work_title(ctx, field)
 			case "description":
 				return ec.fieldContext_Work_description(ctx, field)
-			case "imageUrl":
-				return ec.fieldContext_Work_imageUrl(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Work_createdAt(ctx, field)
 			case "updatedAt":
@@ -3292,6 +3300,10 @@ func (ec *executionContext) fieldContext_Mutation_createWork(ctx context.Context
 				return ec.fieldContext_Work_eventId(ctx, field)
 			case "userIds":
 				return ec.fieldContext_Work_userIds(ctx, field)
+			case "imageUrl":
+				return ec.fieldContext_Work_imageUrl(ctx, field)
+			case "diagramImageUrl":
+				return ec.fieldContext_Work_diagramImageUrl(ctx, field)
 			case "event":
 				return ec.fieldContext_Work_event(ctx, field)
 			case "profile":
@@ -3361,8 +3373,6 @@ func (ec *executionContext) fieldContext_Mutation_createProjectEvent(ctx context
 				return ec.fieldContext_Work_title(ctx, field)
 			case "description":
 				return ec.fieldContext_Work_description(ctx, field)
-			case "imageUrl":
-				return ec.fieldContext_Work_imageUrl(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Work_createdAt(ctx, field)
 			case "updatedAt":
@@ -3371,6 +3381,10 @@ func (ec *executionContext) fieldContext_Mutation_createProjectEvent(ctx context
 				return ec.fieldContext_Work_eventId(ctx, field)
 			case "userIds":
 				return ec.fieldContext_Work_userIds(ctx, field)
+			case "imageUrl":
+				return ec.fieldContext_Work_imageUrl(ctx, field)
+			case "diagramImageUrl":
+				return ec.fieldContext_Work_diagramImageUrl(ctx, field)
 			case "event":
 				return ec.fieldContext_Work_event(ctx, field)
 			case "profile":
@@ -5256,8 +5270,6 @@ func (ec *executionContext) fieldContext_Query_work(ctx context.Context, field g
 				return ec.fieldContext_Work_title(ctx, field)
 			case "description":
 				return ec.fieldContext_Work_description(ctx, field)
-			case "imageUrl":
-				return ec.fieldContext_Work_imageUrl(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Work_createdAt(ctx, field)
 			case "updatedAt":
@@ -5266,6 +5278,10 @@ func (ec *executionContext) fieldContext_Query_work(ctx context.Context, field g
 				return ec.fieldContext_Work_eventId(ctx, field)
 			case "userIds":
 				return ec.fieldContext_Work_userIds(ctx, field)
+			case "imageUrl":
+				return ec.fieldContext_Work_imageUrl(ctx, field)
+			case "diagramImageUrl":
+				return ec.fieldContext_Work_diagramImageUrl(ctx, field)
 			case "event":
 				return ec.fieldContext_Work_event(ctx, field)
 			case "profile":
@@ -5335,8 +5351,6 @@ func (ec *executionContext) fieldContext_Query_worksByTitle(ctx context.Context,
 				return ec.fieldContext_Work_title(ctx, field)
 			case "description":
 				return ec.fieldContext_Work_description(ctx, field)
-			case "imageUrl":
-				return ec.fieldContext_Work_imageUrl(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Work_createdAt(ctx, field)
 			case "updatedAt":
@@ -5345,6 +5359,10 @@ func (ec *executionContext) fieldContext_Query_worksByTitle(ctx context.Context,
 				return ec.fieldContext_Work_eventId(ctx, field)
 			case "userIds":
 				return ec.fieldContext_Work_userIds(ctx, field)
+			case "imageUrl":
+				return ec.fieldContext_Work_imageUrl(ctx, field)
+			case "diagramImageUrl":
+				return ec.fieldContext_Work_diagramImageUrl(ctx, field)
 			case "event":
 				return ec.fieldContext_Work_event(ctx, field)
 			case "profile":
@@ -5830,8 +5848,6 @@ func (ec *executionContext) fieldContext_Query_worksByProfileId(ctx context.Cont
 				return ec.fieldContext_Work_title(ctx, field)
 			case "description":
 				return ec.fieldContext_Work_description(ctx, field)
-			case "imageUrl":
-				return ec.fieldContext_Work_imageUrl(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Work_createdAt(ctx, field)
 			case "updatedAt":
@@ -5840,6 +5856,10 @@ func (ec *executionContext) fieldContext_Query_worksByProfileId(ctx context.Cont
 				return ec.fieldContext_Work_eventId(ctx, field)
 			case "userIds":
 				return ec.fieldContext_Work_userIds(ctx, field)
+			case "imageUrl":
+				return ec.fieldContext_Work_imageUrl(ctx, field)
+			case "diagramImageUrl":
+				return ec.fieldContext_Work_diagramImageUrl(ctx, field)
 			case "event":
 				return ec.fieldContext_Work_event(ctx, field)
 			case "profile":
@@ -6678,50 +6698,6 @@ func (ec *executionContext) fieldContext_Work_description(_ context.Context, fie
 	return fc, nil
 }
 
-func (ec *executionContext) _Work_imageUrl(ctx context.Context, field graphql.CollectedField, obj *model.Work) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Work_imageUrl(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ImageURL, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Work_imageUrl(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Work",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _Work_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.Work) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Work_createdAt(ctx, field)
 	if err != nil {
@@ -6888,6 +6864,91 @@ func (ec *executionContext) fieldContext_Work_userIds(_ context.Context, field g
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Work_imageUrl(ctx context.Context, field graphql.CollectedField, obj *model.Work) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Work_imageUrl(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Work().ImageURL(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Work_imageUrl(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Work",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Work_diagramImageUrl(ctx context.Context, field graphql.CollectedField, obj *model.Work) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Work_diagramImageUrl(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Work().DiagramImageURL(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*string)
+	fc.Result = res
+	return ec.marshalOString2ᚕᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Work_diagramImageUrl(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Work",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
 		},
@@ -7225,8 +7286,6 @@ func (ec *executionContext) fieldContext_WorkEdge_node(_ context.Context, field 
 				return ec.fieldContext_Work_title(ctx, field)
 			case "description":
 				return ec.fieldContext_Work_description(ctx, field)
-			case "imageUrl":
-				return ec.fieldContext_Work_imageUrl(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Work_createdAt(ctx, field)
 			case "updatedAt":
@@ -7235,6 +7294,10 @@ func (ec *executionContext) fieldContext_WorkEdge_node(_ context.Context, field 
 				return ec.fieldContext_Work_eventId(ctx, field)
 			case "userIds":
 				return ec.fieldContext_Work_userIds(ctx, field)
+			case "imageUrl":
+				return ec.fieldContext_Work_imageUrl(ctx, field)
+			case "diagramImageUrl":
+				return ec.fieldContext_Work_diagramImageUrl(ctx, field)
 			case "event":
 				return ec.fieldContext_Work_event(ctx, field)
 			case "profile":
@@ -7557,8 +7620,6 @@ func (ec *executionContext) fieldContext_WorkEvent_works(_ context.Context, fiel
 				return ec.fieldContext_Work_title(ctx, field)
 			case "description":
 				return ec.fieldContext_Work_description(ctx, field)
-			case "imageUrl":
-				return ec.fieldContext_Work_imageUrl(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Work_createdAt(ctx, field)
 			case "updatedAt":
@@ -7567,6 +7628,10 @@ func (ec *executionContext) fieldContext_WorkEvent_works(_ context.Context, fiel
 				return ec.fieldContext_Work_eventId(ctx, field)
 			case "userIds":
 				return ec.fieldContext_Work_userIds(ctx, field)
+			case "imageUrl":
+				return ec.fieldContext_Work_imageUrl(ctx, field)
+			case "diagramImageUrl":
+				return ec.fieldContext_Work_diagramImageUrl(ctx, field)
 			case "event":
 				return ec.fieldContext_Work_event(ctx, field)
 			case "profile":
@@ -7911,8 +7976,6 @@ func (ec *executionContext) fieldContext_WorkProfile_work(_ context.Context, fie
 				return ec.fieldContext_Work_title(ctx, field)
 			case "description":
 				return ec.fieldContext_Work_description(ctx, field)
-			case "imageUrl":
-				return ec.fieldContext_Work_imageUrl(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Work_createdAt(ctx, field)
 			case "updatedAt":
@@ -7921,6 +7984,10 @@ func (ec *executionContext) fieldContext_WorkProfile_work(_ context.Context, fie
 				return ec.fieldContext_Work_eventId(ctx, field)
 			case "userIds":
 				return ec.fieldContext_Work_userIds(ctx, field)
+			case "imageUrl":
+				return ec.fieldContext_Work_imageUrl(ctx, field)
+			case "diagramImageUrl":
+				return ec.fieldContext_Work_diagramImageUrl(ctx, field)
 			case "event":
 				return ec.fieldContext_Work_event(ctx, field)
 			case "profile":
@@ -10174,7 +10241,7 @@ func (ec *executionContext) unmarshalInputNewCreateProjectEvent(ctx context.Cont
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"title", "description", "imageUrl", "workId", "eventId", "userIds", "skills"}
+	fieldsInOrder := [...]string{"title", "description", "workId", "eventId", "userIds", "skills", "imageUrl", "diagramImageUrl"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -10195,13 +10262,6 @@ func (ec *executionContext) unmarshalInputNewCreateProjectEvent(ctx context.Cont
 				return it, err
 			}
 			it.Description = data
-		case "imageUrl":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("imageUrl"))
-			data, err := ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.ImageURL = data
 		case "workId":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("workId"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
@@ -10230,6 +10290,20 @@ func (ec *executionContext) unmarshalInputNewCreateProjectEvent(ctx context.Cont
 				return it, err
 			}
 			it.Skills = data
+		case "imageUrl":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("imageUrl"))
+			data, err := ec.unmarshalNString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ImageURL = data
+		case "diagramImageUrl":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("diagramImageUrl"))
+			data, err := ec.unmarshalOString2ᚕᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.DiagramImageURL = data
 		}
 	}
 
@@ -10483,7 +10557,7 @@ func (ec *executionContext) unmarshalInputNewWork(ctx context.Context, obj any) 
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"title", "description", "imageUrl", "userIds", "skills"}
+	fieldsInOrder := [...]string{"title", "description", "userIds", "skills", "imageUrl", "diagramImageUrl"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -10504,13 +10578,6 @@ func (ec *executionContext) unmarshalInputNewWork(ctx context.Context, obj any) 
 				return it, err
 			}
 			it.Description = data
-		case "imageUrl":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("imageUrl"))
-			data, err := ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.ImageURL = data
 		case "userIds":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userIds"))
 			data, err := ec.unmarshalNString2ᚕstringᚄ(ctx, v)
@@ -10525,6 +10592,20 @@ func (ec *executionContext) unmarshalInputNewWork(ctx context.Context, obj any) 
 				return it, err
 			}
 			it.Skills = data
+		case "imageUrl":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("imageUrl"))
+			data, err := ec.unmarshalNString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ImageURL = data
+		case "diagramImageUrl":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("diagramImageUrl"))
+			data, err := ec.unmarshalOString2ᚕᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.DiagramImageURL = data
 		}
 	}
 
@@ -12111,11 +12192,6 @@ func (ec *executionContext) _Work(ctx context.Context, sel ast.SelectionSet, obj
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
 			}
-		case "imageUrl":
-			out.Values[i] = ec._Work_imageUrl(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&out.Invalids, 1)
-			}
 		case "createdAt":
 			field := field
 
@@ -12226,6 +12302,75 @@ func (ec *executionContext) _Work(ctx context.Context, sel ast.SelectionSet, obj
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
 			}
+		case "imageUrl":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Work_imageUrl(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "diagramImageUrl":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Work_diagramImageUrl(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "event":
 			field := field
 
@@ -14293,6 +14438,36 @@ func (ec *executionContext) unmarshalOString2string(ctx context.Context, v any) 
 func (ec *executionContext) marshalOString2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
 	res := graphql.MarshalString(v)
 	return res
+}
+
+func (ec *executionContext) unmarshalOString2ᚕᚖstring(ctx context.Context, v any) ([]*string, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]*string, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalOString2ᚖstring(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOString2ᚕᚖstring(ctx context.Context, sel ast.SelectionSet, v []*string) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalOString2ᚖstring(ctx, sel, v[i])
+	}
+
+	return ret
 }
 
 func (ec *executionContext) unmarshalOString2ᚖstring(ctx context.Context, v any) (*string, error) {

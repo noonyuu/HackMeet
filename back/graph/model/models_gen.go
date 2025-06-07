@@ -6,13 +6,14 @@ type Mutation struct {
 }
 
 type NewCreateProjectEvent struct {
-	Title       string   `json:"title"`
-	Description string   `json:"description"`
-	ImageURL    string   `json:"imageUrl"`
-	WorkID      *string  `json:"workId,omitempty"`
-	EventID     *string  `json:"eventId,omitempty"`
-	UserIds     []string `json:"userIds"`
-	Skills      []string `json:"skills"`
+	Title           string    `json:"title"`
+	Description     string    `json:"description"`
+	WorkID          *string   `json:"workId,omitempty"`
+	EventID         *string   `json:"eventId,omitempty"`
+	UserIds         []string  `json:"userIds"`
+	Skills          []string  `json:"skills"`
+	ImageURL        []string  `json:"imageUrl"`
+	DiagramImageURL []*string `json:"diagramImageUrl,omitempty"`
 }
 
 type NewEvent struct {
@@ -51,11 +52,12 @@ type NewUser struct {
 }
 
 type NewWork struct {
-	Title       string   `json:"title"`
-	Description *string  `json:"description,omitempty"`
-	ImageURL    string   `json:"imageUrl"`
-	UserIds     []string `json:"userIds"`
-	Skills      []string `json:"skills"`
+	Title           string    `json:"title"`
+	Description     *string   `json:"description,omitempty"`
+	UserIds         []string  `json:"userIds"`
+	Skills          []string  `json:"skills"`
+	ImageURL        []string  `json:"imageUrl"`
+	DiagramImageURL []*string `json:"diagramImageUrl,omitempty"`
 }
 
 type NewWorkEvent struct {
