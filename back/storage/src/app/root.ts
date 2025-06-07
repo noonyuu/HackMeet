@@ -8,6 +8,7 @@ import { Readable } from "stream";
 
 import upload from "../multerHandler";
 import { uploadMain } from "./minio";
+import { unlink } from "fs/promises";
 
 require("dotenv").config();
 const app = express();
@@ -38,31 +39,45 @@ app.get("/ping", (_, req) => {
   req.json({ message: "connected from pictogram" });
 });
 
-app.post("/", upload.single("image"), async (req, res) => {
-  const imagePath = req.file!.path;
-  const uid = req.body.uid;
-
-  if (!imagePath) {
-    return res.status(400).send("No file uploaded");
+app.post("/", upload.array("images", 7), async (req, res) => {
+  if (!req.files || (req.files as Express.Multer.File[]).length === 0) {
+    return res.status(400).send("No files uploaded");
   }
+
+  const uid = req.body.uid;
   if (!uid) {
+    for (const file of req.files as Express.Multer.File[]) {
+      await unlink(file.path);
+    }
     return res.status(400).send("No uid provided");
   }
 
-  const fileName = req.file!.filename;
-
   try {
-    const uploadPath = await uploadMain(imagePath, fileName, uid);
-    if (!uploadPath) throw new Error("Upload failed");
+    const files = req.files as Express.Multer.File[];
 
-    const s3Key = `${uid}/${fileName}`;
+    const uploadPromises = files.map((file) => {
+      const imagePath = file.path;
+      const fileName = file.filename;
+      return uploadMain(imagePath, fileName, uid);
+    });
+
+    await Promise.all(uploadPromises);
+
+    const s3Keys = files.map((file) => `${uid}/${file.filename}`);
 
     res.status(200).json({
-      key: s3Key,
+      keys: s3Keys,
     });
   } catch (error) {
-    console.error("Error uploading image to S3:", error);
-    res.status(500).send("Error uploading image to S3");
+    console.error("Error uploading images to S3:", error);
+    for (const file of req.files as Express.Multer.File[]) {
+      try {
+        await unlink(file.path);
+      } catch (cleanupError) {
+        console.error("Failed to cleanup file:", file.path, cleanupError);
+      }
+    }
+    res.status(500).send("Error uploading images to S3");
   }
 });
 
