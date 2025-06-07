@@ -12,11 +12,16 @@ export const ProjectSchema = v.object({
     v.maxLength(300, "説明は300文字以内で入力してください"),
   ),
   imageFile: v.pipe(
-    v.instance(File, "画像は必須です"),
-    // v.check((input) => input.length > 0, "画像は必須です@"),
+    v.array(v.instance(File, "画像は必須です"), "画像は必須です"),
+    v.check((input) => input.length > 0, "画像は必須です"),
     v.transform((input) => input),
-    v.mimeType(["image/jpeg", "image/png"]),
-    v.maxSize(1024 * 1024 * 100),
+  ),
+  diagramFile: v.optional(
+    v.pipe(
+      v.array(v.instance(File, "図は必須です"), "図は必須です"),
+      v.check((input) => input.length > 0, "図は必須です"),
+      v.transform((input) => input),
+    ),
   ),
   techs: v.pipe(
     v.array(v.string("技術は必須です"), "技術は必須です"),
