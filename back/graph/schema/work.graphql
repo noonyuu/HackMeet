@@ -4,12 +4,13 @@ type Work {
   id: String!
   title: String!
   description: String!
-  imageUrl: String!
   createdAt: DateTime!
   updatedAt: DateTime!
 
   eventId: String
   userIds: [String!]!
+  imageUrl: [String!]!
+  diagramImageUrl: [String]
 
   event: [Event]
   profile: [Profile!]!
@@ -20,17 +21,17 @@ type Work {
 input NewWork {
   title: String!
   description: String
-  imageUrl: String!
   # 中間
   userIds: [String!]!
   skills: [String!]!
+  imageUrl: [String!]!
+  diagramImageUrl: [String]
 }
 
 # イベントベースで作成する
 input NewCreateProjectEvent {
   title: String!
   description: String!
-  imageUrl: String!
 
   # 新規で作成する場合はnull
   # 既存の作品を指定する場合はその作品のID
@@ -39,6 +40,8 @@ input NewCreateProjectEvent {
   # 中間
   userIds: [String!]!
   skills: [String!]!
+  imageUrl: [String!]!
+  diagramImageUrl: [String]
 }
 
 type WorkConnection {

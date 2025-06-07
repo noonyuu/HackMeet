@@ -8,6 +8,7 @@ import { Fab } from "@/components/ui/fab";
 import { useAuth } from "@/hooks/useAuth";
 import { PROJECT_LIST } from "@/graph/work";
 import { Work } from "@/types/project";
+import { SwiperComponents } from "@/components/ui/swiper/swiper";
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -158,16 +159,15 @@ function Index() {
         </div>
       )}
       {/* Loading State */}
-      {loading &&
-        !data && (
-          <div className="flex min-h-[calc(100vh-10rem)] flex-col items-center justify-center py-20 text-center">
-            <div className="h-16 w-16 animate-spin rounded-full border-t-4 border-b-4 border-indigo-600"></div>
-            <p className="mt-4 text-lg font-semibold text-indigo-700">
-              作品を読み込んでいます...
-            </p>
-            <p className="text-sm text-gray-500">少々お待ちください</p>
-          </div>
-        )}
+      {loading && !data && (
+        <div className="flex min-h-[calc(100vh-10rem)] flex-col items-center justify-center py-20 text-center">
+          <div className="h-16 w-16 animate-spin rounded-full border-t-4 border-b-4 border-indigo-600"></div>
+          <p className="mt-4 text-lg font-semibold text-indigo-700">
+            作品を読み込んでいます...
+          </p>
+          <p className="text-sm text-gray-500">少々お待ちください</p>
+        </div>
+      )}
       {/* No Works Found */}
       {!loading && data?.workList?.edges.length === 0 && (
         <div className="flex min-h-[calc(100vh-10rem)] flex-col items-center justify-center py-16 text-center">
@@ -203,7 +203,7 @@ function Index() {
                   <img
                     src={
                       node.imageUrl
-                        ? `${HOST_URL}image/upload/get?date=${encodeURIComponent(node.imageUrl)}`
+                        ? `${HOST_URL}image/upload/get?date=${encodeURIComponent(node.imageUrl[0])}`
                         : placeholderImage(node.title)
                     }
                     alt={node.title || "作品画像"}
@@ -263,7 +263,6 @@ function Index() {
           )}
         </div>
       )}
-
       {/* 作品詳細モーダル */}
       {selectedWork && (
         <>
@@ -276,7 +275,7 @@ function Index() {
             <div className="relative max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-xl bg-white p-6 shadow-2xl">
               <button
                 onClick={closeModal}
-                className="absolute top-3 right-3 z-10 rounded-full bg-white/60 p-2 text-gray-600 hover:bg-gray-100/80 focus:ring-2 focus:ring-pink-300 focus:outline-none" 
+                className="absolute top-3 right-3 z-10 rounded-full bg-white/60 p-2 text-gray-600 hover:bg-gray-100/80 focus:ring-2 focus:ring-pink-300 focus:outline-none"
                 aria-label="閉じる"
               >
                 <svg
@@ -300,7 +299,7 @@ function Index() {
 
                 {selectedWork.imageUrl && (
                   <div className="overflow-hidden rounded-lg shadow-md">
-                    <img
+                    {/* <img
                       src={`${HOST_URL}image/upload/get?date=${encodeURIComponent(selectedWork.imageUrl)}`}
                       alt={selectedWork.title || "作品画像"}
                       className="h-auto max-h-[45vh] w-full object-contain"
@@ -309,6 +308,10 @@ function Index() {
                           selectedWork.title || "作品",
                         ))
                       }
+                    /> */}
+                    <SwiperComponents
+                      images={selectedWork.imageUrl}
+                      title={selectedWork.title || "作品"}
                     />
                   </div>
                 )}

@@ -10,6 +10,18 @@ CREATE TABLE IF NOT EXISTS events (
   created_by VARCHAR(255),
   updated_by VARCHAR(255)
 ) ENGINE=InnoDB;
+CREATE TABLE IF NOT EXISTS images (
+  id VARCHAR(255) PRIMARY KEY,
+  image_url VARCHAR(255),
+  created_at DATETIME,
+  updated_at DATETIME
+) ENGINE=InnoDB;
+CREATE TABLE IF NOT EXISTS diagram_images (
+  id VARCHAR(255) PRIMARY KEY,
+  image_url VARCHAR(255),
+  created_at DATETIME,
+  updated_at DATETIME
+) ENGINE=InnoDB;
 CREATE TABLE IF NOT EXISTS skills (
   id VARCHAR(255) PRIMARY KEY,
   name VARCHAR(255) UNIQUE,
@@ -56,9 +68,17 @@ CREATE TABLE IF NOT EXISTS works (
   id VARCHAR(255) PRIMARY KEY,
   title VARCHAR(255),
   description TEXT,
-  image_url TEXT,
   created_at DATETIME,
   updated_at DATETIME
+) ENGINE=InnoDB;
+CREATE TABLE IF NOT EXISTS work_diagram_images (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  work_id VARCHAR(255),
+  image_id VARCHAR(255),
+  created_at DATETIME,
+  updated_at DATETIME,
+  FOREIGN KEY (work_id) REFERENCES works(id),
+  FOREIGN KEY (image_id) REFERENCES diagram_images(id)
 ) ENGINE=InnoDB;
 CREATE TABLE IF NOT EXISTS work_events (
   id INT AUTO_INCREMENT PRIMARY KEY,
@@ -68,6 +88,15 @@ CREATE TABLE IF NOT EXISTS work_events (
   updated_at DATETIME,
   FOREIGN KEY (work_id) REFERENCES works(id),
   FOREIGN KEY (event_id) REFERENCES events(id)
+) ENGINE=InnoDB;
+CREATE TABLE IF NOT EXISTS work_images (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  work_id VARCHAR(255),
+  image_id VARCHAR(255),
+  created_at DATETIME,
+  updated_at DATETIME,
+  FOREIGN KEY (work_id) REFERENCES works(id),
+  FOREIGN KEY (image_id) REFERENCES diagram_images(id)
 ) ENGINE=InnoDB;
 CREATE TABLE IF NOT EXISTS work_profiles (
   id INT AUTO_INCREMENT PRIMARY KEY,

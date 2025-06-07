@@ -7,11 +7,12 @@ export const GET_USER_WORKS = gql`
       id
       title
       description
-      imageUrl
       skills {
         id
         name
       }
+      imageUrl
+      diagramImageUrl
     }
   }
 `;
@@ -21,11 +22,12 @@ export const CREATE_WORK = gql`
     createWork(input: $input) {
       title
       description
-      imageUrl
       skills {
         name
       }
       userIds
+      imageUrl
+      diagramImageUrl
     }
   }
 `;
@@ -35,11 +37,12 @@ export const CREATE_WORK_EVENT = gql`
     createProjectEvent(input: $input) {
       title
       description
-      imageUrl
       skills {
         name
       }
       userIds
+      imageUrl
+      diagramImageUrl
     }
   }
 `;
@@ -53,7 +56,6 @@ export const PROJECT_LIST = gql`
           id
           title
           description
-          imageUrl
           createdAt
           updatedAt
           userIds # Keep if used elsewhere, otherwise can be removed if profile is primary
@@ -70,6 +72,8 @@ export const PROJECT_LIST = gql`
             id
             name
           }
+          imageUrl
+          diagramImageUrl
         }
       }
       pageInfo {

@@ -21,7 +21,7 @@ export type Work = {
   id: string;
   title: string;
   description: string;
-  imageUrl: string | null;
+  imageUrl: string[] | null;
   createdAt: string;
   updatedAt: string;
   profile: TodoProfile[];
