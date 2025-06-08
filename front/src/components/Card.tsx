@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import type { CardData } from "@/types/card";
+import { SwiperComponents } from "./ui/swiper/swiper";
 
 interface CardProps {
   data: CardData;
@@ -7,7 +8,6 @@ interface CardProps {
 }
 
 export function Cards({ data, compact = false }: CardProps) {
-  const HOST_URL = import.meta.env.VITE_HOST_URL || "";
 
   return (
     <div
@@ -65,18 +65,11 @@ export function Cards({ data, compact = false }: CardProps) {
                 作品名
                 <span className="pl-2 text-blue-100/70">{data.work.title}</span>
               </h3>
-              {data.work.imageUrl ? (
-                <div className="shimmer relative mb-2 aspect-video overflow-hidden rounded-lg">
-                  <div className="absolute inset-0 z-10 bg-gradient-to-tr from-blue-900/30 to-transparent"></div>
-                  <img
-                    src={`${HOST_URL}image/upload/get?date=${data.work.imageUrl}`}
-                    alt="作品画像"
-                    className="mx-auto max-h-58 max-w-103"
-                  />
-                </div>
-              ) : (
-                <div className="shimmer mb-2 aspect-video rounded-lg bg-gradient-to-tr from-blue-900/30 to-indigo-900/20"></div>
-              )}
+              <SwiperComponents
+                images={data.work.imageUrl}
+                title={data.work.title || "作品画像"}
+                css="mx-auto max-h-56 max-w-104"
+              />
             </div>
 
             <div className="flex-1">

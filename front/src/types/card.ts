@@ -8,7 +8,7 @@ export type Skill = {
 export type Work = {
   title: string;
   description: string;
-  imageUrl: string;
+  imageUrl: string[];
   skills: Skill[];
 };
 

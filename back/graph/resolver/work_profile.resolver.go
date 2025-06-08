@@ -57,7 +57,7 @@ func (r *mutationResolver) DeleteWorkProfile(ctx context.Context, id int32) (*mo
 func (r *queryResolver) WorkProfile(ctx context.Context, id int32) (*model.WorkProfile, error) {
 	query := `
 		SELECT wp.id, wp.work_id, wp.profile_id, wp.created_at, wp.updated_at,
-			w.id, w.title, w.description, w.created_at, w.updated_at, w.event_id,
+			w.id, w.title, w.description,
 			p.id, p.avatar_url, p.nick_name, p.graduation_year, p.affiliation, p.bio
 		FROM work_profiles wp
 		JOIN works w ON wp.work_id = w.id
@@ -78,7 +78,7 @@ func (r *queryResolver) WorkProfile(ctx context.Context, id int32) (*model.WorkP
 
 	err := row.Scan(
 		&wp.ID, &wp.WorkID, &wp.ProfileID, &wp.CreatedAt, &wp.UpdatedAt,
-		&work.ID, &work.Title, &work.Description, &work.CreatedAt, &work.UpdatedAt, &workEventID,
+		&work.ID, &work.Title, &work.Description,
 		&profile.ID, &profile.AvatarURL, &profile.NickName, &profileGraduationYear,
 		&profileAffiliation, &profileBio,
 	)
@@ -161,7 +161,7 @@ func (r *queryResolver) WorkProfile(ctx context.Context, id int32) (*model.WorkP
 	diagramImageQuery := `
 		SELECT di.id, di.image_url, di.created_at, di.updated_at
 		FROM diagram_images di
-		JOIN work_diagram_images wdi ON di.id = wdi.diagram_image_id
+		JOIN work_diagram_images wdi ON di.id = wdi.image_id
 		WHERE wdi.work_id = ?
 	`
 	diagramImageRows, err := r.DB.QueryContext(ctx, diagramImageQuery, work.ID)
