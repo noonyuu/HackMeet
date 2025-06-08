@@ -19,7 +19,7 @@ type CardQueryResult = {
 function RouteComponent() {
   const { workId } = useParams({ from: "/nfc/$workId/" });
   const [cards, setCards] = useState<CardData[]>([]);
-  const [minimizedCards, setMinimizedCards] = useState<CardData[]>([]);
+  // const [minimizedCards, setMinimizedCards] = useState<CardData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -50,10 +50,10 @@ function RouteComponent() {
     setCards((prevCards) => {
       const newCards = [...prevCards];
       if (newCards.length > 0) {
-        const lastCard = newCards.pop();
-        if (lastCard) {
-          setMinimizedCards((prev) => [...prev, lastCard]);
-        }
+        // const lastCard = newCards.pop();
+        // if (lastCard) {
+        //   setMinimizedCards((prev) => [...prev, lastCard]);
+        // }
       }
       return [...newCards, card];
     });
@@ -154,8 +154,8 @@ function RouteComponent() {
       <CardStack
         cards={cards}
         setCards={setCards}
-        minimizedCards={minimizedCards}
-        setMinimizedCards={setMinimizedCards}
+        // minimizedCards={minimizedCards}
+        // setMinimizedCards={setMinimizedCards}
       />
     </div>
   );
