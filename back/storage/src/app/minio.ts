@@ -1,18 +1,23 @@
 import { load } from "ts-dotenv";
 import { GetObjectCommand, S3Client } from "@aws-sdk/client-s3";
-import { fromIni } from "@aws-sdk/credential-providers";
 import { Upload } from "@aws-sdk/lib-storage";
 import fs from "fs";
 
 const env = load({
   BUCKET_NAME: String,
-  AWS_PROFILE: String,
+  // AWS_PROFILE: String, // 削除
   S3_ENDPOINT: String,
+  AWS_ACCESS_KEY_ID: String, // 追加
+  AWS_SECRET_ACCESS_KEY: String, // 追加
+  AWS_REGION: { type: String, default: "ap-northeast-1" }, // 追加
 });
 
 const s3Client = new S3Client({
-  region: "ap-northeast-1",
-  credentials: fromIni({ profile: env.AWS_PROFILE }),
+  region: env.AWS_REGION,
+  credentials: {
+    accessKeyId: env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: env.AWS_SECRET_ACCESS_KEY,
+  },
   endpoint: env.S3_ENDPOINT,
   forcePathStyle: true,
 });
@@ -64,7 +69,6 @@ const downLoadObject = async (key: string) => {
 
 // ダウンロード処理のメイン関数
 const downloadMain = async (filePath: string) => {
-  console.log(env.AWS_PROFILE);
   try {
     console.log("Starting download process");
     return await downLoadObject(filePath);

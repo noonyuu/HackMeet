@@ -3,7 +3,6 @@ import cors from "cors";
 import logger from "morgan";
 import cookieParser from "cookie-parser";
 import { GetObjectCommand, S3Client } from "@aws-sdk/client-s3";
-import { fromIni } from "@aws-sdk/credential-providers";
 import { Readable } from "stream";
 
 import upload from "../multerHandler";
@@ -12,6 +11,7 @@ import { unlink } from "fs/promises";
 
 require("dotenv").config();
 const app = express();
+
 // 環境変数の読み込み
 const HOST_URL = process.env.HOST_URL || "";
 
@@ -22,21 +22,23 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-
 app.use(logger("dev")); // 開発用にログの表示
 app.use(express.json()); // application/jsonを扱えるようにする
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 const s3 = new S3Client({
-  region: "ap-northeast-1",
-  credentials: fromIni({ profile: process.env.AWS_PROFILE }),
+  region: process.env.AWS_REGION || "ap-northeast-1",
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+  },
   endpoint: process.env.S3_ENDPOINT,
   forcePathStyle: true,
 });
 
-app.get("/ping", (_, req) => {
-  req.json({ message: "connected from pictogram" });
+app.get("/ping", (req, res) => {
+  res.json({ message: "connected from pictogram" });
 });
 
 app.post("/", upload.array("images", 7), async (req, res) => {
