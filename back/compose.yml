@@ -4,16 +4,13 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      # target: dev
-      # target: release
-    # working_dir: /work
-    command: ["air"]
-    # command: ["/usr/local/bin/nfc"]
     container_name: go_app
     volumes:
       - .:/work
     ports:
       - "8080:8080"
+    env_file:
+      - .env
     environment:
       ENV: Development
       MYSQL_DATABASE: ${MYSQL_DATABASE}
@@ -28,18 +25,23 @@ services:
       - redis_network
 
   image:
-    image: node
+    build:
+      context: ./storage
+      dockerfile: Dockerfile
     container_name: image
     environment:
+      - BUCKET_NAME=${BUCKET_NAME}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_REGION=${AWS_REGION}
+      - S3_ENDPOINT=${S3_ENDPOINT}
+      - AWS_S3_FORCE_PATH_STYLE=true
       - CHOKIDAR_USEPOLLING=true
-    tty: true
+
     ports:
       - "3001:3001"
-    volumes:
-      - ./storage/:/work
-      - ./storage/.aws:/root/.aws:ro
     working_dir: /work
-    command: ["sh", "-c", "rm -rf node_modules && npm install && npm run dev-ts"]
+    restart: always
     networks:
       - redis_network
 
@@ -89,6 +91,8 @@ services:
       - minio_data:/data
     networks:
       - redis_network
+    mem_limit: 256m
+    mem_reservation: 128m
 
   nginx:
     image: nginx:latest
