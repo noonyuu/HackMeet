@@ -78,6 +78,54 @@ func (r *mutationResolver) CreateEvent(ctx context.Context, input model.NewEvent
 	return event, nil
 }
 
+// Events is the resolver for the events field.
+func (r *queryResolver) Events(ctx context.Context) ([]*model.Event, error) {
+	query := `
+		SELECT *
+		FROM (
+			SELECT id, name, description, start_date, end_date, location,
+						created_at, updated_at, created_by, updated_by,
+						ROW_NUMBER() OVER (PARTITION BY created_by ORDER BY created_at DESC) AS rn
+			FROM events
+		) AS ranked
+		WHERE rn <= 10;
+	`
+	rows, err := r.DB.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var events []*model.Event
+	for rows.Next() {
+		var event model.Event
+		var _ int
+		err := rows.Scan(
+			&event.ID,
+			&event.Name,
+			&event.Description,
+			&event.StartDate,
+			&event.EndDate,
+			&event.Location,
+			&event.CreatedAt,
+			&event.UpdatedAt,
+			&event.CreatedBy,
+			&event.UpdatedBy,
+			&_ 
+		)
+		if err != nil {
+			return nil, err
+		}
+		events = append(events, &event)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return events, nil
+}
+
 // EventByID is the resolver for the eventById field.
 func (r *queryResolver) EventByID(ctx context.Context, id string) (*model.Event, error) {
 	query := `

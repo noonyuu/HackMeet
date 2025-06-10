@@ -22,6 +22,7 @@ input NewEvent {
 }
 
 extend type Query {
+  events: [Event!]!
   eventById(id: String!): Event!
   eventByName(name: String!): Event!
 }
