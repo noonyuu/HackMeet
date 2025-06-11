@@ -28,6 +28,16 @@ input NewWork {
   diagramImageUrl: [String]
 }
 
+input UpdateWork {
+  title: String
+  description: String
+  # 中間
+  userIds: [String]
+  skills: [String]
+  imageUrl: [String]
+  diagramImageUrl: [String]
+}
+
 # イベントベースで作成する
 input NewCreateProjectEvent {
   title: String!
@@ -70,4 +80,5 @@ extend type Query {
 extend type Mutation {
   createWork(input: NewWork!): Work!
   createProjectEvent(input: NewCreateProjectEvent!): Work!
+  updateWork(id: String!, input: UpdateWork!): Work!
 }

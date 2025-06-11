@@ -86,3 +86,12 @@ type UpdateProfile struct {
 	Affiliation    *string `json:"affiliation,omitempty"`
 	Bio            *string `json:"bio,omitempty"`
 }
+
+type UpdateWork struct {
+	Title           *string   `json:"title,omitempty"`
+	Description     *string   `json:"description,omitempty"`
+	UserIds         []*string `json:"userIds,omitempty"`
+	Skills          []*string `json:"skills,omitempty"`
+	ImageURL        []*string `json:"imageUrl,omitempty"`
+	DiagramImageURL []*string `json:"diagramImageUrl,omitempty"`
+}
