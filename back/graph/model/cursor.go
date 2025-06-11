@@ -23,11 +23,15 @@ func EncodeCursor(c Cursor) string {
 func DecodeCursor(encoded string) (*Cursor, error) {
 	data, err := base64.StdEncoding.DecodeString(encoded)
 	if err != nil {
-		return nil, fmt.Errorf("failed to decode base64: %w", err)
+		log.Printf("failed to decode base64: %v", err)
+
+		return nil, fmt.Errorf("failed to decode base64")
 	}
 	var cursor Cursor
 	if err := json.Unmarshal(data, &cursor); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal cursor JSON: %w", err)
+		log.Printf("failed to unmarshal cursor JSON: %v", err)
+		
+		return nil, fmt.Errorf("failed to unmarshal cursor JSON")
 	}
 	return &cursor, nil
 }

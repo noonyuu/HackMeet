@@ -38,10 +38,16 @@ func (r *mutationResolver) CreateUser(ctx context.Context, input model.NewUser) 
 
 	_, err := r.DB.Exec(query, user.ID, input.FirstName, input.LastName, input.Email, user.CreatedAt, user.UpdatedAt)
 	if err != nil {
-		return nil, err
+		log.Printf("failed to insert user: %v", err)
+
+		return nil, &gqlerror.Error{
+			Message: "ユーザーの登録に失敗しました。",
+			Extensions: map[string]interface{}{
+				"code":  "INTERNAL_SERVER_ERROR",
+			},
+		},	
 	}
 
-	// 作成したユーザーを返す
 	return user, nil
 }
 
@@ -55,7 +61,14 @@ func (r *queryResolver) UserByID(ctx context.Context, id string) (*model.User, e
 	row := r.DB.QueryRow(query, id)
 	var user model.User
 	if err := row.Scan(&user.ID, &user.FirstName, &user.LastName, &user.Email, &user.CreatedAt, &user.UpdatedAt); err != nil {
-		return nil, err
+		log.Printf("failed to query user by ID: %v", err)
+
+		return nil, &gqlerror.Error{
+			Message: "ユーザーの取得に失敗しました。",
+			Extensions: map[string]interface{}{
+				"code":  "INTERNAL_SERVER_ERROR",
+			},
+		},
 	}
 
 	return &user, nil
@@ -69,7 +82,14 @@ func (r *queryResolver) Users(ctx context.Context) ([]*model.User, error) {
 	`
 	rows, err := r.DB.Query(query)
 	if err != nil {
-		return nil, err
+		log.Printf("failed to query users: %v", err)
+
+		return nil, &gqlerror.Error{
+			Message: "ユーザーの取得中にサーバーエラーが発生しました。",
+			Extensions: map[string]interface{}{
+				"code": "INTERNAL_SERVER_ERROR",
+			},
+		},
 	}
 	defer rows.Close()
 
@@ -78,14 +98,26 @@ func (r *queryResolver) Users(ctx context.Context) ([]*model.User, error) {
 	for rows.Next() {
 		var user model.User
 		if err = rows.Scan(&user.ID, &user.FirstName, &user.LastName, &user.Email, &user.CreatedAt, &user.UpdatedAt); err != nil {
-			return nil, err
+			log.Printf("failed to scan user: %v", err)
+
+			return nil, &gqlerror.Error{
+				Message: "ユーザーの取得中にサーバーエラーが発生しました。",
+				Extensions: map[string]interface{}{
+					"code": "INTERNAL_SERVER_ERROR",
+				},
+			},
 		}
 
 		users = append(users, &user)
 	}
 
 	if er := rows.Err(); er != nil {
-		return nil, er
+		return nil, &gqlerror.Error{
+			Message: "ユーザーの取得中にサーバーエラーが発生しました。",
+			Extensions: map[string]interface{}{
+				"code": "INTERNAL_SERVER_ERROR",
+			},
+		},
 	}
 
 	return users, nil
