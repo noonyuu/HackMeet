@@ -29,7 +29,14 @@ func (r *mutationResolver) CreateProfileSkill(ctx context.Context, input model.N
 	VALUES (?, ?, ?, ?)
 `
 	if _, err := r.DB.Exec(query, profileSkill.ProfileID, profileSkill.SkillID, now, now); err != nil {
-		return nil, err
+		log.Printf("failed to insert profile skill: %v", err)
+
+		return nil, &gqlerror.Error{
+			Message: "スキルの登録に失敗しました。",
+			Extensions: map[string]interface{}{
+				"code":  "INTERNAL_SERVER_ERROR",
+			},
+		},
 	}
 
 	return profileSkill, nil
@@ -41,7 +48,14 @@ func (r *mutationResolver) DeleteProfileSkill(ctx context.Context, id int32) (*m
 	DELETE FROM profile_skills WHERE id = ?
 `
 	if _, err := r.DB.Exec(query, id); err != nil {
-		return nil, err
+		log.Printf("failed to delete profile skill: %v", err)
+
+		return nil, &gqlerror.Error{
+			Message: "スキルの削除に失敗しました。",
+			Extensions: map[string]interface{}{
+				"code":  "INTERNAL_SERVER_ERROR",
+			},
+		},
 	}
 
 	return &model.ProfileSkill{ID: id}, nil
@@ -66,7 +80,14 @@ func (r *queryResolver) ProfileSkill(ctx context.Context, id int32) (*model.Prof
 `
 	var profileSkill model.ProfileSkill
 	if err := r.DB.QueryRow(query, id).Scan(&profileSkill.ID, &profileSkill.ProfileID, &profileSkill.SkillID, &profileSkill.CreatedAt, &profileSkill.UpdatedAt); err != nil {
-		return nil, err
+		log.Printf("failed to get profile skill: %v", err)
+
+		return nil, &gqlerror.Error{
+			Message: "スキルの取得に失敗しました。",
+			Extensions: map[string]interface{}{
+				"code":  "INTERNAL_SERVER_ERROR",
+			},
+		},
 	}
 
 	return &profileSkill, nil
@@ -81,7 +102,14 @@ func (r *queryResolver) ProfileSkillsByProfileID(ctx context.Context, profileID 
 `
 	rows, err := r.DB.Query(query, profileID)
 	if err != nil {
-		return nil, err
+		log.Printf("failed to query profile skills: %v", err)
+
+		return nil, &gqlerror.Error{
+			Message: "スキルの取得中にサーバーエラーが発生しました。",
+			Extensions: map[string]interface{}{
+				"code": "INTERNAL_SERVER_ERROR",
+			},
+		}
 	}
 	defer rows.Close()
 
@@ -89,7 +117,14 @@ func (r *queryResolver) ProfileSkillsByProfileID(ctx context.Context, profileID 
 	for rows.Next() {
 		var profileSkill model.ProfileSkill
 		if err := rows.Scan(&profileSkill.ID, &profileSkill.ProfileID, &profileSkill.SkillID, &profileSkill.CreatedAt, &profileSkill.UpdatedAt); err != nil {
-			return nil, err
+			log.Printf("failed to scan profile skill: %v", err)
+			
+			return nil, &gqlerror.Error{
+				Message: "スキルの取得中にサーバーエラーが発生しました。",
+				Extensions: map[string]interface{}{
+					"code": "INTERNAL_SERVER_ERROR",
+				},
+			},
 		}
 		profileSkills = append(profileSkills, &profileSkill)
 	}

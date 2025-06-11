@@ -36,9 +36,16 @@ func (r *mutationResolver) CreateSkill(ctx context.Context, input model.NewSkill
 	`
 	_, err := r.DB.Exec(query, skill.ID, skill.Name, skill.Category, now, now)
 	if err != nil {
-		return nil, err
+		log.Printf("failed to insert skill: %v", err)
+
+		return nil, &gqlerror.Error{
+			Message: "スキルの登録に失敗しました。",
+			Extensions: map[string]interface{}{
+				"code":  "INTERNAL_SERVER_ERROR",
+			},
+		},
 	}
-	// 作成したスキルを返す
+
 	return skill, nil
 }
 
@@ -52,7 +59,14 @@ func (r *queryResolver) SkillByName(ctx context.Context, name string) (*model.Sk
 	row := r.DB.QueryRow(query, name)
 	var skill model.Skill
 	if err := row.Scan(&skill.ID, &skill.Name, &skill.Category, &skill.CreatedAt, &skill.UpdatedAt); err != nil {
-		return nil, err
+		log.Printf("failed to query skill by name: %v", err)
+		
+		return nil, &gqlerror.Error{
+			Message: "スキルの取得に失敗しました。",
+			Extensions: map[string]interface{}{
+				"code":  "INTERNAL_SERVER_ERROR",
+			},
+		},
 	}
 	// スキルを返す
 	return &skill, nil
@@ -66,7 +80,14 @@ func (r *queryResolver) Skills(ctx context.Context) ([]*model.Skill, error) {
 	`
 	rows, err := r.DB.Query(query)
 	if err != nil {
-		return nil, err
+		log.Printf("failed to query skills: %v", err)
+		
+		return nil, &gqlerror.Error{
+			Message: "スキルの取得中にサーバーエラーが発生しました。",
+			Extensions: map[string]interface{}{
+				"code": "INTERNAL_SERVER_ERROR",
+			},
+		},
 	}
 	defer rows.Close()
 
@@ -74,13 +95,27 @@ func (r *queryResolver) Skills(ctx context.Context) ([]*model.Skill, error) {
 	for rows.Next() {
 		var skill model.Skill
 		if err := rows.Scan(&skill.ID, &skill.Name, &skill.Category, &skill.CreatedAt, &skill.UpdatedAt); err != nil {
-			return nil, err
+			log.Printf("failed to scan skill: %v", err)
+
+			return nil, &gqlerror.Error{
+				Message: "スキルの取得中にサーバーエラーが発生しました。",
+				Extensions: map[string]interface{}{
+					"code": "INTERNAL_SERVER_ERROR",
+				},
+			},
 		}
 		skills = append(skills, &skill)
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, err
+		log.Printf("error iterating over skills: %v", err)
+		
+		return nil, &gqlerror.Error{
+			Message: "スキルの取得中にサーバーエラーが発生しました。",
+			Extensions: map[string]interface{}{
+				"code": "INTERNAL_SERVER_ERROR",
+			},
+		},
 	}
 
 	return skills, nil

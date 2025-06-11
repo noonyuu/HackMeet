@@ -93,7 +93,14 @@ func (r *mutationResolver) CreateProfile(ctx context.Context, input model.NewPro
 		profileToInsert.UpdatedAt,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("failed to insert profile: %w", err)
+		log.Printf("failed to insert profile: %v", err)
+
+		return nil, &gqlerror.Error{
+			Message: "プロフィールの作成中にサーバーエラーが発生しました。",
+			Extensions: map[string]interface{}{
+				"code": "INTERNAL_SERVER_ERROR",
+			},
+		},
 	}
 
 	return profileToInsert, nil
@@ -136,7 +143,14 @@ func (r *mutationResolver) UpdateProfile(ctx context.Context, input model.Update
 		input.ID,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("failed to update profile in database: %w", err)
+		log.Printf("failed to update profile: %v", err)
+
+		return nil, &gqlerror.Error{
+			Message: "プロフィールの更新中にサーバーエラーが発生しました。",
+			Extensions: map[string]interface{}{
+				"code": "INTERNAL_SERVER_ERROR",
+			},
+		},
 	}
 
 	selectQuery := `
@@ -160,9 +174,22 @@ func (r *mutationResolver) UpdateProfile(ctx context.Context, input model.Update
 		&fetchedProfile.UpdatedAt,
 	); err != nil {
 		if err == sql.ErrNoRows {
-			return nil, fmt.Errorf("profile with id %s not found after update", input.ID) // 更新直後なので通常は見つかるはず
+			log.Printf("profile with id %s not found after update", input.ID)
+			return nil, &gqlerror.Error{
+				Message: "プロフィールが見つかりません。",
+				Extensions: map[string]interface{}{
+					"code": "NOT_FOUND",
+				},
+			}
 		}
-		return nil, fmt.Errorf("failed to fetch profile after update: %w", err)
+		log.Printf("failed to scan updated profile: %v", err)
+
+		return nil, &gqlerror.Error{
+			Message: "プロフィールの取得中にサーバーエラーが発生しました。",
+			Extensions: map[string]interface{}{
+				"code": "INTERNAL_SERVER_ERROR",
+			},
+		},
 	}
 
 	// sql.NullInt32 から model.Profile の *int32 へ変換
@@ -212,9 +239,23 @@ func (r *queryResolver) Profile(ctx context.Context, id string) (*model.Profile,
 		&profile.UpdatedAt,
 	); err != nil {
 		if err == sql.ErrNoRows {
-			return nil, nil
+			log.Printf("profile with id %s not found", id)
+
+			return nil, &gqlerror.Error{
+				Message: "プロフィールが見つかりません。",
+				Extensions: map[string]interface{}{
+					"code": "NOT_FOUND",
+				},
+			},
 		}
-		return nil, fmt.Errorf("failed to scan profile by ID %s: %w", id, err)
+		log.Printf("failed to scan profile data for ID %s: %v", id, err)
+
+		return nil, &gqlerror.Error{
+			Message: "プロフィールの取得中にサーバーエラーが発生しました。",
+			Extensions: map[string]interface{}{
+				"code": "INTERNAL_SERVER_ERROR",
+			},
+		},
 	}
 
 	if avatarURL.Valid {
@@ -277,9 +318,23 @@ func (r *queryResolver) ProfileByNickName(ctx context.Context, nickName string) 
 		&profile.UpdatedAt,
 	); err != nil {
 		if err == sql.ErrNoRows {
-			return nil, nil
+			log.Printf("profile with nick name %s not found", nickName)
+
+			return nil, &gqlerror.Error{
+				Message: "プロフィールが見つかりません。",
+				Extensions: map[string]interface{}{
+					"code": "NOT_FOUND",
+				},
+			},
 		}
-		return nil, fmt.Errorf("failed to scan profile by user name %s: %w", nickName, err)
+		log.Printf("failed to scan profile by user name %s: %v", nickName, err)
+
+		return nil, &gqlerror.Error{
+			Message: "プロフィールの取得中にサーバーエラーが発生しました。",
+			Extensions: map[string]interface{}{
+				"code": "INTERNAL_SERVER_ERROR",
+			},
+		},
 	}
 
 	if avatarURL.Valid {
@@ -342,9 +397,23 @@ func (r *queryResolver) ProfileByUserID(ctx context.Context, id string) (*model.
 		&profile.UpdatedAt,
 	); err != nil {
 		if err == sql.ErrNoRows {
-			return nil, nil
+			log.Printf("profile with id %s not found", id)
+
+			return nil, &gqlerror.Error{
+				Message: "プロフィールが見つかりません。",
+				Extensions: map[string]interface{}{
+					"code": "NOT_FOUND",
+				},
+			},
 		}
-		return nil, fmt.Errorf("failed to scan profile data for ID %s: %w", id, err)
+		log.Printf("failed to scan profile data for ID %s: %v", id, err)
+
+		return nil, &gqlerror.Error{
+			Message: "プロフィールの取得中にサーバーエラーが発生しました。",
+			Extensions: map[string]interface{}{
+				"code": "INTERNAL_SERVER_ERROR",
+			},
+		},
 	}
 
 	if avatarURL.Valid {
