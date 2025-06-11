@@ -8,10 +8,12 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/noonyuu/nfc/back/graph"
 	"github.com/noonyuu/nfc/back/graph/model"
+	"github.com/vektah/gqlparser/gqlerror"
 )
 
 // CreateWorkProfile is the resolver for the createWorkProfile field.
@@ -35,9 +37,9 @@ func (r *mutationResolver) CreateWorkProfile(ctx context.Context, input model.Ne
 		return nil, &gqlerror.Error{
 			Message: "作品の登録に失敗しました。",
 			Extensions: map[string]interface{}{
-				"code":  "INTERNAL_SERVER_ERROR",
+				"code": "INTERNAL_SERVER_ERROR",
 			},
-		},
+		}
 	}
 
 	return workProfile, nil
@@ -51,13 +53,13 @@ func (r *mutationResolver) DeleteWorkProfile(ctx context.Context, id int32) (*mo
 	result, err := r.DB.ExecContext(ctx, query, id)
 	if err != nil {
 		log.Printf("failed to delete work profile: %v", err)
-		
+
 		return nil, &gqlerror.Error{
 			Message: "作品の削除に失敗しました。",
 			Extensions: map[string]interface{}{
-				"code":  "INTERNAL_SERVER_ERROR",
+				"code": "INTERNAL_SERVER_ERROR",
 			},
-		},
+		}
 	}
 
 	rowsAffected, err := result.RowsAffected()
@@ -67,9 +69,9 @@ func (r *mutationResolver) DeleteWorkProfile(ctx context.Context, id int32) (*mo
 		return nil, &gqlerror.Error{
 			Message: "作品の削除に失敗しました。",
 			Extensions: map[string]interface{}{
-				"code":  "INTERNAL_SERVER_ERROR",
+				"code": "INTERNAL_SERVER_ERROR",
 			},
-		},
+		}
 	}
 	if rowsAffected == 0 {
 		log.Printf("work profile with ID %d not found", id)
@@ -79,7 +81,7 @@ func (r *mutationResolver) DeleteWorkProfile(ctx context.Context, id int32) (*mo
 			Extensions: map[string]interface{}{
 				"code": "NOT_FOUND",
 			},
-		},
+		}
 	}
 
 	return &model.WorkProfile{ID: id}, nil
@@ -123,7 +125,7 @@ func (r *queryResolver) WorkProfile(ctx context.Context, id int32) (*model.WorkP
 				Extensions: map[string]interface{}{
 					"code": "NOT_FOUND",
 				},
-			},
+			}
 		}
 		return nil, fmt.Errorf("failed to scan work profile: %w", err)
 	}
@@ -155,9 +157,9 @@ func (r *queryResolver) WorkProfile(ctx context.Context, id int32) (*model.WorkP
 		return nil, &gqlerror.Error{
 			Message: "作品のスキル取得に失敗しました。",
 			Extensions: map[string]interface{}{
-				"code":  "INTERNAL_SERVER_ERROR",
+				"code": "INTERNAL_SERVER_ERROR",
 			},
-		},
+		}
 	}
 	defer skillRows.Close()
 
@@ -170,7 +172,7 @@ func (r *queryResolver) WorkProfile(ctx context.Context, id int32) (*model.WorkP
 			return nil, &gqlerror.Error{
 				Message: "作品のスキル取得に失敗しました。",
 				Extensions: map[string]interface{}{
-					"code":  "INTERNAL_SERVER_ERROR",
+					"code": "INTERNAL_SERVER_ERROR",
 				},
 			}
 		}
@@ -182,9 +184,9 @@ func (r *queryResolver) WorkProfile(ctx context.Context, id int32) (*model.WorkP
 		return nil, &gqlerror.Error{
 			Message: "作品のスキル取得中にサーバーエラーが発生しました。",
 			Extensions: map[string]interface{}{
-				"code":  "INTERNAL_SERVER_ERROR",
+				"code": "INTERNAL_SERVER_ERROR",
 			},
-		},
+		}
 	}
 	work.Skills = skills
 
@@ -202,8 +204,8 @@ func (r *queryResolver) WorkProfile(ctx context.Context, id int32) (*model.WorkP
 		return nil, &gqlerror.Error{
 			Message: "作品の画像取得に失敗しました。",
 			Extensions: map[string]interface{}{
-				"code":  "INTERNAL_SERVER_ERROR",
-			}
+				"code": "INTERNAL_SERVER_ERROR",
+			},
 		}
 	}
 	defer imageRows.Close()
@@ -218,9 +220,9 @@ func (r *queryResolver) WorkProfile(ctx context.Context, id int32) (*model.WorkP
 			return nil, &gqlerror.Error{
 				Message: "作品の画像取得に失敗しました。",
 				Extensions: map[string]interface{}{
-					"code":  "INTERNAL_SERVER_ERROR",
+					"code": "INTERNAL_SERVER_ERROR",
 				},
-			},
+			}
 		}
 		images = append(images, img)
 		imageIDs = append(imageIDs, img.ID)
@@ -231,9 +233,9 @@ func (r *queryResolver) WorkProfile(ctx context.Context, id int32) (*model.WorkP
 		return nil, &gqlerror.Error{
 			Message: "作品の画像取得中にサーバーエラーが発生しました。",
 			Extensions: map[string]interface{}{
-				"code":  "INTERNAL_SERVER_ERROR",
+				"code": "INTERNAL_SERVER_ERROR",
 			},
-		},
+		}
 	}
 	work.Images = images
 	work.ImageID = imageIDs
@@ -252,8 +254,8 @@ func (r *queryResolver) WorkProfile(ctx context.Context, id int32) (*model.WorkP
 		return nil, &gqlerror.Error{
 			Message: "作品の図表画像取得に失敗しました。",
 			Extensions: map[string]interface{}{
-				"code":  "INTERNAL_SERVER_ERROR",
-			}
+				"code": "INTERNAL_SERVER_ERROR",
+			},
 		}
 	}
 	defer diagramImageRows.Close()
@@ -268,7 +270,7 @@ func (r *queryResolver) WorkProfile(ctx context.Context, id int32) (*model.WorkP
 			return nil, &gqlerror.Error{
 				Message: "作品の図表画像取得に失敗しました。",
 				Extensions: map[string]interface{}{
-					"code":  "INTERNAL_SERVER_ERROR",
+					"code": "INTERNAL_SERVER_ERROR",
 				},
 			}
 		}
@@ -281,9 +283,9 @@ func (r *queryResolver) WorkProfile(ctx context.Context, id int32) (*model.WorkP
 		return nil, &gqlerror.Error{
 			Message: "作品の図表画像取得中にサーバーエラーが発生しました。",
 			Extensions: map[string]interface{}{
-				"code":  "INTERNAL_SERVER_ERROR",
+				"code": "INTERNAL_SERVER_ERROR",
 			},
-		},
+		}
 	}
 	work.DiagramImages = diagramImages
 	work.DiagramImageID = diagramImageURLs
@@ -297,9 +299,9 @@ func (r *queryResolver) WorkProfile(ctx context.Context, id int32) (*model.WorkP
 		return nil, &gqlerror.Error{
 			Message: "作品のユーザーID取得に失敗しました。",
 			Extensions: map[string]interface{}{
-				"code":  "INTERNAL_SERVER_ERROR",
+				"code": "INTERNAL_SERVER_ERROR",
 			},
-		},
+		}
 	}
 	defer userIDRows.Close()
 
@@ -312,14 +314,21 @@ func (r *queryResolver) WorkProfile(ctx context.Context, id int32) (*model.WorkP
 			return nil, &gqlerror.Error{
 				Message: "作品のユーザーID取得中にサーバーエラーが発生しました。",
 				Extensions: map[string]interface{}{
-					"code":  "INTERNAL_SERVER_ERROR",
+					"code": "INTERNAL_SERVER_ERROR",
 				},
 			}
 		}
 		userIDs = append(userIDs, userID)
 	}
 	if err = userIDRows.Err(); err != nil {
-		return nil, fmt.Errorf("error iterating user ID rows for work %s: %w", work.ID, err)
+		log.Printf("error iterating user ID rows for work %s: %v", work.ID, err)
+
+		return nil, &gqlerror.Error{
+			Message: "作品のユーザーID取得中にサーバーエラーが発生しました。",
+			Extensions: map[string]interface{}{
+				"code": "INTERNAL_SERVER_ERROR",
+			},
+		}
 	}
 	work.UserIDs = userIDs
 
@@ -337,7 +346,7 @@ func (r *queryResolver) WorkProfile(ctx context.Context, id int32) (*model.WorkP
 		return nil, &gqlerror.Error{
 			Message: "作品のイベント取得に失敗しました。",
 			Extensions: map[string]interface{}{
-				"code":  "INTERNAL_SERVER_ERROR",
+				"code": "INTERNAL_SERVER_ERROR",
 			},
 		}
 	}
@@ -352,8 +361,8 @@ func (r *queryResolver) WorkProfile(ctx context.Context, id int32) (*model.WorkP
 			return nil, &gqlerror.Error{
 				Message: "作品のイベント取得に失敗しました。",
 				Extensions: map[string]interface{}{
-					"code":  "INTERNAL_SERVER_ERROR",
-				}	
+					"code": "INTERNAL_SERVER_ERROR",
+				},
 			}
 		}
 		events = append(events, event)
@@ -364,7 +373,7 @@ func (r *queryResolver) WorkProfile(ctx context.Context, id int32) (*model.WorkP
 		return nil, &gqlerror.Error{
 			Message: "作品のイベント取得中にサーバーエラーが発生しました。",
 			Extensions: map[string]interface{}{
-				"code":  "INTERNAL_SERVER_ERROR",
+				"code": "INTERNAL_SERVER_ERROR",
 			},
 		}
 	}
@@ -390,9 +399,9 @@ func (r *queryResolver) WorkProfilesByWorkID(ctx context.Context, workID string)
 		return nil, &gqlerror.Error{
 			Message: "作品のプロフィール取得に失敗しました。",
 			Extensions: map[string]interface{}{
-				"code":  "INTERNAL_SERVER_ERROR",
+				"code": "INTERNAL_SERVER_ERROR",
 			},
-		},
+		}
 	}
 	defer rows.Close()
 
@@ -405,7 +414,7 @@ func (r *queryResolver) WorkProfilesByWorkID(ctx context.Context, workID string)
 			return nil, &gqlerror.Error{
 				Message: "作品のプロフィール取得中にサーバーエラーが発生しました。",
 				Extensions: map[string]interface{}{
-					"code":  "INTERNAL_SERVER_ERROR",
+					"code": "INTERNAL_SERVER_ERROR",
 				},
 			}
 		}
@@ -450,7 +459,7 @@ func (r *queryResolver) WorkProfilesByWorkID(ctx context.Context, workID string)
 			return nil, &gqlerror.Error{
 				Message: "作品のスキル取得に失敗しました。",
 				Extensions: map[string]interface{}{
-					"code":  "INTERNAL_SERVER_ERROR",
+					"code": "INTERNAL_SERVER_ERROR",
 				},
 			}
 		}
@@ -465,7 +474,7 @@ func (r *queryResolver) WorkProfilesByWorkID(ctx context.Context, workID string)
 				return nil, &gqlerror.Error{
 					Message: "作品のスキル取得中にサーバーエラーが発生しました。",
 					Extensions: map[string]interface{}{
-						"code":  "INTERNAL_SERVER_ERROR",
+						"code": "INTERNAL_SERVER_ERROR",
 					},
 				}
 			}
@@ -477,7 +486,7 @@ func (r *queryResolver) WorkProfilesByWorkID(ctx context.Context, workID string)
 			return nil, &gqlerror.Error{
 				Message: "作品のスキル取得中にサーバーエラーが発生しました。",
 				Extensions: map[string]interface{}{
-					"code":  "INTERNAL_SERVER_ERROR",
+					"code": "INTERNAL_SERVER_ERROR",
 				},
 			}
 		}
@@ -497,7 +506,7 @@ func (r *queryResolver) WorkProfilesByWorkID(ctx context.Context, workID string)
 			return nil, &gqlerror.Error{
 				Message: "作品の画像取得に失敗しました。",
 				Extensions: map[string]interface{}{
-					"code":  "INTERNAL_SERVER_ERROR",
+					"code": "INTERNAL_SERVER_ERROR",
 				},
 			}
 		}
@@ -508,12 +517,12 @@ func (r *queryResolver) WorkProfilesByWorkID(ctx context.Context, workID string)
 		for imageRows.Next() {
 			img := &model.Image{}
 			if err := imageRows.Scan(&img.ID, &img.ImageURL, &img.CreatedAt, &img.UpdatedAt); err != nil {
-			log.Printf("failed to scan image for work %s: %v", work.ID, err)
+				log.Printf("failed to scan image for work %s: %v", work.ID, err)
 
 				return nil, &gqlerror.Error{
 					Message: "作品の画像取得中にサーバーエラーが発生しました。",
 					Extensions: map[string]interface{}{
-						"code":  "INTERNAL_SERVER_ERROR",
+						"code": "INTERNAL_SERVER_ERROR",
 					},
 				}
 			}
@@ -526,7 +535,7 @@ func (r *queryResolver) WorkProfilesByWorkID(ctx context.Context, workID string)
 			return nil, &gqlerror.Error{
 				Message: "作品の画像取得中にサーバーエラーが発生しました。",
 				Extensions: map[string]interface{}{
-					"code":  "INTERNAL_SERVER_ERROR",
+					"code": "INTERNAL_SERVER_ERROR",
 				},
 			}
 		}
@@ -547,7 +556,7 @@ func (r *queryResolver) WorkProfilesByWorkID(ctx context.Context, workID string)
 			return nil, &gqlerror.Error{
 				Message: "作品の図表画像取得に失敗しました。",
 				Extensions: map[string]interface{}{
-					"code":  "INTERNAL_SERVER_ERROR",
+					"code": "INTERNAL_SERVER_ERROR",
 				},
 			}
 		}
@@ -563,7 +572,7 @@ func (r *queryResolver) WorkProfilesByWorkID(ctx context.Context, workID string)
 				return nil, &gqlerror.Error{
 					Message: "作品の図表画像取得中にサーバーエラーが発生しました。",
 					Extensions: map[string]interface{}{
-						"code":  "INTERNAL_SERVER_ERROR",
+						"code": "INTERNAL_SERVER_ERROR",
 					},
 				}
 			}
@@ -576,7 +585,7 @@ func (r *queryResolver) WorkProfilesByWorkID(ctx context.Context, workID string)
 			return nil, &gqlerror.Error{
 				Message: "作品の図表画像取得中にサーバーエラーが発生しました。",
 				Extensions: map[string]interface{}{
-					"code":  "INTERNAL_SERVER_ERROR",
+					"code": "INTERNAL_SERVER_ERROR",
 				},
 			}
 		}
@@ -592,7 +601,7 @@ func (r *queryResolver) WorkProfilesByWorkID(ctx context.Context, workID string)
 			return nil, &gqlerror.Error{
 				Message: "作品のユーザーID取得に失敗しました。",
 				Extensions: map[string]interface{}{
-					"code":  "INTERNAL_SERVER_ERROR",
+					"code": "INTERNAL_SERVER_ERROR",
 				},
 			}
 		}
@@ -607,7 +616,7 @@ func (r *queryResolver) WorkProfilesByWorkID(ctx context.Context, workID string)
 				return nil, &gqlerror.Error{
 					Message: "作品のユーザーID取得中にサーバーエラーが発生しました。",
 					Extensions: map[string]interface{}{
-						"code":  "INTERNAL_SERVER_ERROR",
+						"code": "INTERNAL_SERVER_ERROR",
 					},
 				}
 			}
@@ -619,7 +628,7 @@ func (r *queryResolver) WorkProfilesByWorkID(ctx context.Context, workID string)
 			return nil, &gqlerror.Error{
 				Message: "作品のユーザーID取得中にサーバーエラーが発生しました。",
 				Extensions: map[string]interface{}{
-					"code":  "INTERNAL_SERVER_ERROR",
+					"code": "INTERNAL_SERVER_ERROR",
 				},
 			}
 		}
@@ -639,7 +648,7 @@ func (r *queryResolver) WorkProfilesByWorkID(ctx context.Context, workID string)
 			return nil, &gqlerror.Error{
 				Message: "作品のイベント取得に失敗しました。",
 				Extensions: map[string]interface{}{
-					"code":  "INTERNAL_SERVER_ERROR",
+					"code": "INTERNAL_SERVER_ERROR",
 				},
 			}
 		}
@@ -654,7 +663,7 @@ func (r *queryResolver) WorkProfilesByWorkID(ctx context.Context, workID string)
 				return nil, &gqlerror.Error{
 					Message: "作品のイベント取得中にサーバーエラーが発生しました。",
 					Extensions: map[string]interface{}{
-						"code":  "INTERNAL_SERVER_ERROR",
+						"code": "INTERNAL_SERVER_ERROR",
 					},
 				}
 			}
@@ -666,7 +675,7 @@ func (r *queryResolver) WorkProfilesByWorkID(ctx context.Context, workID string)
 			return nil, &gqlerror.Error{
 				Message: "作品のイベント取得中にサーバーエラーが発生しました。",
 				Extensions: map[string]interface{}{
-					"code":  "INTERNAL_SERVER_ERROR",
+					"code": "INTERNAL_SERVER_ERROR",
 				},
 			}
 		}
@@ -698,7 +707,7 @@ func (r *queryResolver) WorkProfilesByWorkID(ctx context.Context, workID string)
 			return nil, &gqlerror.Error{
 				Message: "作品のプロフィール取得中にサーバーエラーが発生しました。",
 				Extensions: map[string]interface{}{
-					"code":  "INTERNAL_SERVER_ERROR",
+					"code": "INTERNAL_SERVER_ERROR",
 				},
 			}
 		}
@@ -721,7 +730,7 @@ func (r *queryResolver) WorkProfilesByWorkID(ctx context.Context, workID string)
 		return nil, &gqlerror.Error{
 			Message: "作品のプロフィール取得中にサーバーエラーが発生しました。",
 			Extensions: map[string]interface{}{
-				"code":  "INTERNAL_SERVER_ERROR",
+				"code": "INTERNAL_SERVER_ERROR",
 			},
 		}
 	}
@@ -743,9 +752,9 @@ func (r *queryResolver) WorkProfilesByProfileID(ctx context.Context, profileID s
 		return nil, &gqlerror.Error{
 			Message: "プロフィールの作品取得に失敗しました。",
 			Extensions: map[string]interface{}{
-				"code":  "INTERNAL_SERVER_ERROR",
+				"code": "INTERNAL_SERVER_ERROR",
 			},
-		},
+		}
 	}
 	defer rows.Close()
 
@@ -758,7 +767,7 @@ func (r *queryResolver) WorkProfilesByProfileID(ctx context.Context, profileID s
 			return nil, &gqlerror.Error{
 				Message: "プロフィールの作品取得中にサーバーエラーが発生しました。",
 				Extensions: map[string]interface{}{
-					"code":  "INTERNAL_SERVER_ERROR",
+					"code": "INTERNAL_SERVER_ERROR",
 				},
 			}
 		}
@@ -793,7 +802,7 @@ func (r *queryResolver) WorkProfilesByProfileID(ctx context.Context, profileID s
 			return nil, &gqlerror.Error{
 				Message: "作品のスキル取得に失敗しました。",
 				Extensions: map[string]interface{}{
-					"code":  "INTERNAL_SERVER_ERROR",
+					"code": "INTERNAL_SERVER_ERROR",
 				},
 			}
 		}

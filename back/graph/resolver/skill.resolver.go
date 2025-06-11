@@ -6,11 +6,13 @@ package resolver
 
 import (
 	"context"
+	"log"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/noonyuu/nfc/back/graph"
 	"github.com/noonyuu/nfc/back/graph/model"
+	"github.com/vektah/gqlparser/gqlerror"
 )
 
 // CreateSkill is the resolver for the createSkill field.
@@ -41,9 +43,9 @@ func (r *mutationResolver) CreateSkill(ctx context.Context, input model.NewSkill
 		return nil, &gqlerror.Error{
 			Message: "スキルの登録に失敗しました。",
 			Extensions: map[string]interface{}{
-				"code":  "INTERNAL_SERVER_ERROR",
+				"code": "INTERNAL_SERVER_ERROR",
 			},
-		},
+		}
 	}
 
 	return skill, nil
@@ -60,13 +62,13 @@ func (r *queryResolver) SkillByName(ctx context.Context, name string) (*model.Sk
 	var skill model.Skill
 	if err := row.Scan(&skill.ID, &skill.Name, &skill.Category, &skill.CreatedAt, &skill.UpdatedAt); err != nil {
 		log.Printf("failed to query skill by name: %v", err)
-		
+
 		return nil, &gqlerror.Error{
 			Message: "スキルの取得に失敗しました。",
 			Extensions: map[string]interface{}{
-				"code":  "INTERNAL_SERVER_ERROR",
+				"code": "INTERNAL_SERVER_ERROR",
 			},
-		},
+		}
 	}
 	// スキルを返す
 	return &skill, nil
@@ -81,13 +83,13 @@ func (r *queryResolver) Skills(ctx context.Context) ([]*model.Skill, error) {
 	rows, err := r.DB.Query(query)
 	if err != nil {
 		log.Printf("failed to query skills: %v", err)
-		
+
 		return nil, &gqlerror.Error{
 			Message: "スキルの取得中にサーバーエラーが発生しました。",
 			Extensions: map[string]interface{}{
 				"code": "INTERNAL_SERVER_ERROR",
 			},
-		},
+		}
 	}
 	defer rows.Close()
 
@@ -102,20 +104,20 @@ func (r *queryResolver) Skills(ctx context.Context) ([]*model.Skill, error) {
 				Extensions: map[string]interface{}{
 					"code": "INTERNAL_SERVER_ERROR",
 				},
-			},
+			}
 		}
 		skills = append(skills, &skill)
 	}
 
 	if err := rows.Err(); err != nil {
 		log.Printf("error iterating over skills: %v", err)
-		
+
 		return nil, &gqlerror.Error{
 			Message: "スキルの取得中にサーバーエラーが発生しました。",
 			Extensions: map[string]interface{}{
 				"code": "INTERNAL_SERVER_ERROR",
 			},
-		},
+		}
 	}
 
 	return skills, nil

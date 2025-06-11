@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"time"
+	"log"
 )
 
 // Cursor はページネーションのための情報を保持

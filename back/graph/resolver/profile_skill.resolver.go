@@ -6,10 +6,12 @@ package resolver
 
 import (
 	"context"
+	"log"
 	"time"
 
 	"github.com/noonyuu/nfc/back/graph"
 	"github.com/noonyuu/nfc/back/graph/model"
+	"github.com/vektah/gqlparser/gqlerror"
 )
 
 // CreateProfileSkill is the resolver for the createProfileSkill field.
@@ -34,9 +36,9 @@ func (r *mutationResolver) CreateProfileSkill(ctx context.Context, input model.N
 		return nil, &gqlerror.Error{
 			Message: "スキルの登録に失敗しました。",
 			Extensions: map[string]interface{}{
-				"code":  "INTERNAL_SERVER_ERROR",
+				"code": "INTERNAL_SERVER_ERROR",
 			},
-		},
+		}
 	}
 
 	return profileSkill, nil
@@ -53,9 +55,9 @@ func (r *mutationResolver) DeleteProfileSkill(ctx context.Context, id int32) (*m
 		return nil, &gqlerror.Error{
 			Message: "スキルの削除に失敗しました。",
 			Extensions: map[string]interface{}{
-				"code":  "INTERNAL_SERVER_ERROR",
+				"code": "INTERNAL_SERVER_ERROR",
 			},
-		},
+		}
 	}
 
 	return &model.ProfileSkill{ID: id}, nil
@@ -85,9 +87,9 @@ func (r *queryResolver) ProfileSkill(ctx context.Context, id int32) (*model.Prof
 		return nil, &gqlerror.Error{
 			Message: "スキルの取得に失敗しました。",
 			Extensions: map[string]interface{}{
-				"code":  "INTERNAL_SERVER_ERROR",
+				"code": "INTERNAL_SERVER_ERROR",
 			},
-		},
+		}
 	}
 
 	return &profileSkill, nil
@@ -118,13 +120,13 @@ func (r *queryResolver) ProfileSkillsByProfileID(ctx context.Context, profileID 
 		var profileSkill model.ProfileSkill
 		if err := rows.Scan(&profileSkill.ID, &profileSkill.ProfileID, &profileSkill.SkillID, &profileSkill.CreatedAt, &profileSkill.UpdatedAt); err != nil {
 			log.Printf("failed to scan profile skill: %v", err)
-			
+
 			return nil, &gqlerror.Error{
 				Message: "スキルの取得中にサーバーエラーが発生しました。",
 				Extensions: map[string]interface{}{
 					"code": "INTERNAL_SERVER_ERROR",
 				},
-			},
+			}
 		}
 		profileSkills = append(profileSkills, &profileSkill)
 	}
