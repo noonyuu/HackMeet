@@ -15,6 +15,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/noonyuu/nfc/back/graph"
 	"github.com/noonyuu/nfc/back/graph/model"
+	"github.com/vektah/gqlparser/gqlerror"
 )
 
 // CreateWork is the resolver for the createWork field.
@@ -59,7 +60,13 @@ func (r *mutationResolver) CreateWork(ctx context.Context, input model.NewWork) 
 	`
 	if _, err = tx.ExecContext(ctx, query, work.ID, work.Title, work.Description, now, now); err != nil {
 		log.Printf("Error inserting into works with transaction: %v", err)
-		return nil, fmt.Errorf("failed to insert work with transaction: %w", err)
+
+		return nil, &gqlerror.Error{
+			Message: "作品の登録に失敗しました。",
+			Extensions: map[string]interface{}{
+				"code": "INTERNAL_SERVER_ERROR",
+			},
+		}
 	}
 
 	if input.ImageURL != nil {
@@ -71,11 +78,25 @@ func (r *mutationResolver) CreateWork(ctx context.Context, input model.NewWork) 
 			imageID := imageUID.String()
 
 			if _, err := tx.ExecContext(ctx, imageQuery, imageID, imageUrl, now, now); err != nil {
-				return nil, fmt.Errorf("failed to insert image: %w", err)
+				log.Printf("Error inserting image with transaction: %v", err)
+
+				return nil, &gqlerror.Error{
+					Message: "画像の登録に失敗しました。",
+					Extensions: map[string]interface{}{
+						"code": "INTERNAL_SERVER_ERROR",
+					},
+				}
 			}
 
 			if _, err := tx.ExecContext(ctx, workImageQuery, work.ID, imageID, now, now); err != nil {
-				return nil, fmt.Errorf("failed to insert work_image relation: %w", err)
+				log.Printf("Error inserting work_image relation with transaction: %v", err)
+
+				return nil, &gqlerror.Error{
+					Message: "失敗しました。",
+					Extensions: map[string]interface{}{
+						"code": "INTERNAL_SERVER_ERROR",
+					},
+				}
 			}
 		}
 	}
@@ -89,11 +110,25 @@ func (r *mutationResolver) CreateWork(ctx context.Context, input model.NewWork) 
 			diagramImageID := diagramImageUID.String()
 
 			if _, err := tx.ExecContext(ctx, diagramImageQuery, diagramImageID, diagramImageUrl, now, now); err != nil {
-				return nil, fmt.Errorf("failed to insert diagram_image: %w", err)
+				log.Printf("Error inserting diagram image with transaction: %v", err)
+
+				return nil, &gqlerror.Error{
+					Message: "図の画像の登録に失敗しました。",
+					Extensions: map[string]interface{}{
+						"code": "INTERNAL_SERVER_ERROR",
+					},
+				}
 			}
 
 			if _, err := tx.ExecContext(ctx, workDiagramImageQuery, work.ID, diagramImageID, now, now); err != nil {
-				return nil, fmt.Errorf("failed to insert work_diagram_image relation: %w", err)
+				log.Printf("Error inserting work_diagram_image relation with transaction: %v", err)
+
+				return nil, &gqlerror.Error{
+					Message: "失敗しました。",
+					Extensions: map[string]interface{}{
+						"code": "INTERNAL_SERVER_ERROR",
+					},
+				}
 			}
 		}
 	}
@@ -102,7 +137,14 @@ func (r *mutationResolver) CreateWork(ctx context.Context, input model.NewWork) 
 		skillQuery := `INSERT INTO work_skills (work_id, skill_id, created_at, updated_at) VALUES (?, ?, ?, ?)`
 		for _, skillID := range input.Skills {
 			if _, err := tx.ExecContext(ctx, skillQuery, work.ID, skillID, now, now); err != nil {
-				return nil, fmt.Errorf("failed to insert work_skill: %w", err)
+				log.Printf("Error inserting work_skill with transaction: %v", err)
+
+				return nil, &gqlerror.Error{
+					Message: "スキルの登録に失敗しました。",
+					Extensions: map[string]interface{}{
+						"code": "INTERNAL_SERVER_ERROR",
+					},
+				}
 			}
 		}
 	}
@@ -111,13 +153,27 @@ func (r *mutationResolver) CreateWork(ctx context.Context, input model.NewWork) 
 		profileQuery := `INSERT INTO work_profiles (work_id, profile_id, created_at, updated_at) VALUES (?, ?, ?, ?)`
 		for _, userID := range input.UserIds {
 			if _, err := tx.ExecContext(ctx, profileQuery, work.ID, userID, now, now); err != nil {
-				return nil, fmt.Errorf("failed to insert work_profile: %w", err)
+				log.Printf("Error inserting work_profile with transaction: %v", err)
+
+				return nil, &gqlerror.Error{
+					Message: "ユーザーの登録に失敗しました。",
+					Extensions: map[string]interface{}{
+						"code": "INTERNAL_SERVER_ERROR",
+					},
+				}
 			}
 		}
 	}
 
 	if err := tx.Commit(); err != nil {
-		return nil, fmt.Errorf("failed to commit transaction: %w", err)
+		log.Printf("Error committing transaction: %v", err)
+
+		return nil, &gqlerror.Error{
+			Message: "作品の登録に失敗しました。",
+			Extensions: map[string]interface{}{
+				"code": "INTERNAL_SERVER_ERROR",
+			},
+		}
 	}
 
 	return work, nil
@@ -130,7 +186,14 @@ func (r *mutationResolver) CreateProjectEvent(ctx context.Context, input model.N
 
 	tx, err := r.DB.BeginTx(ctx, nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to begin transaction: %w", err)
+		log.Printf("Error beginning transaction: %v", err)
+
+		return nil, &gqlerror.Error{
+			Message: "プロジェクトイベントの作成に失敗しました。",
+			Extensions: map[string]interface{}{
+				"code": "INTERNAL_SERVER_ERROR",
+			},
+		}
 	}
 	defer func() {
 		if p := recover(); p != nil {
@@ -166,9 +229,14 @@ func (r *mutationResolver) CreateProjectEvent(ctx context.Context, input model.N
       VALUES (?, ?, ?, ?, ?)
     `
 		if _, execErr := tx.ExecContext(ctx, query, respWork.ID, respWork.Title, respWork.Description, respWork.CreatedAt, respWork.UpdatedAt); execErr != nil {
-			err = fmt.Errorf("failed to insert work: %w", execErr)
-			log.Printf("Error: %v", err)
-			return nil, err
+			log.Printf("Error inserting new work: %v", execErr)
+
+			return nil, &gqlerror.Error{
+				Message: "作品の登録に失敗しました。",
+				Extensions: map[string]interface{}{
+					"code": "INTERNAL_SERVER_ERROR",
+				},
+			}
 		}
 
 		if input.ImageURL != nil {
@@ -180,11 +248,25 @@ func (r *mutationResolver) CreateProjectEvent(ctx context.Context, input model.N
 				imageID := imageUID.String()
 
 				if _, err := tx.ExecContext(ctx, imageQuery, imageID, imageUrl, now, now); err != nil {
-					return nil, fmt.Errorf("failed to insert image: %w", err)
+					log.Printf("Error inserting image: %v", err)
+
+					return nil, &gqlerror.Error{
+						Message: "画像の登録に失敗しました。",
+						Extensions: map[string]interface{}{
+							"code": "INTERNAL_SERVER_ERROR",
+						},
+					}
 				}
 
 				if _, err := tx.ExecContext(ctx, workImageQuery, workID, imageID, now, now); err != nil {
-					return nil, fmt.Errorf("failed to insert work_image relation: %w", err)
+					log.Printf("Error inserting work_image relation: %v", err)
+
+					return nil, &gqlerror.Error{
+						Message: "失敗しました。",
+						Extensions: map[string]interface{}{
+							"code": "INTERNAL_SERVER_ERROR",
+						},
+					}
 				}
 			}
 		}
@@ -198,11 +280,25 @@ func (r *mutationResolver) CreateProjectEvent(ctx context.Context, input model.N
 				diagramImageID := diagramImageUID.String()
 
 				if _, err := tx.ExecContext(ctx, diagramImageQuery, diagramImageID, diagramImageUrl, now, now); err != nil {
-					return nil, fmt.Errorf("failed to insert diagram_image: %w", err)
+					log.Printf("Error inserting diagram image: %v", err)
+
+					return nil, &gqlerror.Error{
+						Message: "図の画像の登録に失敗しました。",
+						Extensions: map[string]interface{}{
+							"code": "INTERNAL_SERVER_ERROR",
+						},
+					}
 				}
 
 				if _, err := tx.ExecContext(ctx, workDiagramImageQuery, workID, diagramImageID, now, now); err != nil {
-					return nil, fmt.Errorf("failed to insert work_diagram_image relation: %w", err)
+					log.Printf("Error inserting work_diagram_image relation: %v", err)
+
+					return nil, &gqlerror.Error{
+						Message: "失敗しました。",
+						Extensions: map[string]interface{}{
+							"code": "INTERNAL_SERVER_ERROR",
+						},
+					}
 				}
 			}
 		}
@@ -211,9 +307,14 @@ func (r *mutationResolver) CreateProjectEvent(ctx context.Context, input model.N
 			skillQuery := `INSERT INTO work_skills (work_id, skill_id, created_at, updated_at) VALUES (?, ?, ?, ?)`
 			for _, skillID := range input.Skills {
 				if _, execErr := tx.ExecContext(ctx, skillQuery, workID, skillID, now, now); execErr != nil {
-					err = fmt.Errorf("failed to insert work_skill for new work: %w", execErr)
-					log.Printf("Error: %v", err)
-					return nil, err
+					log.Printf("Error inserting work_skill for new work: %v", execErr)
+
+					return nil, &gqlerror.Error{
+						Message: "スキルの登録に失敗しました。",
+						Extensions: map[string]interface{}{
+							"code": "INTERNAL_SERVER_ERROR",
+						},
+					}
 				}
 			}
 			log.Printf("Successfully inserted work_skills for work: %s", workID)
@@ -223,9 +324,14 @@ func (r *mutationResolver) CreateProjectEvent(ctx context.Context, input model.N
 			profileQuery := `INSERT INTO work_profiles (work_id, profile_id, created_at, updated_at) VALUES (?, ?, ?, ?)`
 			for _, userID := range input.UserIds {
 				if _, execErr := tx.ExecContext(ctx, profileQuery, workID, userID, now, now); execErr != nil {
-					err = fmt.Errorf("failed to insert work_profile for new work: %w", execErr)
-					log.Printf("Error: %v", err)
-					return nil, err
+					log.Printf("Error inserting work_profile for new work: %v", execErr)
+
+					return nil, &gqlerror.Error{
+						Message: "ユーザーの登録に失敗しました。",
+						Extensions: map[string]interface{}{
+							"code": "INTERNAL_SERVER_ERROR",
+						},
+					}
 				}
 			}
 			log.Printf("Successfully inserted work_profiles for work: %s", workID)
@@ -234,9 +340,15 @@ func (r *mutationResolver) CreateProjectEvent(ctx context.Context, input model.N
 		if input.EventID != nil {
 			eventQuery := `INSERT INTO work_events (work_id, event_id, created_at, updated_at) VALUES (?, ?, ?, ?)`
 			if _, execErr := tx.ExecContext(ctx, eventQuery, workID, *input.EventID, now, now); execErr != nil {
-				err = fmt.Errorf("failed to insert work_event for new work: %w", execErr)
+				err = fmt.Errorf("failed to insert work_event for new work %s: %w", workID, execErr)
 				log.Printf("Error: %v", err)
-				return nil, err
+
+				return nil, &gqlerror.Error{
+					Message: "イベントの登録に失敗しました。",
+					Extensions: map[string]interface{}{
+						"code": "INTERNAL_SERVER_ERROR",
+					},
+				}
 			}
 			log.Printf("Successfully inserted work_event for work: %s", workID)
 		}
@@ -245,26 +357,41 @@ func (r *mutationResolver) CreateProjectEvent(ctx context.Context, input model.N
 		respWork.ID = workID
 
 		if input.EventID == nil {
-			err = fmt.Errorf("EventID is required when linking to an existing work via CreateProjectEvent")
-			log.Printf("Error: %v", err)
-			return nil, err
+			log.Printf("No EventID provided for existing work: %s", workID)
+
+			return nil, &gqlerror.Error{
+				Message: "イベントが提供されていません。",
+				Extensions: map[string]interface{}{
+					"code": "BAD_USER_INPUT",
+				},
+			}
 		}
 
 		eventQuery := `INSERT INTO work_events (work_id, event_id, created_at, updated_at) VALUES (?, ?, ?, ?)`
 		if _, execErr := tx.ExecContext(ctx, eventQuery, workID, *input.EventID, now, now); execErr != nil {
 			err = fmt.Errorf("failed to insert work_event for existing work %s: %w", workID, execErr)
 			log.Printf("Error: %v", err)
-			return nil, err
+
+			return nil, &gqlerror.Error{
+				Message: "イベントの登録に失敗しました。",
+				Extensions: map[string]interface{}{
+					"code": "INTERNAL_SERVER_ERROR",
+				},
+			}
 		}
 	}
 
 	if commitErr := tx.Commit(); commitErr != nil {
-		err = fmt.Errorf("failed to commit transaction: %w", commitErr)
-		log.Printf("Error committing transaction: %v", err)
-		return nil, err
+		log.Printf("Error committing transaction: %v", commitErr)
+
+		return nil, &gqlerror.Error{
+			Message: "プロジェクトイベントの作成に失敗しました。",
+			Extensions: map[string]interface{}{
+				"code": "INTERNAL_SERVER_ERROR",
+			},
+		}
 	}
 
-	log.Printf("Transaction committed successfully for work_id: %s", workID)
 	return respWork, nil
 }
 
@@ -279,7 +406,14 @@ func (r *queryResolver) Work(ctx context.Context, id string) (*model.Work, error
 	var eventID sql.NullString
 	if err := r.DB.QueryRowContext(ctx, query, id).Scan(&work.ID, &work.Title, &work.Description, &work.CreatedAt, &work.UpdatedAt, &eventID); err != nil {
 		if err == sql.ErrNoRows {
-			return nil, fmt.Errorf("work with id %s not found", id)
+			log.Printf("Work with ID %s not found", id)
+
+			return nil, &gqlerror.Error{
+				Message: "作品が見つかりません。",
+				Extensions: map[string]interface{}{
+					"code": "NOT_FOUND",
+				},
+			}
 		}
 		return nil, err
 	}
@@ -291,13 +425,27 @@ func (r *queryResolver) Work(ctx context.Context, id string) (*model.Work, error
 	profileQuery := `SELECT profile_id FROM work_profiles WHERE work_id = ?`
 	profileRows, err := r.DB.QueryContext(ctx, profileQuery, work.ID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to query user IDs for work: %w", err)
+		log.Printf("Error querying work_profiles for work ID %s: %v", work.ID, err)
+
+		return nil, &gqlerror.Error{
+			Message: "ユーザーの取得に失敗しました。",
+			Extensions: map[string]interface{}{
+				"code": "INTERNAL_SERVER_ERROR",
+			},
+		}
 	}
 	defer profileRows.Close()
 	for profileRows.Next() {
 		var userID string
 		if err := profileRows.Scan(&userID); err != nil {
-			return nil, fmt.Errorf("failed to scan user ID: %w", err)
+			log.Printf("Error scanning profile_id for work ID %s: %v", work.ID, err)
+
+			return nil, &gqlerror.Error{
+				Message: "ユーザーの取得中にサーバーエラーが発生しました。",
+				Extensions: map[string]interface{}{
+					"code": "INTERNAL_SERVER_ERROR",
+				},
+			}
 		}
 		userIDs = append(userIDs, userID)
 	}
@@ -311,14 +459,28 @@ func (r *queryResolver) Work(ctx context.Context, id string) (*model.Work, error
 	`
 	imageRows, err := r.DB.QueryContext(ctx, imageQuery, work.ID)
 	if err != nil {
-		return nil, err
+		log.Printf("Error querying work_images for work ID %s: %v", work.ID, err)
+
+		return nil, &gqlerror.Error{
+			Message: "画像の取得に失敗しました。",
+			Extensions: map[string]interface{}{
+				"code": "INTERNAL_SERVER_ERROR",
+			},
+		}
 	}
 	defer imageRows.Close()
 	var images []*model.Image
 	for imageRows.Next() {
 		image := &model.Image{}
 		if err := imageRows.Scan(&image.ID, &image.ImageURL); err != nil {
-			return nil, err
+			log.Printf("Error scanning image for work ID %s: %v", work.ID, err)
+
+			return nil, &gqlerror.Error{
+				Message: "画像の取得中にサーバーエラーが発生しました。",
+				Extensions: map[string]interface{}{
+					"code": "INTERNAL_SERVER_ERROR",
+				},
+			}
 		}
 		images = append(images, image)
 	}
@@ -341,14 +503,28 @@ func (r *queryResolver) Work(ctx context.Context, id string) (*model.Work, error
 	`
 	diagramImageRows, err := r.DB.QueryContext(ctx, diagramImageQuery, work.ID)
 	if err != nil {
-		return nil, err
+		log.Printf("Error querying work_diagram_images for work ID %s: %v", work.ID, err)
+
+		return nil, &gqlerror.Error{
+			Message: "図の画像の取得に失敗しました。",
+			Extensions: map[string]interface{}{
+				"code": "INTERNAL_SERVER_ERROR",
+			},
+		}
 	}
 	defer diagramImageRows.Close()
 	var diagramImages []*model.DiagramImage
 	for diagramImageRows.Next() {
 		diagramImage := &model.DiagramImage{}
 		if err := diagramImageRows.Scan(&diagramImage.ID, &diagramImage.ImageURL); err != nil {
-			return nil, err
+			log.Printf("Error scanning diagram image for work ID %s: %v", work.ID, err)
+
+			return nil, &gqlerror.Error{
+				Message: "図の画像の取得中にサーバーエラーが発生しました。",
+				Extensions: map[string]interface{}{
+					"code": "INTERNAL_SERVER_ERROR",
+				},
+			}
 		}
 		diagramImages = append(diagramImages, diagramImage)
 	}
@@ -372,14 +548,28 @@ func (r *queryResolver) Work(ctx context.Context, id string) (*model.Work, error
 	`
 	eventRows, err := r.DB.QueryContext(ctx, eventQuery, work.ID)
 	if err != nil {
-		return nil, err
+		log.Printf("Error querying work_events for work ID %s: %v", work.ID, err)
+
+		return nil, &gqlerror.Error{
+			Message: "イベントの取得に失敗しました。",
+			Extensions: map[string]interface{}{
+				"code": "INTERNAL_SERVER_ERROR",
+			},
+		}
 	}
 	defer eventRows.Close()
 	var events []*model.Event
 	for eventRows.Next() {
 		event := &model.Event{}
 		if err := eventRows.Scan(&event.ID, &event.Name); err != nil {
-			return nil, err
+			log.Printf("Error scanning event for work ID %s: %v", work.ID, err)
+
+			return nil, &gqlerror.Error{
+				Message: "イベントの取得中にサーバーエラーが発生しました。",
+				Extensions: map[string]interface{}{
+					"code": "INTERNAL_SERVER_ERROR",
+				},
+			}
 		}
 		events = append(events, event)
 	}
@@ -397,14 +587,28 @@ func (r *queryResolver) Work(ctx context.Context, id string) (*model.Work, error
 	`
 	profileObjRows, err := r.DB.QueryContext(ctx, profileObjQuery, work.ID)
 	if err != nil {
-		return nil, err
+		log.Printf("Error querying work_profiles for work ID %s: %v", work.ID, err)
+
+		return nil, &gqlerror.Error{
+			Message: "ユーザーの取得に失敗しました。",
+			Extensions: map[string]interface{}{
+				"code": "INTERNAL_SERVER_ERROR",
+			},
+		}
 	}
 	defer profileObjRows.Close()
 	var profiles []model.Profile
 	for profileObjRows.Next() {
 		profile := model.Profile{}
 		if err := profileObjRows.Scan(&profile.ID, &profile.AvatarURL, &profile.NickName); err != nil {
-			return nil, err
+			log.Printf("Error scanning profile for work ID %s: %v", work.ID, err)
+
+			return nil, &gqlerror.Error{
+				Message: "ユーザーの取得中にサーバーエラーが発生しました。",
+				Extensions: map[string]interface{}{
+					"code": "INTERNAL_SERVER_ERROR",
+				},
+			}
 		}
 		profiles = append(profiles, profile)
 	}
@@ -422,14 +626,28 @@ func (r *queryResolver) Work(ctx context.Context, id string) (*model.Work, error
 	`
 	skillRows, err := r.DB.QueryContext(ctx, skillQuery, work.ID)
 	if err != nil {
-		return nil, err
+		log.Printf("Error querying work_skills for work ID %s: %v", work.ID, err)
+
+		return nil, &gqlerror.Error{
+			Message: "スキルの取得に失敗しました。",
+			Extensions: map[string]interface{}{
+				"code": "INTERNAL_SERVER_ERROR",
+			},
+		}
 	}
 	defer skillRows.Close()
 	var skills []model.Skill
 	for skillRows.Next() {
 		skill := model.Skill{}
 		if err := skillRows.Scan(&skill.ID, &skill.Name); err != nil {
-			return nil, err
+			log.Printf("Error scanning skill for work ID %s: %v", work.ID, err)
+
+			return nil, &gqlerror.Error{
+				Message: "スキルの取得中にサーバーエラーが発生しました。",
+				Extensions: map[string]interface{}{
+					"code": "INTERNAL_SERVER_ERROR",
+				},
+			}
 		}
 		skills = append(skills, skill)
 	}
@@ -451,7 +669,14 @@ func (r *queryResolver) WorksByTitle(ctx context.Context, title string) ([]*mode
 	`
 	baseRows, err := r.DB.QueryContext(ctx, query, title)
 	if err != nil {
-		return nil, err
+		log.Printf("Error querying works by title '%s': %v", title, err)
+
+		return nil, &gqlerror.Error{
+			Message: "作品の取得に失敗しました。",
+			Extensions: map[string]interface{}{
+				"code": "INTERNAL_SERVER_ERROR",
+			},
+		}
 	}
 	defer baseRows.Close()
 
@@ -460,7 +685,14 @@ func (r *queryResolver) WorksByTitle(ctx context.Context, title string) ([]*mode
 		work := &model.Work{}
 		var eventID sql.NullString
 		if err := baseRows.Scan(&work.ID, &work.Title, &work.Description, &work.CreatedAt, &work.UpdatedAt, &eventID); err != nil {
-			return nil, err
+			log.Printf("Error scanning work by title '%s': %v", title, err)
+
+			return nil, &gqlerror.Error{
+				Message: "作品の取得中にサーバーエラーが発生しました。",
+				Extensions: map[string]interface{}{
+					"code": "INTERNAL_SERVER_ERROR",
+				},
+			}
 		}
 		if eventID.Valid {
 			work.EventID = &eventID.String
@@ -474,14 +706,28 @@ func (r *queryResolver) WorksByTitle(ctx context.Context, title string) ([]*mode
 		`
 		imageRows, err := r.DB.QueryContext(ctx, imageQuery, work.ID)
 		if err != nil {
-			return nil, err
+			log.Printf("Error querying work_images for work ID %s: %v", work.ID, err)
+
+			return nil, &gqlerror.Error{
+				Message: "画像の取得に失敗しました。",
+				Extensions: map[string]interface{}{
+					"code": "INTERNAL_SERVER_ERROR",
+				},
+			}
 		}
 		defer imageRows.Close()
 		var images []*model.Image
 		for imageRows.Next() {
 			image := &model.Image{}
 			if err := imageRows.Scan(&image.ID, &image.ImageURL); err != nil {
-				return nil, err
+				log.Printf("Error scanning image for work ID %s: %v", work.ID, err)
+
+				return nil, &gqlerror.Error{
+					Message: "画像の取得中にサーバーエラーが発生しました。",
+					Extensions: map[string]interface{}{
+						"code": "INTERNAL_SERVER_ERROR",
+					},
+				}
 			}
 			images = append(images, image)
 		}
@@ -504,14 +750,28 @@ func (r *queryResolver) WorksByTitle(ctx context.Context, title string) ([]*mode
 		`
 		diagramImageRows, err := r.DB.QueryContext(ctx, diagramImageQuery, work.ID)
 		if err != nil {
-			return nil, err
+			log.Printf("Error querying work_diagram_images for work ID %s: %v", work.ID, err)
+
+			return nil, &gqlerror.Error{
+				Message: "図の画像の取得に失敗しました。",
+				Extensions: map[string]interface{}{
+					"code": "INTERNAL_SERVER_ERROR",
+				},
+			}
 		}
 		defer diagramImageRows.Close()
 		var diagramImages []*model.DiagramImage
 		for diagramImageRows.Next() {
 			diagramImage := &model.DiagramImage{}
 			if err := diagramImageRows.Scan(&diagramImage.ID, &diagramImage.ImageURL); err != nil {
-				return nil, err
+				log.Printf("Error scanning diagram image for work ID %s: %v", work.ID, err)
+
+				return nil, &gqlerror.Error{
+					Message: "図の画像の取得中にサーバーエラーが発生しました。",
+					Extensions: map[string]interface{}{
+						"code": "INTERNAL_SERVER_ERROR",
+					},
+				}
 			}
 			diagramImages = append(diagramImages, diagramImage)
 		}
@@ -553,14 +813,30 @@ func (r *queryResolver) WorkList(ctx context.Context, first *int32, after *strin
 		log.Printf("Received after cursor: %s", *after)
 		afterCurs, err = model.DecodeCursor(*after)
 		if err != nil {
-			return nil, fmt.Errorf("invalid after cursor: %w", err)
+			log.Printf("Error decoding after cursor: %v", err)
+
+			return nil, &gqlerror.Error{
+				Message: "無効なafterカーソルです。",
+				Extensions: map[string]interface{}{
+					"code": "INTERNAL_SERVER_ERROR",
+				},
+			}
 		}
 	}
 
 	if before != nil && *before != "" {
 		beforeCurs, err = model.DecodeCursor(*before)
 		if err != nil {
-			return nil, fmt.Errorf("invalid before cursor: %w", err)
+			log.Printf("Error decoding before cursor: %v", err)
+
+			return nil, &gqlerror.Error{
+				Message: "無効なbeforeカーソルです。",
+				Extensions: map[string]interface{}{
+					"code": "INTERNAL_SERVER_ERROR",
+				},
+			}
+		} else {
+			log.Printf("Received before cursor: %s", *before)
 		}
 	}
 
@@ -605,7 +881,14 @@ func (r *queryResolver) WorkList(ctx context.Context, first *int32, after *strin
 
 	rows, err := r.DB.QueryContext(ctx, query, args...)
 	if err != nil {
-		return nil, fmt.Errorf("failed to query works: %w", err)
+		log.Printf("Error querying work list: %v", err)
+
+		return nil, &gqlerror.Error{
+			Message: "作品の取得に失敗しました。",
+			Extensions: map[string]interface{}{
+				"code": "INTERNAL_SERVER_ERROR",
+			},
+		}
 	}
 	defer rows.Close()
 
@@ -614,12 +897,26 @@ func (r *queryResolver) WorkList(ctx context.Context, first *int32, after *strin
 		w := &model.Work{}
 		if err := rows.Scan(&w.ID, &w.Title, &w.Description, &w.CreatedAt, &w.UpdatedAt); err != nil {
 			rows.Close()
-			return nil, fmt.Errorf("failed to scan work: %w", err)
+			log.Printf("Error scanning work: %v", err)
+
+			return nil, &gqlerror.Error{
+				Message: "作品の取得中にサーバーエラーが発生しました。",
+				Extensions: map[string]interface{}{
+					"code": "INTERNAL_SERVER_ERROR",
+				},
+			}
 		}
 		works = append(works, w)
 	}
 	if err = rows.Err(); err != nil {
-		return nil, fmt.Errorf("error during rows iteration: %w", err)
+		log.Printf("Error during work list rows iteration: %v", err)
+
+		return nil, &gqlerror.Error{
+			Message: "作品の取得中にサーバーエラーが発生しました。",
+			Extensions: map[string]interface{}{
+				"code": "INTERNAL_SERVER_ERROR",
+			},
+		}
 	}
 
 	if len(works) > 0 {
@@ -645,20 +942,41 @@ func (r *queryResolver) WorkList(ctx context.Context, first *int32, after *strin
 		userIDsQuery := fmt.Sprintf(`SELECT work_id, profile_id FROM work_profiles WHERE work_id IN (%s)`, inClause)
 		userIDRows, err := r.DB.QueryContext(ctx, userIDsQuery, idArgs...)
 		if err != nil {
-			return nil, fmt.Errorf("failed to query user IDs for work list: %w", err)
+			log.Printf("Error querying user IDs for work list: %v", err)
+
+			return nil, &gqlerror.Error{
+				Message: "ユーザーの取得に失敗しました。",
+				Extensions: map[string]interface{}{
+					"code": "INTERNAL_SERVER_ERROR",
+				},
+			}
 		}
 		userIDsByWorkID := make(map[string][]string)
 		for userIDRows.Next() {
 			var workID, userID string
 			if err := userIDRows.Scan(&workID, &userID); err != nil {
 				userIDRows.Close()
-				return nil, fmt.Errorf("failed to scan work_id/profile_id: %w", err)
+				log.Printf("Error scanning user ID for work list: %v", err)
+
+				return nil, &gqlerror.Error{
+					Message: "ユーザーの取得中にサーバーエラーが発生しました。",
+					Extensions: map[string]interface{}{
+						"code": "INTERNAL_SERVER_ERROR",
+					},
+				}
 			}
 			userIDsByWorkID[workID] = append(userIDsByWorkID[workID], userID)
 		}
 		userIDRows.Close()
 		if err = userIDRows.Err(); err != nil {
-			return nil, fmt.Errorf("error during userIDRows iteration: %w", err)
+			log.Printf("Error during userIDRows iteration: %v", err)
+
+			return nil, &gqlerror.Error{
+				Message: "ユーザーの取得中にサーバーエラーが発生しました。",
+				Extensions: map[string]interface{}{
+					"code": "INTERNAL_SERVER_ERROR",
+				},
+			}
 		}
 
 		eventQuery := fmt.Sprintf(`
@@ -668,7 +986,14 @@ func (r *queryResolver) WorkList(ctx context.Context, first *int32, after *strin
 			WHERE we.work_id IN (%s)`, inClause)
 		eventRows, err := r.DB.QueryContext(ctx, eventQuery, idArgs...)
 		if err != nil {
-			return nil, fmt.Errorf("failed to query events for work list: %w", err)
+			log.Printf("Error querying events for work list: %v", err)
+
+			return nil, &gqlerror.Error{
+				Message: "イベントの取得に失敗しました。",
+				Extensions: map[string]interface{}{
+					"code": "INTERNAL_SERVER_ERROR",
+				},
+			}
 		}
 		eventsByWorkID := make(map[string][]*model.Event)
 		for eventRows.Next() {
@@ -676,13 +1001,27 @@ func (r *queryResolver) WorkList(ctx context.Context, first *int32, after *strin
 			event := &model.Event{}
 			if err := eventRows.Scan(&workID, &event.ID, &event.Name); err != nil {
 				eventRows.Close()
-				return nil, fmt.Errorf("failed to scan event for work list: %w", err)
+				log.Printf("Error scanning event for work list: %v", err)
+
+				return nil, &gqlerror.Error{
+					Message: "イベントの取得中にサーバーエラーが発生しました。",
+					Extensions: map[string]interface{}{
+						"code": "INTERNAL_SERVER_ERROR",
+					},
+				}
 			}
 			eventsByWorkID[workID] = append(eventsByWorkID[workID], event)
 		}
 		eventRows.Close()
 		if err = eventRows.Err(); err != nil {
-			return nil, fmt.Errorf("error during eventRows iteration: %w", err)
+			log.Printf("Error during eventRows iteration: %v", err)
+
+			return nil, &gqlerror.Error{
+				Message: "イベントの取得中にサーバーエラーが発生しました。",
+				Extensions: map[string]interface{}{
+					"code": "INTERNAL_SERVER_ERROR",
+				},
+			}
 		}
 
 		profileQuery := fmt.Sprintf(`
@@ -692,7 +1031,14 @@ func (r *queryResolver) WorkList(ctx context.Context, first *int32, after *strin
 			WHERE wp.work_id IN (%s)`, inClause)
 		profileRows, err := r.DB.QueryContext(ctx, profileQuery, idArgs...)
 		if err != nil {
-			return nil, fmt.Errorf("failed to query profiles for work list: %w", err)
+			log.Printf("Error querying profiles for work list: %v", err)
+
+			return nil, &gqlerror.Error{
+				Message: "ユーザーの取得に失敗しました。",
+				Extensions: map[string]interface{}{
+					"code": "INTERNAL_SERVER_ERROR",
+				},
+			}
 		}
 		profilesByWorkID := make(map[string][]model.Profile)
 		for profileRows.Next() {
@@ -700,13 +1046,27 @@ func (r *queryResolver) WorkList(ctx context.Context, first *int32, after *strin
 			profile := model.Profile{}
 			if err := profileRows.Scan(&workID, &profile.ID, &profile.AvatarURL, &profile.NickName); err != nil {
 				profileRows.Close()
-				return nil, fmt.Errorf("failed to scan profile for work list: %w", err)
+				log.Printf("Error scanning profile for work list: %v", err)
+
+				return nil, &gqlerror.Error{
+					Message: "ユーザーの取得中にサーバーエラーが発生しました。",
+					Extensions: map[string]interface{}{
+						"code": "INTERNAL_SERVER_ERROR",
+					},
+				}
 			}
 			profilesByWorkID[workID] = append(profilesByWorkID[workID], profile)
 		}
 		profileRows.Close()
 		if err = profileRows.Err(); err != nil {
-			return nil, fmt.Errorf("error during profileRows iteration: %w", err)
+			log.Printf("Error during profileRows iteration: %v", err)
+
+			return nil, &gqlerror.Error{
+				Message: "ユーザーの取得中にサーバーエラーが発生しました。",
+				Extensions: map[string]interface{}{
+					"code": "INTERNAL_SERVER_ERROR",
+				},
+			}
 		}
 
 		skillQuery := fmt.Sprintf(`
@@ -716,7 +1076,14 @@ func (r *queryResolver) WorkList(ctx context.Context, first *int32, after *strin
 			WHERE ws.work_id IN (%s)`, inClause)
 		skillRows, err := r.DB.QueryContext(ctx, skillQuery, idArgs...)
 		if err != nil {
-			return nil, fmt.Errorf("failed to query skills for work list: %w", err)
+			log.Printf("Error querying skills for work list: %v", err)
+
+			return nil, &gqlerror.Error{
+				Message: "スキルの取得に失敗しました。",
+				Extensions: map[string]interface{}{
+					"code": "INTERNAL_SERVER_ERROR",
+				},
+			}
 		}
 		skillsByWorkID := make(map[string][]model.Skill)
 		for skillRows.Next() {
@@ -724,13 +1091,27 @@ func (r *queryResolver) WorkList(ctx context.Context, first *int32, after *strin
 			skill := model.Skill{}
 			if err := skillRows.Scan(&workID, &skill.ID, &skill.Name); err != nil {
 				skillRows.Close()
-				return nil, fmt.Errorf("failed to scan skill for work list: %w", err)
+				log.Printf("Error scanning skill for work list: %v", err)
+
+				return nil, &gqlerror.Error{
+					Message: "スキルの取得中にサーバーエラーが発生しました。",
+					Extensions: map[string]interface{}{
+						"code": "INTERNAL_SERVER_ERROR",
+					},
+				}
 			}
 			skillsByWorkID[workID] = append(skillsByWorkID[workID], skill)
 		}
 		skillRows.Close()
 		if err = skillRows.Err(); err != nil {
-			return nil, fmt.Errorf("error during skillRows iteration: %w", err)
+			log.Printf("Error during skillRows iteration: %v", err)
+
+			return nil, &gqlerror.Error{
+				Message: "スキルの取得中にサーバーエラーが発生しました。",
+				Extensions: map[string]interface{}{
+					"code": "INTERNAL_SERVER_ERROR",
+				},
+			}
 		}
 
 		// 画像と図表画像も取得
@@ -742,14 +1123,28 @@ func (r *queryResolver) WorkList(ctx context.Context, first *int32, after *strin
 			WHERE wi.work_id IN (%s)`, inClause)
 		imageRows, err := r.DB.QueryContext(ctx, imageIDsQuery, idArgs...)
 		if err != nil {
-			return nil, fmt.Errorf("failed to query images for work list: %w", err)
+			log.Printf("Error querying images for work list: %v", err)
+
+			return nil, &gqlerror.Error{
+				Message: "画像の取得に失敗しました。",
+				Extensions: map[string]interface{}{
+					"code": "INTERNAL_SERVER_ERROR",
+				},
+			}
 		}
 		for imageRows.Next() {
 			var workID string
 			img := &model.Image{}
 			if err := imageRows.Scan(&workID, &img.ID, &img.ImageURL); err != nil {
 				imageRows.Close()
-				return nil, fmt.Errorf("failed to scan image for work list: %w", err)
+				log.Printf("Error scanning image for work list: %v", err)
+
+				return nil, &gqlerror.Error{
+					Message: "画像の取得中にサーバーエラーが発生しました。",
+					Extensions: map[string]interface{}{
+						"code": "INTERNAL_SERVER_ERROR",
+					},
+				}
 			}
 			imageMap[workID] = append(imageMap[workID], img)
 		}
@@ -763,14 +1158,29 @@ func (r *queryResolver) WorkList(ctx context.Context, first *int32, after *strin
 			WHERE wdi.work_id IN (%s)`, inClause)
 		diagramImageRows, err := r.DB.QueryContext(ctx, diagramImageIDsQuery, idArgs...)
 		if err != nil {
-			return nil, fmt.Errorf("failed to query diagram images for work list: %w", err)
+			log.Printf("Error querying diagram images for work list: %v", err)
+
+			return nil, &gqlerror.Error{
+				Message: "図の画像の取得に失敗しました。",
+				Extensions: map[string]interface{}{
+					"code": "INTERNAL_SERVER_ERROR",
+				},
+			}
+			
 		}
 		for diagramImageRows.Next() {
 			var workID string
 			diagImg := &model.DiagramImage{}
 			if err := diagramImageRows.Scan(&workID, &diagImg.ID, &diagImg.ImageURL); err != nil {
 				diagramImageRows.Close()
-				return nil, fmt.Errorf("failed to scan diagram image for work list: %w", err)
+				log.Printf("Error scanning diagram image for work list: %v", err)
+
+				return nil, &gqlerror.Error{
+					Message: "図の画像の取得中にサーバーエラーが発生しました。",
+					Extensions: map[string]interface{}{
+						"code": "INTERNAL_SERVER_ERROR",
+					},
+				}
 			}
 			diagramImageMap[workID] = append(diagramImageMap[workID], diagImg)
 		}
@@ -825,7 +1235,14 @@ func (r *queryResolver) WorkList(ctx context.Context, first *int32, after *strin
 	for i, w := range works {
 		cursorStr := model.EncodeCursor(model.Cursor{CreatedAt: w.CreatedAt, ID: w.ID})
 		if err != nil {
-			return nil, fmt.Errorf("failed to encode cursor for work %s: %w", w.ID, err)
+			log.Printf("Error encoding cursor for work ID %s: %v", w.ID, err)
+
+			return nil, &gqlerror.Error{
+				Message: "カーソルのエンコード中にサーバーエラーが発生しました。",
+				Extensions: map[string]interface{}{
+					"code": "INTERNAL_SERVER_ERROR",
+				},
+			}
 		}
 		edges[i] = &model.WorkEdge{
 			Node:   w,

@@ -6,11 +6,13 @@ package resolver
 
 import (
 	"context"
+	"log"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/noonyuu/nfc/back/graph"
 	"github.com/noonyuu/nfc/back/graph/model"
+	"github.com/vektah/gqlparser/gqlerror"
 )
 
 // CreateUser is the resolver for the createUser field.
@@ -43,9 +45,9 @@ func (r *mutationResolver) CreateUser(ctx context.Context, input model.NewUser) 
 		return nil, &gqlerror.Error{
 			Message: "ユーザーの登録に失敗しました。",
 			Extensions: map[string]interface{}{
-				"code":  "INTERNAL_SERVER_ERROR",
+				"code": "INTERNAL_SERVER_ERROR",
 			},
-		},	
+		}
 	}
 
 	return user, nil
@@ -66,9 +68,9 @@ func (r *queryResolver) UserByID(ctx context.Context, id string) (*model.User, e
 		return nil, &gqlerror.Error{
 			Message: "ユーザーの取得に失敗しました。",
 			Extensions: map[string]interface{}{
-				"code":  "INTERNAL_SERVER_ERROR",
+				"code": "INTERNAL_SERVER_ERROR",
 			},
-		},
+		}
 	}
 
 	return &user, nil
@@ -89,7 +91,7 @@ func (r *queryResolver) Users(ctx context.Context) ([]*model.User, error) {
 			Extensions: map[string]interface{}{
 				"code": "INTERNAL_SERVER_ERROR",
 			},
-		},
+		}
 	}
 	defer rows.Close()
 
@@ -105,7 +107,7 @@ func (r *queryResolver) Users(ctx context.Context) ([]*model.User, error) {
 				Extensions: map[string]interface{}{
 					"code": "INTERNAL_SERVER_ERROR",
 				},
-			},
+			}
 		}
 
 		users = append(users, &user)
@@ -117,7 +119,7 @@ func (r *queryResolver) Users(ctx context.Context) ([]*model.User, error) {
 			Extensions: map[string]interface{}{
 				"code": "INTERNAL_SERVER_ERROR",
 			},
-		},
+		}
 	}
 
 	return users, nil

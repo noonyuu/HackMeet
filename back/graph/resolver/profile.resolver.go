@@ -7,11 +7,12 @@ package resolver
 import (
 	"context"
 	"database/sql"
-	"fmt"
+	"log"
 	"time"
 
 	"github.com/noonyuu/nfc/back/graph"
 	"github.com/noonyuu/nfc/back/graph/model"
+	"github.com/vektah/gqlparser/gqlerror"
 )
 
 // CreateProfile is the resolver for the createProfile field.
@@ -100,7 +101,7 @@ func (r *mutationResolver) CreateProfile(ctx context.Context, input model.NewPro
 			Extensions: map[string]interface{}{
 				"code": "INTERNAL_SERVER_ERROR",
 			},
-		},
+		}
 	}
 
 	return profileToInsert, nil
@@ -150,7 +151,7 @@ func (r *mutationResolver) UpdateProfile(ctx context.Context, input model.Update
 			Extensions: map[string]interface{}{
 				"code": "INTERNAL_SERVER_ERROR",
 			},
-		},
+		}
 	}
 
 	selectQuery := `
@@ -189,7 +190,7 @@ func (r *mutationResolver) UpdateProfile(ctx context.Context, input model.Update
 			Extensions: map[string]interface{}{
 				"code": "INTERNAL_SERVER_ERROR",
 			},
-		},
+		}
 	}
 
 	// sql.NullInt32 から model.Profile の *int32 へ変換
@@ -246,7 +247,7 @@ func (r *queryResolver) Profile(ctx context.Context, id string) (*model.Profile,
 				Extensions: map[string]interface{}{
 					"code": "NOT_FOUND",
 				},
-			},
+			}
 		}
 		log.Printf("failed to scan profile data for ID %s: %v", id, err)
 
@@ -255,7 +256,7 @@ func (r *queryResolver) Profile(ctx context.Context, id string) (*model.Profile,
 			Extensions: map[string]interface{}{
 				"code": "INTERNAL_SERVER_ERROR",
 			},
-		},
+		}
 	}
 
 	if avatarURL.Valid {
@@ -325,7 +326,7 @@ func (r *queryResolver) ProfileByNickName(ctx context.Context, nickName string) 
 				Extensions: map[string]interface{}{
 					"code": "NOT_FOUND",
 				},
-			},
+			}
 		}
 		log.Printf("failed to scan profile by user name %s: %v", nickName, err)
 
@@ -334,7 +335,7 @@ func (r *queryResolver) ProfileByNickName(ctx context.Context, nickName string) 
 			Extensions: map[string]interface{}{
 				"code": "INTERNAL_SERVER_ERROR",
 			},
-		},
+		}
 	}
 
 	if avatarURL.Valid {
@@ -404,7 +405,7 @@ func (r *queryResolver) ProfileByUserID(ctx context.Context, id string) (*model.
 				Extensions: map[string]interface{}{
 					"code": "NOT_FOUND",
 				},
-			},
+			}
 		}
 		log.Printf("failed to scan profile data for ID %s: %v", id, err)
 
@@ -413,7 +414,7 @@ func (r *queryResolver) ProfileByUserID(ctx context.Context, id string) (*model.
 			Extensions: map[string]interface{}{
 				"code": "INTERNAL_SERVER_ERROR",
 			},
-		},
+		}
 	}
 
 	if avatarURL.Valid {

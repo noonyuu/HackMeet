@@ -8,11 +8,13 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/noonyuu/nfc/back/graph"
 	"github.com/noonyuu/nfc/back/graph/model"
+	"github.com/vektah/gqlparser/gqlerror"
 )
 
 // StartDate is the resolver for the startDate field.
@@ -46,25 +48,23 @@ func (r *mutationResolver) CreateEvent(ctx context.Context, input model.NewEvent
 	// startとendのデータ型を変換
 	startDate, err := time.Parse("2006-01-02 15:04:05", input.StartDate)
 	if err != nil {
-		log.Printf("failed to parse startDate: %v", err) 
+		log.Printf("failed to parse startDate: %v", err)
 
 		return nil, &gqlerror.Error{
 			Message: "日付の形式が正しくありません。'YYYY-MM-DD HH:MM:SS' の形式で入力してください。",
 			Extensions: map[string]interface{}{
-					"code":  "BAD_USER_INPUT",
-					"field": "startDate",
+				"code": "BAD_USER_INPUT",
 			},
 		}
 	}
 	endDate, err := time.Parse("2006-01-02 15:04:05", input.EndDate)
 	if err != nil {
-		log.Printf("failed to parse startDate: %v", err) 
+		log.Printf("failed to parse startDate: %v", err)
 
 		return nil, &gqlerror.Error{
 			Message: "日付の形式が正しくありません。'YYYY-MM-DD HH:MM:SS' の形式で入力してください。",
 			Extensions: map[string]interface{}{
-					"code":  "BAD_USER_INPUT",
-					"field": "startDate",
+				"code": "BAD_USER_INPUT",
 			},
 		}
 	}
@@ -92,10 +92,10 @@ func (r *mutationResolver) CreateEvent(ctx context.Context, input model.NewEvent
 
 		// その他のデータベースエラーの場合は、汎用的なメッセージを返す
 		return nil, &gqlerror.Error{
-				Message: "イベントの作成中にサーバーエラーが発生しました。",
-				Extensions: map[string]interface{}{
-						"code": "INTERNAL_SERVER_ERROR",
-				},
+			Message: "イベントの作成中にサーバーエラーが発生しました。",
+			Extensions: map[string]interface{}{
+				"code": "INTERNAL_SERVER_ERROR",
+			},
 		}
 	}
 
@@ -104,7 +104,7 @@ func (r *mutationResolver) CreateEvent(ctx context.Context, input model.NewEvent
 
 // Events is the resolver for the events field.
 func (r *queryResolver) Events(ctx context.Context) ([]*model.Event, error) {
-  query := `
+	query := `
     SELECT id, name, description, start_date, end_date, location,
            created_at, updated_at, created_by, updated_by
     FROM (
@@ -118,7 +118,7 @@ func (r *queryResolver) Events(ctx context.Context) ([]*model.Event, error) {
 	rows, err := r.DB.Query(query)
 	if err != nil {
 		log.Printf("failed to query events: %v", err)
-		
+
 		return nil, &gqlerror.Error{
 			Message: "イベントの取得中にサーバーエラーが発生しました。",
 			Extensions: map[string]interface{}{
@@ -145,13 +145,13 @@ func (r *queryResolver) Events(ctx context.Context) ([]*model.Event, error) {
 		)
 		if err != nil {
 			log.Printf("failed to scan event: %v", err)
-			
+
 			return nil, &gqlerror.Error{
 				Message: "イベントの取得中にサーバーエラーが発生しました。",
 				Extensions: map[string]interface{}{
 					"code": "INTERNAL_SERVER_ERROR",
 				},
-			},
+			}
 		}
 		events = append(events, &event)
 	}
@@ -233,7 +233,7 @@ func (r *queryResolver) EventByName(ctx context.Context, name string) (*model.Ev
 			return nil, fmt.Errorf("event not found")
 		}
 		log.Printf("failed to query event by name: %v", err)
-		
+
 		return nil, &gqlerror.Error{
 			Message: "イベントの取得中にサーバーエラーが発生しました。",
 			Extensions: map[string]interface{}{
