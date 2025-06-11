@@ -53,7 +53,7 @@ func (r *mutationResolver) CreateEvent(ctx context.Context, input model.NewEvent
 		return nil, &gqlerror.Error{
 			Message: "日付の形式が正しくありません。'YYYY-MM-DD HH:MM:SS' の形式で入力してください。",
 			Extensions: map[string]interface{}{
-				"code":  "BAD_USER_INPUT",
+				"code": "BAD_USER_INPUT",
 			},
 		}
 	}
@@ -64,7 +64,7 @@ func (r *mutationResolver) CreateEvent(ctx context.Context, input model.NewEvent
 		return nil, &gqlerror.Error{
 			Message: "日付の形式が正しくありません。'YYYY-MM-DD HH:MM:SS' の形式で入力してください。",
 			Extensions: map[string]interface{}{
-				"code":  "BAD_USER_INPUT",
+				"code": "BAD_USER_INPUT",
 			},
 		}
 	}
@@ -112,7 +112,7 @@ func (r *queryResolver) Events(ctx context.Context) ([]*model.Event, error) {
             created_at, updated_at, created_by, updated_by,
             ROW_NUMBER() OVER (PARTITION BY created_by ORDER BY created_at DESC) AS rn
       FROM events
-    ) AS ranked,
+    ) AS ranked
     WHERE rn <= 10;
   `
 	rows, err := r.DB.Query(query)
