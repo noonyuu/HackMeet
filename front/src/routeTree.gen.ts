@@ -11,17 +11,27 @@
 // Import Routes
 
 import { Route as rootRoute } from './routes/__root'
+import { Route as TermImport } from './routes/term'
 import { Route as RegisterImport } from './routes/register'
+import { Route as PolicyImport } from './routes/policy'
 import { Route as LoginImport } from './routes/login'
-import { Route as AboutImport } from './routes/about'
 import { Route as IndexImport } from './routes/index'
 import { Route as NfcIndexImport } from './routes/nfc/index'
+import { Route as EventIndexImport } from './routes/event/index'
+import { Route as ProfileProjectlistImport } from './routes/profile/project_list'
 import { Route as ProfileEditImport } from './routes/profile/edit'
 import { Route as WorksCreateIndexImport } from './routes/works/create/index'
 import { Route as NfcWorkIdIndexImport } from './routes/nfc/$workId/index'
+import { Route as EventEventIdIndexImport } from './routes/event/$eventId/index'
 import { Route as WorksCreateEventIdIndexImport } from './routes/works/create/$eventId/index'
 
 // Create/Update Routes
+
+const TermRoute = TermImport.update({
+  id: '/term',
+  path: '/term',
+  getParentRoute: () => rootRoute,
+} as any)
 
 const RegisterRoute = RegisterImport.update({
   id: '/register',
@@ -29,15 +39,15 @@ const RegisterRoute = RegisterImport.update({
   getParentRoute: () => rootRoute,
 } as any)
 
-const LoginRoute = LoginImport.update({
-  id: '/login',
-  path: '/login',
+const PolicyRoute = PolicyImport.update({
+  id: '/policy',
+  path: '/policy',
   getParentRoute: () => rootRoute,
 } as any)
 
-const AboutRoute = AboutImport.update({
-  id: '/about',
-  path: '/about',
+const LoginRoute = LoginImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -50,6 +60,18 @@ const IndexRoute = IndexImport.update({
 const NfcIndexRoute = NfcIndexImport.update({
   id: '/nfc/',
   path: '/nfc/',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const EventIndexRoute = EventIndexImport.update({
+  id: '/event/',
+  path: '/event/',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const ProfileProjectlistRoute = ProfileProjectlistImport.update({
+  id: '/profile/project_list',
+  path: '/profile/project_list',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -71,6 +93,12 @@ const NfcWorkIdIndexRoute = NfcWorkIdIndexImport.update({
   getParentRoute: () => rootRoute,
 } as any)
 
+const EventEventIdIndexRoute = EventEventIdIndexImport.update({
+  id: '/event/$eventId/',
+  path: '/event/$eventId/',
+  getParentRoute: () => rootRoute,
+} as any)
+
 const WorksCreateEventIdIndexRoute = WorksCreateEventIdIndexImport.update({
   id: '/works/create/$eventId/',
   path: '/works/create/$eventId/',
@@ -88,18 +116,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexImport
       parentRoute: typeof rootRoute
     }
-    '/about': {
-      id: '/about'
-      path: '/about'
-      fullPath: '/about'
-      preLoaderRoute: typeof AboutImport
-      parentRoute: typeof rootRoute
-    }
     '/login': {
       id: '/login'
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginImport
+      parentRoute: typeof rootRoute
+    }
+    '/policy': {
+      id: '/policy'
+      path: '/policy'
+      fullPath: '/policy'
+      preLoaderRoute: typeof PolicyImport
       parentRoute: typeof rootRoute
     }
     '/register': {
@@ -109,6 +137,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RegisterImport
       parentRoute: typeof rootRoute
     }
+    '/term': {
+      id: '/term'
+      path: '/term'
+      fullPath: '/term'
+      preLoaderRoute: typeof TermImport
+      parentRoute: typeof rootRoute
+    }
     '/profile/edit': {
       id: '/profile/edit'
       path: '/profile/edit'
@@ -116,11 +151,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProfileEditImport
       parentRoute: typeof rootRoute
     }
+    '/profile/project_list': {
+      id: '/profile/project_list'
+      path: '/profile/project_list'
+      fullPath: '/profile/project_list'
+      preLoaderRoute: typeof ProfileProjectlistImport
+      parentRoute: typeof rootRoute
+    }
+    '/event/': {
+      id: '/event/'
+      path: '/event'
+      fullPath: '/event'
+      preLoaderRoute: typeof EventIndexImport
+      parentRoute: typeof rootRoute
+    }
     '/nfc/': {
       id: '/nfc/'
       path: '/nfc'
       fullPath: '/nfc'
       preLoaderRoute: typeof NfcIndexImport
+      parentRoute: typeof rootRoute
+    }
+    '/event/$eventId/': {
+      id: '/event/$eventId/'
+      path: '/event/$eventId'
+      fullPath: '/event/$eventId'
+      preLoaderRoute: typeof EventEventIdIndexImport
       parentRoute: typeof rootRoute
     }
     '/nfc/$workId/': {
@@ -151,11 +207,15 @@ declare module '@tanstack/react-router' {
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/about': typeof AboutRoute
   '/login': typeof LoginRoute
+  '/policy': typeof PolicyRoute
   '/register': typeof RegisterRoute
+  '/term': typeof TermRoute
   '/profile/edit': typeof ProfileEditRoute
+  '/profile/project_list': typeof ProfileProjectlistRoute
+  '/event': typeof EventIndexRoute
   '/nfc': typeof NfcIndexRoute
+  '/event/$eventId': typeof EventEventIdIndexRoute
   '/nfc/$workId': typeof NfcWorkIdIndexRoute
   '/works/create': typeof WorksCreateIndexRoute
   '/works/create/$eventId': typeof WorksCreateEventIdIndexRoute
@@ -163,11 +223,15 @@ export interface FileRoutesByFullPath {
 
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/about': typeof AboutRoute
   '/login': typeof LoginRoute
+  '/policy': typeof PolicyRoute
   '/register': typeof RegisterRoute
+  '/term': typeof TermRoute
   '/profile/edit': typeof ProfileEditRoute
+  '/profile/project_list': typeof ProfileProjectlistRoute
+  '/event': typeof EventIndexRoute
   '/nfc': typeof NfcIndexRoute
+  '/event/$eventId': typeof EventEventIdIndexRoute
   '/nfc/$workId': typeof NfcWorkIdIndexRoute
   '/works/create': typeof WorksCreateIndexRoute
   '/works/create/$eventId': typeof WorksCreateEventIdIndexRoute
@@ -176,11 +240,15 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRoute
   '/': typeof IndexRoute
-  '/about': typeof AboutRoute
   '/login': typeof LoginRoute
+  '/policy': typeof PolicyRoute
   '/register': typeof RegisterRoute
+  '/term': typeof TermRoute
   '/profile/edit': typeof ProfileEditRoute
+  '/profile/project_list': typeof ProfileProjectlistRoute
+  '/event/': typeof EventIndexRoute
   '/nfc/': typeof NfcIndexRoute
+  '/event/$eventId/': typeof EventEventIdIndexRoute
   '/nfc/$workId/': typeof NfcWorkIdIndexRoute
   '/works/create/': typeof WorksCreateIndexRoute
   '/works/create/$eventId/': typeof WorksCreateEventIdIndexRoute
@@ -190,33 +258,45 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/about'
     | '/login'
+    | '/policy'
     | '/register'
+    | '/term'
     | '/profile/edit'
+    | '/profile/project_list'
+    | '/event'
     | '/nfc'
+    | '/event/$eventId'
     | '/nfc/$workId'
     | '/works/create'
     | '/works/create/$eventId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/about'
     | '/login'
+    | '/policy'
     | '/register'
+    | '/term'
     | '/profile/edit'
+    | '/profile/project_list'
+    | '/event'
     | '/nfc'
+    | '/event/$eventId'
     | '/nfc/$workId'
     | '/works/create'
     | '/works/create/$eventId'
   id:
     | '__root__'
     | '/'
-    | '/about'
     | '/login'
+    | '/policy'
     | '/register'
+    | '/term'
     | '/profile/edit'
+    | '/profile/project_list'
+    | '/event/'
     | '/nfc/'
+    | '/event/$eventId/'
     | '/nfc/$workId/'
     | '/works/create/'
     | '/works/create/$eventId/'
@@ -225,11 +305,15 @@ export interface FileRouteTypes {
 
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AboutRoute: typeof AboutRoute
   LoginRoute: typeof LoginRoute
+  PolicyRoute: typeof PolicyRoute
   RegisterRoute: typeof RegisterRoute
+  TermRoute: typeof TermRoute
   ProfileEditRoute: typeof ProfileEditRoute
+  ProfileProjectlistRoute: typeof ProfileProjectlistRoute
+  EventIndexRoute: typeof EventIndexRoute
   NfcIndexRoute: typeof NfcIndexRoute
+  EventEventIdIndexRoute: typeof EventEventIdIndexRoute
   NfcWorkIdIndexRoute: typeof NfcWorkIdIndexRoute
   WorksCreateIndexRoute: typeof WorksCreateIndexRoute
   WorksCreateEventIdIndexRoute: typeof WorksCreateEventIdIndexRoute
@@ -237,11 +321,15 @@ export interface RootRouteChildren {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AboutRoute: AboutRoute,
   LoginRoute: LoginRoute,
+  PolicyRoute: PolicyRoute,
   RegisterRoute: RegisterRoute,
+  TermRoute: TermRoute,
   ProfileEditRoute: ProfileEditRoute,
+  ProfileProjectlistRoute: ProfileProjectlistRoute,
+  EventIndexRoute: EventIndexRoute,
   NfcIndexRoute: NfcIndexRoute,
+  EventEventIdIndexRoute: EventEventIdIndexRoute,
   NfcWorkIdIndexRoute: NfcWorkIdIndexRoute,
   WorksCreateIndexRoute: WorksCreateIndexRoute,
   WorksCreateEventIdIndexRoute: WorksCreateEventIdIndexRoute,
@@ -258,11 +346,15 @@ export const routeTree = rootRoute
       "filePath": "__root.tsx",
       "children": [
         "/",
-        "/about",
         "/login",
+        "/policy",
         "/register",
+        "/term",
         "/profile/edit",
+        "/profile/project_list",
+        "/event/",
         "/nfc/",
+        "/event/$eventId/",
         "/nfc/$workId/",
         "/works/create/",
         "/works/create/$eventId/"
@@ -271,20 +363,32 @@ export const routeTree = rootRoute
     "/": {
       "filePath": "index.tsx"
     },
-    "/about": {
-      "filePath": "about.tsx"
-    },
     "/login": {
       "filePath": "login.tsx"
+    },
+    "/policy": {
+      "filePath": "policy.tsx"
     },
     "/register": {
       "filePath": "register.tsx"
     },
+    "/term": {
+      "filePath": "term.tsx"
+    },
     "/profile/edit": {
       "filePath": "profile/edit.tsx"
     },
+    "/profile/project_list": {
+      "filePath": "profile/project_list.tsx"
+    },
+    "/event/": {
+      "filePath": "event/index.tsx"
+    },
     "/nfc/": {
       "filePath": "nfc/index.tsx"
+    },
+    "/event/$eventId/": {
+      "filePath": "event/$eventId/index.tsx"
     },
     "/nfc/$workId/": {
       "filePath": "nfc/$workId/index.tsx"

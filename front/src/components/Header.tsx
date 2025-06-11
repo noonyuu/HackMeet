@@ -22,6 +22,11 @@ export const Header = () => {
   });
   // プロフィール編集画面
   const isProfileEdit = useMatch({ from: "/profile/edit", shouldThrow: false });
+  // プロフィール編集画面の作品一覧
+  const isProfileProjectList = useMatch({
+    from: "/profile/project_list",
+    shouldThrow: false,
+  });
   // nfc読み取り後の画面
   const isNfc = useMatch({ from: "/nfc/$workId/", shouldThrow: false });
 
@@ -58,13 +63,13 @@ export const Header = () => {
             !isNfc && "border-b border-gray-300",
           )}
         >
-          <div className="font-main text-2xl">タイトル</div>
+          <div className="font-main text-2xl">HackMeet</div>
         </header>
       ) : (
         <header className="flex min-h-25 justify-center border-b border-gray-300 px-8 pt-4">
           <div className="font-main flex w-full flex-col">
             <div className="flex flex-row items-center">
-              <div className="flex grow text-2xl">タイトル</div>
+              <div className="flex grow text-2xl">HackMeet</div>
               <div className="">
                 {isAuthenticated ? (
                   <div>
@@ -76,9 +81,12 @@ export const Header = () => {
                       {isMenuOpen && (
                         <div className="absolute top-16 right-8 z-100 h-96 w-52 rounded-md border border-gray-200 bg-white p-3">
                           <div className="flex size-full flex-col justify-start">
-                            <div className="flex grow flex-col">
+                            <div className="flex grow flex-col gap-y-2">
                               <div className="text-center">
                                 <Link to="/profile/edit">プロフィール確認</Link>
+                              </div>
+                              <div className="text-center">
+                                <Link to="/profile/edit">作品一覧</Link>
                               </div>
                             </div>
                             <div
@@ -116,7 +124,7 @@ export const Header = () => {
                 作品一覧
               </Link>
               <Link
-                to="/about"
+                to="/event"
                 className="text-lg [&.active]:border-b [&.active]:border-green-500 [&.active]:font-bold"
               >
                 イベント
