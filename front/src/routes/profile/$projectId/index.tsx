@@ -163,7 +163,7 @@ function ProjectEditForm({ work }: { work: Work }) {
             ? [...existingDiagramUrls, ...newDiagramKeys]
             : work.diagramImageUrl || [],
         skills: formData.techs,
-        userIds: formData.userIds || [],
+        userIds: formData.userIds.map((user) => user.id),
       };
       console.log("更新データ:", updateInput);
 
