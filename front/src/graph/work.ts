@@ -17,6 +17,26 @@ export const GET_USER_WORKS = gql`
   }
 `;
 
+export const GET_WORK = gql`
+  query GetWork($id: String!) {
+    work(id: $id) {
+      id
+      title
+      description
+      imageUrl
+      diagramImageUrl
+      skills {
+        id
+        name
+      }
+      profile {
+        id
+        nickName
+      }
+    }
+  }
+`;
+
 export const CREATE_WORK = gql`
   mutation CreateWork($input: NewWork!) {
     createWork(input: $input) {
@@ -43,6 +63,7 @@ export const CREATE_WORK_EVENT = gql`
       userIds
       imageUrl
       diagramImageUrl
+      updatedAt
     }
   }
 `;
@@ -87,7 +108,7 @@ export const PROJECT_LIST = gql`
 `;
 
 export const GET_NFC_DATA = gql`
-  query ($id: Int!) {
+  query ($id: String!) {
     workProfile(id: $id) {
       id
       work {
@@ -105,6 +126,43 @@ export const GET_NFC_DATA = gql`
         affiliation
         bio
       }
+    }
+  }
+`;
+
+export const GET_PROFILE_WORKS = gql`
+  query ($profileId: String!) {
+    worksByProfileId(profileId: $profileId) {
+      id
+      title
+      description
+      skills {
+        id
+        name
+      }
+      imageUrl
+      diagramImageUrl
+      profile {
+        nickName
+      }
+      updatedAt
+      workProfileId
+    }
+  }
+`;
+
+export const UPDATE_WORK = gql`
+  mutation UpdateWork($id: String!, $input: UpdateWork!) {
+    updateWork(id: $id, input: $input) {
+      id
+      title
+      description
+      skills {
+        name
+      }
+      userIds
+      imageUrl
+      diagramImageUrl
     }
   }
 `;
