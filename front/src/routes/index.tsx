@@ -299,16 +299,6 @@ function Index() {
 
                 {selectedWork.imageUrl && (
                   <div className="overflow-hidden rounded-lg shadow-md">
-                    {/* <img
-                      src={`${HOST_URL}image/upload/get?date=${encodeURIComponent(selectedWork.imageUrl)}`}
-                      alt={selectedWork.title || "作品画像"}
-                      className="h-auto max-h-[45vh] w-full object-contain"
-                      onError={(e) =>
-                        (e.currentTarget.src = placeholderImage(
-                          selectedWork.title || "作品",
-                        ))
-                      }
-                    /> */}
                     <SwiperComponents
                       images={selectedWork.imageUrl}
                       title={selectedWork.title || "作品"}
@@ -331,32 +321,33 @@ function Index() {
                       関わった人
                     </h3>
                     <div className="flex items-center space-x-3 rounded-lg border border-gray-200 bg-gray-50 p-3">
-                      {selectedWork.profile[0]?.avatarUrl ? (
-                        <img
-                          src={selectedWork.profile[0].avatarUrl}
-                          alt={selectedWork.profile[0].nickName || "アバター"}
-                          className="h-12 w-12 rounded-full object-cover"
-                          onError={(e) => {
-                            const target = e.currentTarget;
-                            target.src = placeholderImage(
-                              selectedWork.profile[0]?.nickName?.[0] || "P",
-                            );
-                            target.onerror = null;
-                          }}
-                        />
-                      ) : (
-                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-indigo-100 text-indigo-600">
-                          <span className="text-xl font-semibold">
-                            {selectedWork.profile[0]?.nickName?.[0]?.toUpperCase() ||
-                              "?"}
-                          </span>
-                        </div>
-                      )}
-                      <div>
-                        <p className="font-semibold text-gray-800">
-                          {selectedWork.profile[0]?.nickName || "匿名ユーザー"}
-                        </p>
-                      </div>
+                      {selectedWork.profile.map((profile) => {
+                        return (
+                          <div>
+                            <div className="flex flex-col justify-center">
+                              <img
+                                key={profile.id}
+                                src={
+                                  profile.avatarUrl ||
+                                  placeholderImage(profile.nickName?.[0] || "P")
+                                }
+                                alt={profile.nickName || "アバター"}
+                                className="mx-auto h-12 w-12 rounded-full object-cover"
+                                onError={(e) => {
+                                  const target = e.currentTarget;
+                                  target.src = placeholderImage(
+                                    profile.nickName?.[0] || "P",
+                                  );
+                                  target.onerror = null;
+                                }}
+                              />
+                            </div>
+                            <p className="text-center font-semibold text-gray-800">
+                              {profile.nickName || "匿名ユーザー"}
+                            </p>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
 
