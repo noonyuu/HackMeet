@@ -68,8 +68,20 @@ function RouteComponent() {
         const data = await response.json();
         return data.keys;
       };
-      const s3ImageUrls = await uploadFiles(formData.imageFile ?? []);
-      const s3DiagramImageUrls = await uploadFiles(formData.diagramFile ?? []);
+      const extractFiles = (input: unknown): File[] => {
+        if (Array.isArray(input)) return input as File[];
+        if (
+          input &&
+          typeof input === "object" &&
+          "files" in input &&
+          Array.isArray((input as { files: unknown }).files)
+        ) {
+          return (input as { files: File[] }).files;
+        }
+        return [];
+      };
+      const s3ImageUrls = await uploadFiles(extractFiles(formData.imageFile));
+      const s3DiagramImageUrls = await uploadFiles(extractFiles(formData.diagramFile));
       const projectInputData = {
         title: formData.title,
         description: formData.description || null,

@@ -5,19 +5,25 @@ import {
   useParams,
 } from "@tanstack/react-router";
 import { valibotResolver } from "@hookform/resolvers/valibot";
-import { useForm, FormProvider, FieldError } from "react-hook-form";
+import {
+  useForm,
+  FormProvider,
+  FieldError,
+  SubmitErrorHandler,
+} from "react-hook-form";
 import * as v from "valibot";
 
 import { Card } from "@/components/ui/card/card";
 import { useAuth } from "@/hooks/useAuth";
-import { EventProjectSchema } from "@/schema/work";
 import { CREATE_WORK_EVENT, GET_USER_WORKS } from "@/graph/work";
 import { ProjectInfoQueryResult } from "@/types/project";
 import { UserWork } from "@/types/user";
 import { ImageUpload } from "@/components/ui/form/ImageUpload";
 import { TechStackInput } from "@/components/ui/form/TechStackInput";
 import { TextInput } from "@/components/ui/form/TextInput";
+import { UserSearchInput } from "@/components/ui/form/UserSearchInput";
 import { useState, useMemo } from "react";
+import { EventProjectSchema } from "@/schema/work";
 
 type ProjectFormData = v.InferOutput<typeof EventProjectSchema>;
 
@@ -37,7 +43,14 @@ function RouteComponent() {
   const methods = useForm<ProjectFormData>({
     resolver: valibotResolver(EventProjectSchema),
     defaultValues: {
-      ProjectSchema: { title: "", description: "", imageFile: [], techs: [] },
+      ProjectSchema: {
+        title: "",
+        description: "",
+        imageFile: [],
+        diagramFile: [],
+        techs: [],
+        userIds: [],
+      },
       eventId: eventId,
     },
   });
@@ -68,15 +81,34 @@ function RouteComponent() {
       (w: UserWork) => w.id === workId,
     );
     setSelectedWork(work || null);
+
     reset({
       eventId: eventId,
       ProjectSchema: {
         title: work?.title || "",
         description: work?.description || "",
         techs: work?.skills.map((skill: { id: string }) => skill.id) || [],
-        imageFile: work?.imageUrl || [],
+        imageFile: {
+          files: [],
+          existingUrls: work?.imageUrl || [],
+        },
+        diagramFile: {
+          files: [],
+          existingUrls: work?.diagramImageUrl || [],
+        },
+        userIds:
+          work?.profile.map(
+            (p: { id: string; nickName?: string; name?: string }) => ({
+              id: p.id,
+              nickName: p.nickName,
+            }),
+          ) || [],
       },
     });
+  };
+  const onInvalid: SubmitErrorHandler<ProjectFormData> = (errors) => {
+    console.error("Form Validation Errors:", errors);
+    alert("入力内容にエラーがあります。コンソールを確認してください。");
   };
 
   const handleToggleWorkType = (isNew: boolean) => {
@@ -84,41 +116,98 @@ function RouteComponent() {
     setSelectedWork(null);
     reset({
       eventId: eventId,
-      ProjectSchema: { title: "", description: "", techs: [], imageFile: [] },
+      ProjectSchema: {
+        title: "",
+        description: "",
+        techs: [],
+        imageFile: [],
+        diagramFile: [],
+        userIds: [],
+      },
     });
   };
 
   const onSubmit = async (formData: ProjectFormData) => {
+    console.log("Form Data:", formData);
     try {
       if (!user?.id) {
         alert("ユーザー情報が見つかりません。再度ログインしてください。");
         return;
       }
-      let finalImageUrl: string | string[] | null = null;
-      const newImageFiles = formData.ProjectSchema.imageFile;
-      if (isNewWork && newImageFiles && newImageFiles.length > 0) {
+
+      const uploadFiles = async (files: File[]): Promise<string[]> => {
+        if (!files || files.length === 0) return [];
         const postData = new FormData();
-        postData.append("image", newImageFiles[0]);
         postData.append("uid", user.id);
+        for (const file of files) {
+          postData.append("images", file);
+        }
         const response = await fetch(`${HOST_URL}image/upload/`, {
           method: "POST",
           body: postData,
         });
-        if (!response.ok) throw new Error("画像のアップロードに失敗しました。");
+        if (!response.ok) throw new Error(`画像のアップロードに失敗しました`);
         const data = await response.json();
-        finalImageUrl = data.key;
-      } else if (!isNewWork && selectedWork) {
-        finalImageUrl = selectedWork.imageUrl;
+        return data.keys;
+      };
+      const extractFiles = (input: unknown): File[] => {
+        if (Array.isArray(input)) return input as File[];
+        if (
+          input &&
+          typeof input === "object" &&
+          "files" in input &&
+          Array.isArray((input as { files: unknown }).files)
+        ) {
+          return (input as { files: File[] }).files;
+        }
+        return [];
+      };
+
+      const s3ImageUrls = await uploadFiles(
+        extractFiles(formData.ProjectSchema.imageFile),
+      );
+      const s3DiagramImageUrls = await uploadFiles(
+        extractFiles(formData.ProjectSchema.diagramFile),
+      );
+
+      interface Collaborator {
+        id: string;
+        nickName?: string;
       }
+
+      interface ProjectSchema {
+        title: string;
+        description: string;
+        imageFile: File[] | { files: File[]; existingUrls?: string[] };
+        diagramFile: File[] | { files: File[]; existingUrls?: string[] };
+        techs: string[];
+        userIds: Collaborator[];
+      }
+
+      interface ProjectFormDataTyped {
+        ProjectSchema: ProjectSchema;
+        eventId: string;
+      }
+
+      const collaboratorIds: string[] = (
+        formData as ProjectFormDataTyped
+      ).ProjectSchema.userIds.map((user: Collaborator) => user.id);
+      const allUserIds = [user.id, ...collaboratorIds];
+
       const projectInputData = {
         title: formData.ProjectSchema.title,
         description: formData.ProjectSchema.description,
-        imageUrl: finalImageUrl,
-        userIds: [user.id],
+        imageUrl: s3ImageUrls,
+        diagramImageUrl:
+          s3DiagramImageUrls.length > 0 ? s3DiagramImageUrls : null,
+        userIds: allUserIds,
         eventId: formData.eventId,
         skills: formData.ProjectSchema.techs,
         workId: !isNewWork ? selectedWork?.id : null,
       };
+
+      console.log("Project Input Data:", formData.ProjectSchema.userIds);
+
       await createProject({ variables: { input: projectInputData } });
       alert("作品を登録しました");
       navigate({ to: "/" });
@@ -131,23 +220,29 @@ function RouteComponent() {
   // 既存作品の画像URLを生成
   const initialImageUrls = useMemo(() => {
     if (!isNewWork && selectedWork?.imageUrl) {
-      console.log("Selected work:", selectedWork?.imageUrl);
       const imageUrlKey = selectedWork.imageUrl;
       return imageUrlKey.map(
         (url: string) => `${HOST_URL}image/upload/get?date=${url}`,
       );
-      // return ;
     }
     return [];
-  }, [HOST_URL, isNewWork, selectedWork?.imageUrl]);
+  }, [HOST_URL, isNewWork, selectedWork]);
+
+  // 既存作品の構成図URLを生成
+  const initialDiagramUrls = useMemo(() => {
+    if (!isNewWork && selectedWork?.diagramUrl) {
+      const diagramUrlKey = selectedWork.diagramUrl;
+      return diagramUrlKey.map(
+        (url: string) => `${HOST_URL}image/upload/get?date=${url}`,
+      );
+    }
+    return [];
+  }, [HOST_URL, isNewWork, selectedWork]);
 
   return (
     <section className="flex size-full flex-col items-center justify-center bg-gray-100 px-2">
       <h1 className="w-full py-2 text-2xl text-black">作品登録</h1>
       <Card className="w-full px-4 py-4">
-        <div className="mb-4 rounded-md bg-gray-200 p-2">
-          <strong>イベントID:</strong> {eventId}
-        </div>
         <div className="mb-4 flex space-x-4">
           <label className="flex items-center space-x-2">
             <input
@@ -193,7 +288,7 @@ function RouteComponent() {
         )}
         <FormProvider {...methods}>
           <form
-            onSubmit={handleSubmit(onSubmit)}
+            onSubmit={handleSubmit(onSubmit, onInvalid)}
             className="flex flex-col gap-4"
           >
             <div
@@ -221,9 +316,25 @@ function RouteComponent() {
                 maxFiles={4}
                 initialUrls={initialImageUrls}
               />
+              <ImageUpload<ProjectFormData>
+                name="ProjectSchema.diagramFile"
+                label="構成図 (最大2枚)"
+                setValue={setValue}
+                trigger={trigger}
+                error={errors.ProjectSchema?.diagramFile as FieldError}
+                maxFiles={2}
+                initialUrls={initialDiagramUrls}
+              />
               <TechStackInput<ProjectFormData>
                 name="ProjectSchema.techs"
                 control={control}
+              />
+              <UserSearchInput<ProjectFormData>
+                name="ProjectSchema.userIds"
+                control={control}
+                label="一緒に制作した人"
+                placeholder="ユーザー名で検索..."
+                currentUserId={user?.id}
               />
             </div>
             <button
