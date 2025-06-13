@@ -29,7 +29,7 @@ input UpdateProfile {
 
 extend type Query {
   profile(id: String!): Profile
-  profileByNickName(nickName: String!): Profile
+  profileByNickName(nickName: String!): [Profile]!
   profileByUserId(id: String!): Profile
 }
 

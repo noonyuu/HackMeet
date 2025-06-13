@@ -21,6 +21,8 @@ type Work struct {
 	Skills        []Skill         `json:"skills"`
 	Images        []*Image        `json:"images"`
 	DiagramImages []*DiagramImage `json:"diagramImages"`
+
+	WorkProfileID *string `json:"workProfileId"`
 }
 
 type WorkEdge struct {

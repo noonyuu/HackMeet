@@ -7,7 +7,9 @@ package resolver
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/noonyuu/nfc/back/graph"
@@ -112,44 +114,92 @@ func (r *mutationResolver) UpdateProfile(ctx context.Context, input model.Update
 	// 現在時刻を取得
 	now := time.Now()
 
-	// GraduationYearの処理 (これはDBに渡すための準備として適切です)
-	var graduationYear sql.NullInt32
-	if input.GraduationYear != nil {
-		graduationYear = sql.NullInt32{
-			Int32: *input.GraduationYear,
-			Valid: true,
-		}
-	} else {
-		graduationYear = sql.NullInt32{Valid: false}
+	// 動的にUPDATE文を構築
+	var setParts []string
+	var args []interface{}
+
+	// AvatarURLの処理
+	if input.AvatarURL != nil {
+		setParts = append(setParts, "avatar_url = ?")
+		args = append(args, *input.AvatarURL)
 	}
 
-	updateQuery := `
+	// NickNameの処理
+	if input.NickName != nil {
+		setParts = append(setParts, "nick_name = ?")
+		args = append(args, *input.NickName)
+	}
+
+	// GraduationYearの処理
+	if input.GraduationYear != nil {
+		setParts = append(setParts, "graduation_year = ?")
+		var graduationYear sql.NullInt32
+		if *input.GraduationYear != 0 { // 0の場合はNULLとして扱う場合
+			graduationYear = sql.NullInt32{
+				Int32: *input.GraduationYear,
+				Valid: true,
+			}
+		} else {
+			graduationYear = sql.NullInt32{Valid: false}
+		}
+		args = append(args, graduationYear)
+	}
+
+	// Affiliationの処理
+	if input.Affiliation != nil {
+		setParts = append(setParts, "affiliation = ?")
+		args = append(args, input.Affiliation)
+	}
+
+	// Bioの処理
+	if input.Bio != nil {
+		setParts = append(setParts, "bio = ?")
+		args = append(args, input.Bio)
+	}
+
+	// 更新するフィールドがない場合
+	if len(setParts) == 0 {
+		return nil, &gqlerror.Error{
+			Message: "更新するフィールドが指定されていません。",
+			Extensions: map[string]interface{}{
+				"code": "BAD_REQUEST",
+			},
+		}
+	}
+
+	// updated_atは常に更新
+	setParts = append(setParts, "updated_at = ?")
+	args = append(args, now)
+
+	// WHERE句のIDを追加
+	args = append(args, input.ID)
+
+	updateQuery := fmt.Sprintf(`
 		UPDATE profiles
-		SET
-			avatar_url = COALESCE(?, avatar_url),
-			nick_name = COALESCE(?, nick_name),
-			graduation_year = ?,
-			affiliation = ?,
-			bio = ?,
-			updated_at = ?
+		SET %s
 		WHERE id = ?
-	`
-	_, err := r.DB.ExecContext(ctx, updateQuery,
-		input.AvatarURL,
-		input.NickName,
-		graduationYear,
-		input.Affiliation,
-		input.Bio,
-		now,
-		input.ID,
-	)
+	`, strings.Join(setParts, ", "))
+
+	result, err := r.DB.ExecContext(ctx, updateQuery, args...)
 	if err != nil {
 		log.Printf("failed to update profile: %v", err)
-
 		return nil, &gqlerror.Error{
 			Message: "プロフィールの更新中にサーバーエラーが発生しました。",
 			Extensions: map[string]interface{}{
 				"code": "INTERNAL_SERVER_ERROR",
+			},
+		}
+	}
+
+	// 更新されたレコード数を確認
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		log.Printf("failed to get rows affected: %v", err)
+	} else if rowsAffected == 0 {
+		return nil, &gqlerror.Error{
+			Message: "指定されたプロフィールが見つかりません。",
+			Extensions: map[string]interface{}{
+				"code": "NOT_FOUND",
 			},
 		}
 	}
@@ -197,7 +247,7 @@ func (r *mutationResolver) UpdateProfile(ctx context.Context, input model.Update
 	if dbGraduationYear.Valid {
 		fetchedProfile.GraduationYear = &dbGraduationYear.Int32
 	} else {
-		fetchedProfile.GraduationYear = nil // DBでNULLだった場合はnilにする
+		fetchedProfile.GraduationYear = nil
 	}
 
 	return &fetchedProfile, nil
@@ -293,12 +343,15 @@ func (r *queryResolver) Profile(ctx context.Context, id string) (*model.Profile,
 }
 
 // ProfileByNickName is the resolver for the profileByNickName field.
-func (r *queryResolver) ProfileByNickName(ctx context.Context, nickName string) (*model.Profile, error) {
+func (r *queryResolver) ProfileByNickName(ctx context.Context, nickName string) ([]*model.Profile, error) {
+	// 曖昧検索にする
+	nickName = "%" + nickName + "%"
 	query := `
-	SELECT id, avatar_url, nick_name, graduation_year, affiliation, bio, created_at, updated_at
-	FROM profiles
-	WHERE nick_name = ?
-`
+		SELECT id, avatar_url, nick_name, graduation_year, affiliation, bio, created_at, updated_at
+		FROM profiles
+		WHERE nick_name LIKE ?
+	`
+
 	row := r.DB.QueryRow(query, nickName)
 
 	var profile model.Profile
@@ -367,7 +420,7 @@ func (r *queryResolver) ProfileByNickName(ctx context.Context, nickName string) 
 	} else {
 		profile.Bio = nil
 	}
-	return &profile, nil
+	return []*model.Profile{&profile}, nil
 }
 
 // ProfileByUserID is the resolver for the profileByUserId field.

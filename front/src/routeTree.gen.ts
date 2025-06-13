@@ -21,6 +21,7 @@ import { Route as EventIndexImport } from './routes/event/index'
 import { Route as ProfileProjectlistImport } from './routes/profile/project_list'
 import { Route as ProfileEditImport } from './routes/profile/edit'
 import { Route as WorksCreateIndexImport } from './routes/works/create/index'
+import { Route as ProfileProjectIdIndexImport } from './routes/profile/$projectId/index'
 import { Route as NfcWorkIdIndexImport } from './routes/nfc/$workId/index'
 import { Route as EventEventIdIndexImport } from './routes/event/$eventId/index'
 import { Route as WorksCreateEventIdIndexImport } from './routes/works/create/$eventId/index'
@@ -84,6 +85,12 @@ const ProfileEditRoute = ProfileEditImport.update({
 const WorksCreateIndexRoute = WorksCreateIndexImport.update({
   id: '/works/create/',
   path: '/works/create/',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const ProfileProjectIdIndexRoute = ProfileProjectIdIndexImport.update({
+  id: '/profile/$projectId/',
+  path: '/profile/$projectId/',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -186,6 +193,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof NfcWorkIdIndexImport
       parentRoute: typeof rootRoute
     }
+    '/profile/$projectId/': {
+      id: '/profile/$projectId/'
+      path: '/profile/$projectId'
+      fullPath: '/profile/$projectId'
+      preLoaderRoute: typeof ProfileProjectIdIndexImport
+      parentRoute: typeof rootRoute
+    }
     '/works/create/': {
       id: '/works/create/'
       path: '/works/create'
@@ -217,6 +231,7 @@ export interface FileRoutesByFullPath {
   '/nfc': typeof NfcIndexRoute
   '/event/$eventId': typeof EventEventIdIndexRoute
   '/nfc/$workId': typeof NfcWorkIdIndexRoute
+  '/profile/$projectId': typeof ProfileProjectIdIndexRoute
   '/works/create': typeof WorksCreateIndexRoute
   '/works/create/$eventId': typeof WorksCreateEventIdIndexRoute
 }
@@ -233,6 +248,7 @@ export interface FileRoutesByTo {
   '/nfc': typeof NfcIndexRoute
   '/event/$eventId': typeof EventEventIdIndexRoute
   '/nfc/$workId': typeof NfcWorkIdIndexRoute
+  '/profile/$projectId': typeof ProfileProjectIdIndexRoute
   '/works/create': typeof WorksCreateIndexRoute
   '/works/create/$eventId': typeof WorksCreateEventIdIndexRoute
 }
@@ -250,6 +266,7 @@ export interface FileRoutesById {
   '/nfc/': typeof NfcIndexRoute
   '/event/$eventId/': typeof EventEventIdIndexRoute
   '/nfc/$workId/': typeof NfcWorkIdIndexRoute
+  '/profile/$projectId/': typeof ProfileProjectIdIndexRoute
   '/works/create/': typeof WorksCreateIndexRoute
   '/works/create/$eventId/': typeof WorksCreateEventIdIndexRoute
 }
@@ -268,6 +285,7 @@ export interface FileRouteTypes {
     | '/nfc'
     | '/event/$eventId'
     | '/nfc/$workId'
+    | '/profile/$projectId'
     | '/works/create'
     | '/works/create/$eventId'
   fileRoutesByTo: FileRoutesByTo
@@ -283,6 +301,7 @@ export interface FileRouteTypes {
     | '/nfc'
     | '/event/$eventId'
     | '/nfc/$workId'
+    | '/profile/$projectId'
     | '/works/create'
     | '/works/create/$eventId'
   id:
@@ -298,6 +317,7 @@ export interface FileRouteTypes {
     | '/nfc/'
     | '/event/$eventId/'
     | '/nfc/$workId/'
+    | '/profile/$projectId/'
     | '/works/create/'
     | '/works/create/$eventId/'
   fileRoutesById: FileRoutesById
@@ -315,6 +335,7 @@ export interface RootRouteChildren {
   NfcIndexRoute: typeof NfcIndexRoute
   EventEventIdIndexRoute: typeof EventEventIdIndexRoute
   NfcWorkIdIndexRoute: typeof NfcWorkIdIndexRoute
+  ProfileProjectIdIndexRoute: typeof ProfileProjectIdIndexRoute
   WorksCreateIndexRoute: typeof WorksCreateIndexRoute
   WorksCreateEventIdIndexRoute: typeof WorksCreateEventIdIndexRoute
 }
@@ -331,6 +352,7 @@ const rootRouteChildren: RootRouteChildren = {
   NfcIndexRoute: NfcIndexRoute,
   EventEventIdIndexRoute: EventEventIdIndexRoute,
   NfcWorkIdIndexRoute: NfcWorkIdIndexRoute,
+  ProfileProjectIdIndexRoute: ProfileProjectIdIndexRoute,
   WorksCreateIndexRoute: WorksCreateIndexRoute,
   WorksCreateEventIdIndexRoute: WorksCreateEventIdIndexRoute,
 }
@@ -356,6 +378,7 @@ export const routeTree = rootRoute
         "/nfc/",
         "/event/$eventId/",
         "/nfc/$workId/",
+        "/profile/$projectId/",
         "/works/create/",
         "/works/create/$eventId/"
       ]
@@ -392,6 +415,9 @@ export const routeTree = rootRoute
     },
     "/nfc/$workId/": {
       "filePath": "nfc/$workId/index.tsx"
+    },
+    "/profile/$projectId/": {
+      "filePath": "profile/$projectId/index.tsx"
     },
     "/works/create/": {
       "filePath": "works/create/index.tsx"

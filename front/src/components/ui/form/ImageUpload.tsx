@@ -15,6 +15,7 @@ interface DisplayImage {
   id: string;
   url: string;
   file?: File; // 新規ファイルの場合のみ存在する
+  isExisting?: boolean; // 既存画像かどうかを示すフラグ
 }
 
 interface ImageUploadProps<TFieldValues extends FieldValues> {
@@ -44,28 +45,37 @@ export const ImageUpload = <TFieldValues extends FieldValues>({
 
   // 既存画像のURLが変更されたら、表示状態をリセット
   useEffect(() => {
-    // initialUrlsが配列なのでdisplayImagesにそれぞれ設定したい
-    initialUrls.forEach((url, index) => {
-      const id = `${Date.now()}-${index}-${url}`;
-      const existingImage = displayImages.find((img) => img.url === url);
-      if (!existingImage) {
-        setDisplayImages((prev) => [
-          ...prev,
-          { id, url, file: undefined }, // 既存画像はfileを持たない
-        ]);
-      }
-    });
-  }, [displayImages, initialUrls]);
+    const newDisplayImages = initialUrls.map((url, index) => ({
+      id: `${Date.now()}-${index}-${url}`,
+      url,
+      file: undefined,
+      isExisting: true,
+    }));
+    setDisplayImages(newDisplayImages);
+  }, [initialUrls]);
 
-  // 親フォームの状態を更新（新規ファイルのみを渡す）
+  // 親フォームの状態を更新
   const updateFormState = useCallback(
     (currentImages: DisplayImage[]) => {
       const newFiles = currentImages
         .filter((img) => img.file)
         .map((img) => img.file as File);
-      setValue(name, newFiles as PathValue<TFieldValues, typeof name>, {
-        shouldValidate: true,
-      });
+
+      // 既存の画像URLと新規ファイルを送信
+      const existingUrls = currentImages
+        .filter((img) => img.isExisting)
+        .map((img) => img.url);
+
+      setValue(
+        name,
+        {
+          files: newFiles,
+          existingUrls,
+        } as PathValue<TFieldValues, typeof name>,
+        {
+          shouldValidate: true,
+        },
+      );
       trigger(name);
     },
     [name, setValue, trigger],

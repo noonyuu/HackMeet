@@ -12,42 +12,37 @@ export const Header = () => {
   const isRegister = useMatch({ from: "/register", shouldThrow: false });
   const isLogin = useMatch({ from: "/login", shouldThrow: false });
   // 作品登録画面
-  const isWorkCreate = useMatch({
-    from: "/works/create/",
-    shouldThrow: false,
-  });
-  const isWorkCreateEvent = useMatch({
-    from: "/works/create/$eventId/",
-    shouldThrow: false,
-  });
+  // const isWorkCreate = useMatch({
+  //   from: "/works/create/",
+  //   shouldThrow: false,
+  // });
+  // const isWorkCreateEvent = useMatch({
+  //   from: "/works/create/$eventId/",
+  //   shouldThrow: false,
+  // });
   // プロフィール編集画面
-  const isProfileEdit = useMatch({ from: "/profile/edit", shouldThrow: false });
+  // const isProfileEdit = useMatch({ from: "/profile/edit", shouldThrow: false });
   // プロフィール編集画面の作品一覧
-  const isProfileProjectList = useMatch({
-    from: "/profile/project_list",
-    shouldThrow: false,
-  });
+  // const isProfileProjectList = useMatch({
+  //   from: "/profile/project_list",
+  //   shouldThrow: false,
+  // });
   // nfc読み取り後の画面
   const isNfc = useMatch({ from: "/nfc/$workId/", shouldThrow: false });
 
   const isAuth =
     isRegister ||
     isLogin ||
-    isWorkCreate ||
-    isWorkCreateEvent ||
-    isProfileEdit ||
     isNfc;
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
 
   const { user, isAuthenticated, logout } = useAuth();
 
   const handleMenuClick = () => {
-    console.log("handleMenuClick");
     setIsMenuOpen((prev) => !prev);
   };
 
   const handleLogout = () => {
-    console.log("logout");
     setIsMenuOpen(false);
     logout();
     navigate({ to: "/" });
@@ -86,7 +81,7 @@ export const Header = () => {
                                 <Link to="/profile/edit">プロフィール確認</Link>
                               </div>
                               <div className="text-center">
-                                <Link to="/profile/edit">作品一覧</Link>
+                                <Link to="/profile/project_list">作品一覧</Link>
                               </div>
                             </div>
                             <div

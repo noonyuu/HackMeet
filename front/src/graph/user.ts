@@ -25,3 +25,12 @@ export const UPDATE_PROFILE = gql`
     }
   }
 `;
+
+export const SEARCH_USERS = gql`
+  query ProfileByNickName($nickName: String!) {
+    profileByNickName(nickName: $nickName) {
+      id
+      nickName
+    }
+  }
+`;

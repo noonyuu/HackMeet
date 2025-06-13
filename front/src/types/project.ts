@@ -22,9 +22,28 @@ export type Work = {
   title: string;
   description: string;
   imageUrl: string[] | null;
+  diagramImageUrl: string[] | null;
   createdAt: string;
   updatedAt: string;
   profile: TodoProfile[];
   skills: TodoSkills[];
   event: TodoEvents[];
+  workProfileId: string;
 };
+
+export type EventWithWorks = {
+  id: string;
+  eventId: string;
+  title: string;
+};
+
+export type UpdateProject = Pick<
+  Work,
+  | "id"
+  | "title"
+  | "description"
+  | "imageUrl"
+  | "diagramImageUrl"
+  | "skills"
+  | "profile"
+>;

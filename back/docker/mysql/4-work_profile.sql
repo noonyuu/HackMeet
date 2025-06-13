@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS work_profiles (
-  id INT AUTO_INCREMENT PRIMARY KEY,
+  id VARCHAR(255) PRIMARY KEY,
   work_id VARCHAR(255),
   profile_id VARCHAR(255),
   created_at DATETIME,

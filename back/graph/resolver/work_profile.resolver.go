@@ -9,6 +9,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/noonyuu/nfc/back/graph"
@@ -74,7 +75,7 @@ func (r *mutationResolver) DeleteWorkProfile(ctx context.Context, id int32) (*mo
 		}
 	}
 	if rowsAffected == 0 {
-		log.Printf("work profile with ID %d not found", id)
+		log.Printf("work profile with ID %s not found", id)
 
 		return nil, &gqlerror.Error{
 			Message: fmt.Sprintf("作品が見つかりませんでした。", id),
@@ -88,7 +89,7 @@ func (r *mutationResolver) DeleteWorkProfile(ctx context.Context, id int32) (*mo
 }
 
 // WorkProfile is the resolver for the workProfile field.
-func (r *queryResolver) WorkProfile(ctx context.Context, id int32) (*model.WorkProfile, error) {
+func (r *queryResolver) WorkProfile(ctx context.Context, id string) (*model.WorkProfile, error) {
 	query := `
 		SELECT wp.id, wp.work_id, wp.profile_id, wp.created_at, wp.updated_at,
 			w.id, w.title, w.description,
@@ -118,7 +119,7 @@ func (r *queryResolver) WorkProfile(ctx context.Context, id int32) (*model.WorkP
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			log.Printf("work profile with ID %d not found", id)
+			log.Printf("work profile with ID %s not found", id)
 
 			return nil, &gqlerror.Error{
 				Message: fmt.Sprintf("作品が見つかりませんでした。", id),
@@ -961,168 +962,187 @@ func (r *queryResolver) WorkProfilesByProfileID(ctx context.Context, profileID s
 
 // WorksByProfileID is the resolver for the worksByProfileId field.
 func (r *queryResolver) WorksByProfileID(ctx context.Context, profileID string) ([]*model.Work, error) {
-	query := `
-		SELECT w.id, w.title, w.description
-		FROM work_profiles wp
-		JOIN works w ON wp.work_id = w.id
+	// 作品情報を取得
+	mainQuery := `
+		SELECT wp.id, w.id, w.title, w.description, w.created_at, w.updated_at
+		FROM works w
+		JOIN work_profiles wp ON w.id = wp.work_id
 		WHERE wp.profile_id = ?
+		ORDER BY w.updated_at DESC
 	`
-
-	rows, err := r.DB.QueryContext(ctx, query, profileID)
+	rows, err := r.DB.QueryContext(ctx, mainQuery, profileID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to query works by profile ID: %w", err)
+		log.Printf("failed to query works by profile ID: %v", err)
+		return nil, fmt.Errorf("作品の取得に失敗しました")
 	}
 	defer rows.Close()
 
 	var works []*model.Work
+	var workIDs []string
 	for rows.Next() {
 		work := &model.Work{}
 		var eventID sql.NullString
-		if err := rows.Scan(&work.ID, &work.Title, &work.Description); err != nil {
-			return nil, fmt.Errorf("failed to scan work: %w", err)
+		if err := rows.Scan(&work.WorkProfileID, &work.ID, &work.Title, &work.Description, &work.CreatedAt, &work.UpdatedAt); err != nil {
+			log.Printf("failed to scan work: %v", err)
+			return nil, fmt.Errorf("作品情報の読み取りに失敗しました")
 		}
 		if eventID.Valid {
 			work.EventID = &eventID.String
 		}
-
-		// Work に紐づくスキル、画像、図表画像、ユーザーID、イベントを取得してセット
-		skillsQuery := `
-			SELECT s.id, s.name, s.created_at, s.updated_at
-			FROM skills s
-			INNER JOIN work_skills ws ON s.id = ws.skill_id
-			WHERE ws.work_id = ?
-		`
-		skillRows, err := r.DB.QueryContext(ctx, skillsQuery, work.ID)
-		if err != nil {
-			return nil, fmt.Errorf("failed to query skills for work %s: %w", work.ID, err)
-		}
-		defer skillRows.Close()
-
-		var skills []model.Skill
-		for skillRows.Next() {
-			skill := model.Skill{}
-			if err := skillRows.Scan(&skill.ID, &skill.Name, &skill.CreatedAt, &skill.UpdatedAt); err != nil {
-				return nil, fmt.Errorf("failed to scan skill for work %s: %w", work.ID, err)
-			}
-			skills = append(skills, skill)
-		}
-		if err = skillRows.Err(); err != nil {
-			return nil, fmt.Errorf("error iterating skill rows for work %s: %w", work.ID, err)
-		}
-		work.Skills = skills
-
-		// Work に紐づく画像を取得してセット
-		imageQuery := `
-			SELECT i.id, i.image_url, i.created_at, i.updated_at
-			FROM images i
-			JOIN work_images wi ON i.id = wi.image_id
-			WHERE wi.work_id = ?
-		`
-		imageRows, err := r.DB.QueryContext(ctx, imageQuery, work.ID)
-		if err != nil {
-			return nil, fmt.Errorf("failed to query images for work %s: %w", work.ID, err)
-		}
-		defer imageRows.Close()
-
-		var images []*model.Image
-		var imageIDs []string // For work.ImageID
-		for imageRows.Next() {
-			img := &model.Image{}
-			if err := imageRows.Scan(&img.ID, &img.ImageURL, &img.CreatedAt, &img.UpdatedAt); err != nil {
-				return nil, fmt.Errorf("failed to scan image for work %s: %w", work.ID, err)
-			}
-			images = append(images, img)
-			imageIDs = append(imageIDs, img.ID)
-		}
-		if err = imageRows.Err(); err != nil {
-			return nil, fmt.Errorf("error iterating image rows for work %s: %w", work.ID, err)
-		}
-		work.Images = images
-		work.ImageID = imageIDs
-
-		// Work に紐づく図表画像を取得してセット
-		diagramImageQuery := `
-			SELECT di.id, di.image_url, di.created_at, di.updated_at
-			FROM diagram_images di
-			JOIN work_diagram_images wdi ON di.id = wdi.image_id
-			WHERE wdi.work_id = ?
-		`
-		diagramImageRows, err := r.DB.QueryContext(ctx, diagramImageQuery, work.ID)
-		if err != nil {
-			return nil, fmt.Errorf("failed to query diagram images for work %s: %w", work.ID, err)
-		}
-		defer diagramImageRows.Close()
-
-		var diagramImages []*model.DiagramImage
-		var diagramImageURLs []*string // For work.DiagramImageID
-		for diagramImageRows.Next() {
-			diagImg := &model.DiagramImage{}
-			if err := diagramImageRows.Scan(&diagImg.ID, &diagImg.ImageURL, &diagImg.CreatedAt, &diagImg.UpdatedAt); err != nil {
-				return nil, fmt.Errorf("failed to scan diagram image for work %s: %w", work.ID, err)
-			}
-			diagramImages = append(diagramImages, diagImg)
-			diagramImageURLs = append(diagramImageURLs, &diagImg.ImageURL)
-		}
-		if err = diagramImageRows.Err(); err != nil {
-			return nil, fmt.Errorf("error iterating diagram image rows for work %s: %w", work.ID, err)
-		}
-		work.DiagramImages = diagramImages
-		work.DiagramImageID = diagramImageURLs
-
-		// Work に紐づくユーザーIDを取得してセット
-		userIDsQuery := `SELECT profile_id FROM work_profiles WHERE work_id = ?`
-		userIDRows, err := r.DB.QueryContext(ctx, userIDsQuery, work.ID)
-		if err != nil {
-			return nil, fmt.Errorf("failed to query user IDs for work %s: %w", work.ID, err)
-		}
-		defer userIDRows.Close()
-
-		var userIDs []string
-		for userIDRows.Next() {
-			var userID string
-			if err := userIDRows.Scan(&userID); err != nil {
-				return nil, fmt.Errorf("failed to scan user ID for work %s: %w", work.ID, err)
-			}
-			userIDs = append(userIDs, userID)
-		}
-		if err = userIDRows.Err(); err != nil {
-			return nil, fmt.Errorf("error iterating user ID rows for work %s: %w", work.ID, err)
-		}
-		work.UserIDs = userIDs
-
-		// Work に紐づくイベントを取得してセット
-		eventQuery := `
-			SELECT e.id, e.name, e.created_at, e.updated_at
-			FROM events e
-			JOIN work_events we ON e.id = we.event_id
-			WHERE we.work_id = ?
-		`
-		eventRows, err := r.DB.QueryContext(ctx, eventQuery, work.ID)
-		if err != nil {
-			return nil, fmt.Errorf("failed to query events for work %s: %w", work.ID, err)
-		}
-		defer eventRows.Close()
-
-		var events []*model.Event
-		for eventRows.Next() {
-			event := &model.Event{}
-			if err := eventRows.Scan(&event.ID, &event.Name, &event.CreatedAt, &event.UpdatedAt); err != nil {
-				return nil, fmt.Errorf("failed to scan event for work %s: %w", work.ID, err)
-			}
-			events = append(events, event)
-		}
-		if err = eventRows.Err(); err != nil {
-			return nil, fmt.Errorf("error iterating event rows for work %s: %w", work.ID, err)
-		}
-		work.Events = events
-
 		works = append(works, work)
+		workIDs = append(workIDs, work.ID)
 	}
 	if err = rows.Err(); err != nil {
-		return nil, fmt.Errorf("error iterating works: %w", err)
+		log.Printf("error iterating works: %v", err)
+		return nil, fmt.Errorf("作品リストの処理中にエラーが発生しました")
+	}
+
+	// 作品がなければここで終了
+	if len(works) == 0 {
+		return []*model.Work{}, nil
+	}
+	// スキルの取得
+	skillsQuery := `
+		SELECT ws.work_id, s.id, s.name
+		FROM skills s
+		JOIN work_skills ws ON s.id = ws.skill_id
+		WHERE ws.work_id IN (?` + strings.Repeat(",?", len(workIDs)-1) + `)
+	`
+	args := []interface{}{}
+	for _, id := range workIDs {
+		args = append(args, id)
+	}
+	skillRows, err := r.DB.QueryContext(ctx, skillsQuery, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer skillRows.Close()
+
+	// スキルをworkIDごとにマップに格納
+	skillsByWorkID := make(map[string][]*model.Skill)
+	for skillRows.Next() {
+		var workID string
+		var skill model.Skill
+		if err := skillRows.Scan(&workID, &skill.ID, &skill.Name); err != nil {
+			return nil, err
+		}
+		skillsByWorkID[workID] = append(skillsByWorkID[workID], &skill)
+	}
+
+	// プロフィール情報の取得
+	profilesQuery := `
+		SELECT wp.work_id, p.id, p.nick_name
+		FROM profiles p
+		JOIN work_profiles wp ON p.id = wp.profile_id
+		WHERE wp.work_id IN (?` + strings.Repeat(",?", len(workIDs)-1) + `)
+	`
+	profileRows, err := r.DB.QueryContext(ctx, profilesQuery, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer profileRows.Close()
+
+	// プロフィールをworkIDごとにマップに格納
+	profilesByWorkID := make(map[string][]*model.Profile)
+	for profileRows.Next() {
+		var workID string
+		var profile model.Profile
+		if err := profileRows.Scan(&workID, &profile.ID, &profile.NickName); err != nil {
+			return nil, err
+		}
+		profilesByWorkID[workID] = append(profilesByWorkID[workID], &profile)
+	}
+
+	// 画像と図表画像の取得
+	imagesQuery := `
+		SELECT wi.work_id, i.id, i.image_url
+		FROM images i
+		JOIN work_images wi ON i.id = wi.image_id
+		WHERE wi.work_id IN (?` + strings.Repeat(",?", len(workIDs)-1) + `)
+	`
+	imageRows, err := r.DB.QueryContext(ctx, imagesQuery, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer imageRows.Close()
+	// 画像をworkIDごとにマップに格納
+	imagesByWorkID := make(map[string][]*model.Image)
+	for imageRows.Next() {
+		var workID string
+		var image model.Image
+		if err := imageRows.Scan(&workID, &image.ID, &image.ImageURL); err != nil {
+			return nil, err
+		}
+		imagesByWorkID[workID] = append(imagesByWorkID[workID], &image)
+	}
+	// 図表画像の取得
+	diagramImagesQuery := `
+		SELECT wdi.work_id, di.id, di.image_url
+		FROM diagram_images di
+		JOIN work_diagram_images wdi ON di.id = wdi.image_id
+		WHERE wdi.work_id IN (?` + strings.Repeat(",?", len(workIDs)-1) + `)
+	`
+	diagramImageRows, err := r.DB.QueryContext(ctx, diagramImagesQuery, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer diagramImageRows.Close()
+	// 図表画像をworkIDごとにマップに格納
+	diagramImagesByWorkID := make(map[string][]*model.DiagramImage)
+	for diagramImageRows.Next() {
+		var workID string
+		var diagramImage model.DiagramImage
+		if err := diagramImageRows.Scan(&workID, &diagramImage.ID, &diagramImage.ImageURL); err != nil {
+			return nil, err
+		}
+		diagramImagesByWorkID[workID] = append(diagramImagesByWorkID[workID], &diagramImage)
+	}
+
+	for _, work := range works {
+		if skills, ok := skillsByWorkID[work.ID]; ok {
+			convertedSkills := make([]model.Skill, len(skills))
+			for i, s := range skills {
+				if s != nil {
+					convertedSkills[i] = *s
+				}
+			}
+			work.Skills = convertedSkills
+		}
+		if profiles, ok := profilesByWorkID[work.ID]; ok {
+			convertedProfiles := make([]model.Profile, len(profiles))
+			for i, p := range profiles {
+				if p != nil {
+					convertedProfiles[i] = *p
+				}
+			}
+			work.Profiles = convertedProfiles
+		}
+		if images, ok := imagesByWorkID[work.ID]; ok {
+			convertedImages := make([]*model.Image, len(images))
+			for i, img := range images {
+				if img != nil {
+					convertedImages[i] = img
+				}
+			}
+			work.Images = convertedImages
+		}
+		if diagramImages, ok := diagramImagesByWorkID[work.ID]; ok {
+			convertedDiagramImages := make([]*model.DiagramImage, len(diagramImages))
+			for i, diagImg := range diagramImages {
+				if diagImg != nil {
+					convertedDiagramImages[i] = diagImg
+				}
+			}
+			work.DiagramImages = convertedDiagramImages
+		}
 	}
 
 	return works, nil
+}
+
+// ID is the resolver for the id field.
+func (r *workProfileResolver) ID(ctx context.Context, obj *model.WorkProfile) (string, error) {
+	panic(fmt.Errorf("not implemented: ID - id"))
 }
 
 // CreatedAt is the resolver for the createdAt field.

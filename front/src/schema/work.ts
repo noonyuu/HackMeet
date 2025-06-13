@@ -1,33 +1,61 @@
 import * as v from "valibot";
 
-export const ProjectSchema = v.object({
-  title: v.pipe(
-    v.string("タイトルは必須です"),
-    v.nonEmpty("タイトルは必須です"),
-    v.maxLength(20, "タイトルは20文字以内で入力してください"),
-  ),
-  description: v.pipe(
-    v.string("説明は必須です"),
-    v.nonEmpty("説明は必須です"),
-    v.maxLength(300, "説明は300文字以内で入力してください"),
-  ),
-  imageFile: v.pipe(
-    v.array(v.instance(File, "画像は必須です"), "画像は必須です"),
-    v.check((input) => input.length > 0, "画像は必須です"),
-    v.transform((input) => input),
-  ),
-  diagramFile: v.optional(
-    v.pipe(
-      v.array(v.instance(File, "図は必須です"), "図は必須です"),
-      v.check((input) => input.length > 0, "図は必須です"),
-      v.transform((input) => input),
-    ),
-  ),
-  techs: v.pipe(
-    v.array(v.string("技術は必須です"), "技術は必須です"),
-    v.minLength(1, "少なくとも1つ以上選択してください"),
-  ),
+// Userスキーマを定義
+const userSchema = v.object({
+  id: v.string(),
+  nickName: v.string(),
 });
+
+/**
+ * プロジェクトの基本的なバリデーションスキーマを生成する関数。
+ * @param options
+ * @param options.isImageRequired
+ */
+export const createProjectSchema = ({
+  isImageRequired = true,
+}: {
+  isImageRequired?: boolean;
+}) =>
+  v.object({
+    title: v.pipe(v.string(), v.minLength(1, "作品名を入力してください")),
+    description: v.pipe(
+      v.string(),
+      v.minLength(1, "作品概要を入力してください"),
+    ),
+    imageFile: isImageRequired
+      ? v.union([
+          v.object({
+            files: v.array(v.instance(File)),
+            existingUrls: v.array(v.string()),
+          }),
+          v.pipe(
+            v.array(v.instance(File)),
+            v.minLength(1, "画像を1枚以上アップロードしてください"),
+          ),
+        ])
+      : v.union([
+          v.object({
+            files: v.array(v.instance(File)),
+            existingUrls: v.array(v.string()),
+          }),
+          v.array(v.instance(File)),
+        ]),
+    diagramFile: v.union([
+      v.object({
+        files: v.array(v.instance(File)),
+        existingUrls: v.array(v.string()),
+      }),
+      v.array(v.instance(File)),
+    ]),
+    techs: v.pipe(
+      v.array(v.string()),
+      v.minLength(1, "技術スタックを1つ以上選択してください"),
+    ),
+    // userIdsをUserオブジェクトの配列に変更
+    userIds: v.array(userSchema, "コラボレーターの情報が正しくありません"),
+  });
+
+export const ProjectSchema = createProjectSchema({ isImageRequired: true });
 
 export const EventProjectSchema = v.object({
   ProjectSchema,
@@ -36,3 +64,23 @@ export const EventProjectSchema = v.object({
     v.nonEmpty("イベントIDは必須です"),
   ),
 });
+
+// 型定義も修正
+export type UpdateFormData = {
+  title: string;
+  description: string;
+  imageFile:
+    | {
+        files: File[];
+        existingUrls: string[];
+      }
+    | File[];
+  diagramFile:
+    | {
+        files: File[];
+        existingUrls: string[];
+      }
+    | File[];
+  techs: string[];
+  userIds: { id: string; nickName: string }[]; // Userオブジェクトの配列に変更
+};

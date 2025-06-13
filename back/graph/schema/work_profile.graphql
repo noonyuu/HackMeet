@@ -1,5 +1,5 @@
 type WorkProfile {
-  id: Int!
+  id: String!
   workId: String!
   profileId: String!
   createdAt: String!
@@ -15,7 +15,7 @@ input NewWorkProfile {
 }
 
 extend type Query {
-  workProfile(id: Int!): WorkProfile!
+  workProfile(id: String!): WorkProfile!
   workProfilesByWorkId(workId: String!): [WorkProfile!]!
   workProfilesByProfileId(profileId: String!): [WorkProfile!]!
   worksByProfileId(profileId: String!): [Work!]!

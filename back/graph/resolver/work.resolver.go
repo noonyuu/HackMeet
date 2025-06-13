@@ -15,6 +15,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/noonyuu/nfc/back/graph"
 	"github.com/noonyuu/nfc/back/graph/model"
+	"github.com/noonyuu/nfc/back/util"
 	"github.com/vektah/gqlparser/gqlerror"
 )
 
@@ -395,16 +396,92 @@ func (r *mutationResolver) CreateProjectEvent(ctx context.Context, input model.N
 	return respWork, nil
 }
 
+// UpdateWork is the resolver for the updateWork field.
+func (r *mutationResolver) UpdateWork(ctx context.Context, id string, input model.UpdateWork) (*model.Work, error) {
+	tx, err := r.DB.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to begin transaction: %w", err)
+	}
+
+	defer func() {
+		// このdeferブロックは、err変数がnilでない場合に自動的にロールバックします
+		if err != nil {
+			tx.Rollback()
+			log.Printf("Transaction rolled back due to error: %v", err)
+		}
+	}()
+
+	// --- 1. メインテーブル `works` の更新 ---
+	now := time.Now()
+	var args []interface{}
+	var setClauses []string
+
+	if input.Title != nil {
+		setClauses = append(setClauses, "title = ?")
+		args = append(args, *input.Title)
+	}
+	if input.Description != nil {
+		setClauses = append(setClauses, "description = ?")
+		args = append(args, *input.Description)
+	}
+
+	if len(setClauses) > 0 {
+		setClauses = append(setClauses, "updated_at = ?")
+		args = append(args, now, id)
+		updateQuery := fmt.Sprintf("UPDATE works SET %s WHERE id = ?", strings.Join(setClauses, ", "))
+		var result sql.Result
+		result, err = tx.ExecContext(ctx, updateQuery, args...)
+		if err != nil {
+			return nil, &gqlerror.Error{Message: "作品の更新に失敗しました。"}
+		}
+		rowsAffected, _ := result.RowsAffected()
+		if rowsAffected == 0 {
+			err = fmt.Errorf("work with id %s not found", id) // エラーをセットしてdeferにロールバックさせる
+			return nil, &gqlerror.Error{Message: fmt.Sprintf("ID '%s' の作品が見つかりません。", id), Extensions: map[string]interface{}{"code": "NOT_FOUND"}}
+		}
+	}
+
+	// --- 2. 関連データの更新 ---
+	if input.ImageURL != nil {
+		if err = util.SyncImages(ctx, tx, id, input.ImageURL, "images", "work_images", "image_id"); err != nil {
+			return nil, &gqlerror.Error{Message: "作品画像の更新に失敗しました。"}
+		}
+	}
+	if input.DiagramImageURL != nil {
+		if err = util.SyncImages(ctx, tx, id, input.DiagramImageURL, "diagram_images", "work_diagram_images", "image_id"); err != nil {
+			return nil, &gqlerror.Error{Message: "構成図の更新に失敗しました。"}
+		}
+	}
+	if input.UserIds != nil {
+		if err = util.SyncRelatedRecords(ctx, tx, id, input.UserIds, "work_profiles", "work_id", "profile_id"); err != nil {
+			return nil, &gqlerror.Error{Message: "共同制作者の更新に失敗しました。"}
+		}
+	}
+	if input.Skills != nil {
+		if err = util.SyncRelatedRecords(ctx, tx, id, input.Skills, "work_skills", "work_id", "skill_id"); err != nil {
+			return nil, &gqlerror.Error{Message: "技術スタックの更新に失敗しました。"}
+		}
+	}
+
+	if err = tx.Commit(); err != nil {
+		log.Printf("Error committing transaction: %v", err)
+		return nil, &gqlerror.Error{Message: "作品の更新を完了できませんでした。"}
+	}
+
+	// 更新後の完全なデータを取得して返す
+	return r.Query().Work(ctx, id)
+}
+
 // Work is the resolver for the work field.
 func (r *queryResolver) Work(ctx context.Context, id string) (*model.Work, error) {
 	query := `
-		SELECT id, title, description, created_at, updated_at, event_id
+		SELECT id, title, description, created_at, updated_at
 		FROM works
 		WHERE id = ?
 	`
 	work := &model.Work{}
 	var eventID sql.NullString
-	if err := r.DB.QueryRowContext(ctx, query, id).Scan(&work.ID, &work.Title, &work.Description, &work.CreatedAt, &work.UpdatedAt, &eventID); err != nil {
+	if err := r.DB.QueryRowContext(ctx, query, id).Scan(&work.ID, &work.Title, &work.Description, &work.CreatedAt, &work.UpdatedAt); err != nil {
 		if err == sql.ErrNoRows {
 			log.Printf("Work with ID %s not found", id)
 
@@ -1166,7 +1243,7 @@ func (r *queryResolver) WorkList(ctx context.Context, first *int32, after *strin
 					"code": "INTERNAL_SERVER_ERROR",
 				},
 			}
-			
+
 		}
 		for diagramImageRows.Next() {
 			var workID string

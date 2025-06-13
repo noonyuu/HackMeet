@@ -5,7 +5,9 @@ export type UserWork = {
   title: string;
   description: string;
   imageUrl: string[];
+  diagramUrl: string[];
   skills: Skill[];
+  userIds: string[];
 };
 
 export type Profile = {

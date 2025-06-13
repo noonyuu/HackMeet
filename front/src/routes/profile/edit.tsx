@@ -105,7 +105,6 @@ function RouteComponent() {
                   };
                   await updateProfileMutation({
                     variables: {
-                      id: user.id,
                       input: inputData,
                     },
                   });
