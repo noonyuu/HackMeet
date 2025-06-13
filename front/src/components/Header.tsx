@@ -30,10 +30,7 @@ export const Header = () => {
   // nfc読み取り後の画面
   const isNfc = useMatch({ from: "/nfc/$workId/", shouldThrow: false });
 
-  const isAuth =
-    isRegister ||
-    isLogin ||
-    isNfc;
+  const isAuth = isRegister || isLogin || isNfc;
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
 
   const { user, isAuthenticated, logout } = useAuth();
@@ -64,7 +61,12 @@ export const Header = () => {
         <header className="flex min-h-25 justify-center border-b border-gray-300 px-8 pt-4">
           <div className="font-main flex w-full flex-col">
             <div className="flex flex-row items-center">
-              <div className="flex grow text-2xl">HackMeet</div>
+              <div className="flex grow text-2xl">
+                <Link to="/" className="my-auto">
+                  <img src="/favicon.svg" alt="logo" className="mr-2 size-8" />
+                </Link>
+                HackMeet
+              </div>
               <div className="">
                 {isAuthenticated ? (
                   <div>
@@ -118,12 +120,12 @@ export const Header = () => {
               >
                 作品一覧
               </Link>
-              <Link
+              {/* <Link
                 to="/event"
                 className="text-lg [&.active]:border-b [&.active]:border-green-500 [&.active]:font-bold"
               >
                 イベント
-              </Link>
+              </Link> */}
             </div>
           </div>
         </header>
