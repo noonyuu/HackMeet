@@ -28,7 +28,7 @@ function RouteComponent() {
     loading: queryLoading,
     error: queryError,
   } = useQuery<CardQueryResult>(GET_NFC_DATA, {
-    variables: { id: parseInt(workId, 10) },
+    variables: { id: workId },
     fetchPolicy: "network-only",
     skip: !workId, // workIdがないときはquery実行しない
   });
