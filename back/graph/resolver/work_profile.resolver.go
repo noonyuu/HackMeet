@@ -47,7 +47,7 @@ func (r *mutationResolver) CreateWorkProfile(ctx context.Context, input model.Ne
 }
 
 // DeleteWorkProfile is the resolver for the deleteWorkProfile field.
-func (r *mutationResolver) DeleteWorkProfile(ctx context.Context, id int32) (*model.WorkProfile, error) {
+func (r *mutationResolver) DeleteWorkProfile(ctx context.Context, id string) (*model.WorkProfile, error) {
 	query := `
 		DELETE FROM work_profiles WHERE id = ?
 	`
@@ -1138,11 +1138,6 @@ func (r *queryResolver) WorksByProfileID(ctx context.Context, profileID string) 
 	}
 
 	return works, nil
-}
-
-// ID is the resolver for the id field.
-func (r *workProfileResolver) ID(ctx context.Context, obj *model.WorkProfile) (string, error) {
-	panic(fmt.Errorf("not implemented: ID - id"))
 }
 
 // CreatedAt is the resolver for the createdAt field.

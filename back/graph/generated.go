@@ -81,7 +81,7 @@ type ComplexityRoot struct {
 		CreateWorkProfile  func(childComplexity int, input model.NewWorkProfile) int
 		CreateWorkSkill    func(childComplexity int, input model.NewWorkSkill) int
 		DeleteProfileSkill func(childComplexity int, id int32) int
-		DeleteWorkProfile  func(childComplexity int, id int32) int
+		DeleteWorkProfile  func(childComplexity int, id string) int
 		DeleteWorkSkill    func(childComplexity int, id int32) int
 		UpdateProfile      func(childComplexity int, input model.UpdateProfile) int
 		UpdateWork         func(childComplexity int, id string, input model.UpdateWork) int
@@ -230,7 +230,7 @@ type MutationResolver interface {
 	UpdateWork(ctx context.Context, id string, input model.UpdateWork) (*model.Work, error)
 	CreateWorkEvent(ctx context.Context, input model.NewWorkEvent) (*model.WorkEvent, error)
 	CreateWorkProfile(ctx context.Context, input model.NewWorkProfile) (*model.WorkProfile, error)
-	DeleteWorkProfile(ctx context.Context, id int32) (*model.WorkProfile, error)
+	DeleteWorkProfile(ctx context.Context, id string) (*model.WorkProfile, error)
 	CreateWorkSkill(ctx context.Context, input model.NewWorkSkill) (*model.WorkSkill, error)
 	DeleteWorkSkill(ctx context.Context, id int32) (*model.WorkSkill, error)
 }
@@ -292,8 +292,6 @@ type WorkEventResolver interface {
 	Works(ctx context.Context, obj *model.WorkEvent) ([]*model.Work, error)
 }
 type WorkProfileResolver interface {
-	ID(ctx context.Context, obj *model.WorkProfile) (string, error)
-
 	CreatedAt(ctx context.Context, obj *model.WorkProfile) (string, error)
 	UpdatedAt(ctx context.Context, obj *model.WorkProfile) (string, error)
 }
@@ -533,7 +531,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.DeleteWorkProfile(childComplexity, args["id"].(int32)), true
+		return e.complexity.Mutation.DeleteWorkProfile(childComplexity, args["id"].(string)), true
 
 	case "Mutation.deleteWorkSkill":
 		if e.complexity.Mutation.DeleteWorkSkill == nil {
@@ -1678,13 +1676,13 @@ func (ec *executionContext) field_Mutation_deleteWorkProfile_args(ctx context.Co
 func (ec *executionContext) field_Mutation_deleteWorkProfile_argsID(
 	ctx context.Context,
 	rawArgs map[string]any,
-) (int32, error) {
+) (string, error) {
 	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
 	if tmp, ok := rawArgs["id"]; ok {
-		return ec.unmarshalNInt2int32(ctx, tmp)
+		return ec.unmarshalNString2string(ctx, tmp)
 	}
 
-	var zeroVal int32
+	var zeroVal string
 	return zeroVal, nil
 }
 
@@ -3727,7 +3725,7 @@ func (ec *executionContext) _Mutation_deleteWorkProfile(ctx context.Context, fie
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().DeleteWorkProfile(rctx, fc.Args["id"].(int32))
+		return ec.resolvers.Mutation().DeleteWorkProfile(rctx, fc.Args["id"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -8007,7 +8005,7 @@ func (ec *executionContext) _WorkProfile_id(ctx context.Context, field graphql.C
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.WorkProfile().ID(rctx, obj)
+		return obj.ID, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -8028,8 +8026,8 @@ func (ec *executionContext) fieldContext_WorkProfile_id(_ context.Context, field
 	fc = &graphql.FieldContext{
 		Object:     "WorkProfile",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
 		},
@@ -13141,41 +13139,10 @@ func (ec *executionContext) _WorkProfile(ctx context.Context, sel ast.SelectionS
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("WorkProfile")
 		case "id":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._WorkProfile_id(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
-				return res
+			out.Values[i] = ec._WorkProfile_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
 			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "workId":
 			out.Values[i] = ec._WorkProfile_workId(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
