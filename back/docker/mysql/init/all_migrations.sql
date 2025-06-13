@@ -48,7 +48,7 @@ CREATE TABLE IF NOT EXISTS profiles (
   updated_at DATETIME
 ) ENGINE=InnoDB;CREATE TABLE IF NOT EXISTS providers (
   id VARCHAR(255) PRIMARY KEY,
-  user_id VARCHAR(255) UNIQUE,
+  user_id VARCHAR(255),
   provider_id VARCHAR(255) UNIQUE,
   provider VARCHAR(255),
   created_at DATETIME,
@@ -99,7 +99,7 @@ CREATE TABLE IF NOT EXISTS work_images (
   FOREIGN KEY (image_id) REFERENCES images(id)
 ) ENGINE=InnoDB;
 CREATE TABLE IF NOT EXISTS work_profiles (
-  id INT AUTO_INCREMENT PRIMARY KEY,
+  id VARCHAR(255) PRIMARY KEY,
   work_id VARCHAR(255),
   profile_id VARCHAR(255),
   created_at DATETIME,
