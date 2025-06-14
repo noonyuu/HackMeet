@@ -16,7 +16,6 @@ import { Route as RegisterImport } from './routes/register'
 import { Route as PolicyImport } from './routes/policy'
 import { Route as LoginImport } from './routes/login'
 import { Route as IndexImport } from './routes/index'
-import { Route as NfcIndexImport } from './routes/nfc/index'
 import { Route as EventIndexImport } from './routes/event/index'
 import { Route as ProfileProjectlistImport } from './routes/profile/project_list'
 import { Route as ProfileEditImport } from './routes/profile/edit'
@@ -55,12 +54,6 @@ const LoginRoute = LoginImport.update({
 const IndexRoute = IndexImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRoute,
-} as any)
-
-const NfcIndexRoute = NfcIndexImport.update({
-  id: '/nfc/',
-  path: '/nfc/',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -172,13 +165,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EventIndexImport
       parentRoute: typeof rootRoute
     }
-    '/nfc/': {
-      id: '/nfc/'
-      path: '/nfc'
-      fullPath: '/nfc'
-      preLoaderRoute: typeof NfcIndexImport
-      parentRoute: typeof rootRoute
-    }
     '/event/$eventId/': {
       id: '/event/$eventId/'
       path: '/event/$eventId'
@@ -228,7 +214,6 @@ export interface FileRoutesByFullPath {
   '/profile/edit': typeof ProfileEditRoute
   '/profile/project_list': typeof ProfileProjectlistRoute
   '/event': typeof EventIndexRoute
-  '/nfc': typeof NfcIndexRoute
   '/event/$eventId': typeof EventEventIdIndexRoute
   '/nfc/$workId': typeof NfcWorkIdIndexRoute
   '/profile/$projectId': typeof ProfileProjectIdIndexRoute
@@ -245,7 +230,6 @@ export interface FileRoutesByTo {
   '/profile/edit': typeof ProfileEditRoute
   '/profile/project_list': typeof ProfileProjectlistRoute
   '/event': typeof EventIndexRoute
-  '/nfc': typeof NfcIndexRoute
   '/event/$eventId': typeof EventEventIdIndexRoute
   '/nfc/$workId': typeof NfcWorkIdIndexRoute
   '/profile/$projectId': typeof ProfileProjectIdIndexRoute
@@ -263,7 +247,6 @@ export interface FileRoutesById {
   '/profile/edit': typeof ProfileEditRoute
   '/profile/project_list': typeof ProfileProjectlistRoute
   '/event/': typeof EventIndexRoute
-  '/nfc/': typeof NfcIndexRoute
   '/event/$eventId/': typeof EventEventIdIndexRoute
   '/nfc/$workId/': typeof NfcWorkIdIndexRoute
   '/profile/$projectId/': typeof ProfileProjectIdIndexRoute
@@ -282,7 +265,6 @@ export interface FileRouteTypes {
     | '/profile/edit'
     | '/profile/project_list'
     | '/event'
-    | '/nfc'
     | '/event/$eventId'
     | '/nfc/$workId'
     | '/profile/$projectId'
@@ -298,7 +280,6 @@ export interface FileRouteTypes {
     | '/profile/edit'
     | '/profile/project_list'
     | '/event'
-    | '/nfc'
     | '/event/$eventId'
     | '/nfc/$workId'
     | '/profile/$projectId'
@@ -314,7 +295,6 @@ export interface FileRouteTypes {
     | '/profile/edit'
     | '/profile/project_list'
     | '/event/'
-    | '/nfc/'
     | '/event/$eventId/'
     | '/nfc/$workId/'
     | '/profile/$projectId/'
@@ -332,7 +312,6 @@ export interface RootRouteChildren {
   ProfileEditRoute: typeof ProfileEditRoute
   ProfileProjectlistRoute: typeof ProfileProjectlistRoute
   EventIndexRoute: typeof EventIndexRoute
-  NfcIndexRoute: typeof NfcIndexRoute
   EventEventIdIndexRoute: typeof EventEventIdIndexRoute
   NfcWorkIdIndexRoute: typeof NfcWorkIdIndexRoute
   ProfileProjectIdIndexRoute: typeof ProfileProjectIdIndexRoute
@@ -349,7 +328,6 @@ const rootRouteChildren: RootRouteChildren = {
   ProfileEditRoute: ProfileEditRoute,
   ProfileProjectlistRoute: ProfileProjectlistRoute,
   EventIndexRoute: EventIndexRoute,
-  NfcIndexRoute: NfcIndexRoute,
   EventEventIdIndexRoute: EventEventIdIndexRoute,
   NfcWorkIdIndexRoute: NfcWorkIdIndexRoute,
   ProfileProjectIdIndexRoute: ProfileProjectIdIndexRoute,
@@ -375,7 +353,6 @@ export const routeTree = rootRoute
         "/profile/edit",
         "/profile/project_list",
         "/event/",
-        "/nfc/",
         "/event/$eventId/",
         "/nfc/$workId/",
         "/profile/$projectId/",
@@ -406,9 +383,6 @@ export const routeTree = rootRoute
     },
     "/event/": {
       "filePath": "event/index.tsx"
-    },
-    "/nfc/": {
-      "filePath": "nfc/index.tsx"
     },
     "/event/$eventId/": {
       "filePath": "event/$eventId/index.tsx"
