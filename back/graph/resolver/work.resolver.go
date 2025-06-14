@@ -151,9 +151,11 @@ func (r *mutationResolver) CreateWork(ctx context.Context, input model.NewWork) 
 	}
 
 	if len(input.UserIds) > 0 {
-		profileQuery := `INSERT INTO work_profiles (work_id, profile_id, created_at, updated_at) VALUES (?, ?, ?, ?)`
+		profileQuery := `INSERT INTO work_profiles (id, work_id, profile_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?)`
 		for _, userID := range input.UserIds {
-			if _, err := tx.ExecContext(ctx, profileQuery, work.ID, userID, now, now); err != nil {
+			workProfileID := uuid.New().String()
+
+			if _, err := tx.ExecContext(ctx, profileQuery, workProfileID, work.ID, userID, now, now); err != nil {
 				log.Printf("Error inserting work_profile with transaction: %v", err)
 
 				return nil, &gqlerror.Error{
@@ -322,9 +324,10 @@ func (r *mutationResolver) CreateProjectEvent(ctx context.Context, input model.N
 		}
 
 		if len(input.UserIds) > 0 {
-			profileQuery := `INSERT INTO work_profiles (work_id, profile_id, created_at, updated_at) VALUES (?, ?, ?, ?)`
+			profileQuery := `INSERT INTO work_profiles (id, work_id, profile_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?)`
 			for _, userID := range input.UserIds {
-				if _, execErr := tx.ExecContext(ctx, profileQuery, workID, userID, now, now); execErr != nil {
+				workProfileID := uuid.New().String()
+				if _, execErr := tx.ExecContext(ctx, profileQuery, workProfileID, workID, userID, now, now); execErr != nil {
 					log.Printf("Error inserting work_profile for new work: %v", execErr)
 
 					return nil, &gqlerror.Error{
